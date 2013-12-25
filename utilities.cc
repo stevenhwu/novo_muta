@@ -184,16 +184,3 @@ Matrix4d1616 TwoParentCounts() {
   }
   return genotype_count;
 }
-
-int main(int argc, char *argv[]) {
-  ArrayXd aa_alpha = GetAlphas(0.005).row(0);
-  cout << aa_alpha << endl;
-  ReadData data1 = {30, 0, 0, 0};
-  cout << data1.reads << endl;
-  double probability = DirichletMultinomialLog(aa_alpha, data1);
-  cout << probability << endl;
-  Matrix4d1616 m = TwoParentCounts();
-  //PrintMatrix4d1616(m);
-  return 0;
-}
-
