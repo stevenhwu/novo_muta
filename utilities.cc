@@ -6,6 +6,7 @@
  * including the Dirichlet multinomial and alphas.
  */
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <limits>
 #include <stdlib.h>
@@ -337,6 +338,20 @@ Array16_16d GetDiagonal(const Array16_16d &arr) {
  */
 bool Equal(double a, double b) {
   return fabs(a - b) < kEpsilon;
+}
+
+/**
+ * Prints user defined errors and exits the program.
+ *
+ * @param  msg Message to be printed.
+ */
+void Die(const char *msg) {
+  if (errno == EDOM) {
+    perror(msg);
+  } else {
+    printf("ERROR: %s\n", msg);
+  }
+  exit(EXIT_FAILURE);
 }
 
 /* Below are functions used for simulation. */

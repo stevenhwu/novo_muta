@@ -17,26 +17,11 @@
  * To run this file, provide the following command line inputs:
  * ./simulation_driver <output.txt> <#samples> <coverage> <germline mutation rate> <somatic mutation rate>
  */
-#include <cerrno>
 #include <stdio.h>
 #include <time.h>
 
 #include "simulation_model.cc"
 
-
-/**
- * Prints user defined errors and exits the program.
- *
- * @param  msg Message to be printed.
- */
-void Die(const char *msg) {
-  if (errno == EDOM) {
-    perror(msg);
-  } else {
-    printf("ERROR: %s\n", msg);
-  }
-  exit(EXIT_FAILURE);
-}
 
 int main(int argc, const char *argv[]) {
   if (argc < 6) {        

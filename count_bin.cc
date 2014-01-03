@@ -19,31 +19,18 @@
  * of 1.00 (100%) will go in the highest bin possible, bin 9.
  */
 #include <algorithm>
-#include <cerrno>
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 
+#include "utilities.cc"
+
 using namespace std;
 
 static const int kNumBins = 10;  // 10 bins cover 0-100% with 10% intervals.
 
-
-/**
- * Prints user defined errors and exits the program.
- *
- * @param  msg Message to be printed.
- */
-void Die(const char *msg) {
-  if (errno == EDOM) {
-    perror(msg);
-  } else {
-    printf("ERROR: %s\n", msg);
-  }
-  exit(EXIT_FAILURE);
-}
 
 int main(int argc, const char *argv[]) {
   if (argc < 2) {        
