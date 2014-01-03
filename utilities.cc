@@ -5,11 +5,14 @@
  * This file contains useful constants and functions to support the TrioModel 
  * including the Dirichlet multinomial and alphas.
  */
+#include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <limits>
+#include <stdlib.h>
 #include <string>
 #include <vector>
- 
+
 #include "Eigen/Core"
 #include "Eigen/Dense"
 
@@ -52,8 +55,9 @@ typedef vector<ReadData> ReadDataVector;
 // 13     TC
 // 14     TG
 // 15     TT
-static const int kNucleotideCount = 4;
 static const int kGenotypeCount = 16;
+static const int kNucleotideCount = 4;
+static const double kEpsilon = numeric_limits<double>::epsilon();
 
 /**
  * Returns 16 x 2 Eigen array where the first dimension represents genotypes
@@ -106,7 +110,7 @@ Matrix16_16_4d ZeroMatrix16_16_4d() {
  *
  * @param  m Matrix16_16_4d object to be printed.
  */
-void PrintMatrix16_16_4d(Matrix16_16_4d m) {
+void PrintMatrix16_16_4d(const Matrix16_16_4d& m) {
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; i < kGenotypeCount; ++i) {
       cout << m(i, j) << endl;
@@ -119,7 +123,8 @@ void PrintMatrix16_16_4d(Matrix16_16_4d m) {
  * mother genotype. The second dimension represents the father genotype. The
  * third dimension represents the nucleotide counts.
  *
- * Used in creating the population priors.
+ * Used for generating the constant kTwoParentCounts only, which is used in
+ * creating the population priors.
  *
  * @return  16 x 16 x 4 Eigen array of genotype counts where the (i, j) element
  *          is the count of nucleotide k of mother genotype i and father
@@ -149,6 +154,7 @@ Matrix16_16_4d TwoParentCounts() {
   }
   return genotype_count;
 }
+static const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
 
 /**
  * Generates a 16 x 4 alpha frequencies array given the sequencing error rate.
@@ -200,7 +206,7 @@ Array16_4d GetAlphas(double rate) {
  * @param  data  Read counts or samples for each category in the multinomial.
  * @return       log_e(P) where P is the value calculated from the pdf.
  */
-double DirichletMultinomialLog(Array4d alpha, ReadData data) {
+double DirichletMultinomialLog(const Array4d& alpha, const ReadData& data) {
   double a = alpha.sum();
   int n = data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3];
   double constant_term = lgamma(a) - lgamma(n + a);
@@ -219,7 +225,7 @@ double DirichletMultinomialLog(Array4d alpha, ReadData data) {
  * @param  arr 4 x 16 Eigen array.
  * @return     16 x 256 Eigen array.
  */
-Array16_256d KroneckerProduct(Array4_16d arr) {
+Array16_256d KroneckerProduct(const Array4_16d& arr) {
   Array16_256d kronecker_product;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 16; ++j) {
@@ -241,7 +247,7 @@ Array16_256d KroneckerProduct(Array4_16d arr) {
  * @param  arr 4 x 4 Eigen array.
  * @return     16 x 16 Eigen array.
  */
-Array16_16d KroneckerProduct(Array44d arr) {
+Array16_16d KroneckerProduct(const Array44d& arr) {
   Array16_16d kronecker_product;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
@@ -264,7 +270,7 @@ Array16_16d KroneckerProduct(Array44d arr) {
  * @param  arr2 1 x 16 Eigen array.
  * @return      16 x 256 Eigen array.
  */
-Array256d KroneckerProduct(Array16d arr1, Array16d arr2) {
+Array256d KroneckerProduct(const Array16d& arr1, const Array16d& arr2) {
   Array256d kronecker_product;
   for (int i = 0; i < 16; ++i) {
     for (int j = 0; j < 16; ++j) {
@@ -284,7 +290,7 @@ Array256d KroneckerProduct(Array16d arr1, Array16d arr2) {
  * @param  arr2 Eigen array.
  * @return      Product of both arrays.
  */
-ArrayXXd DotProduct(ArrayXXd arr1, ArrayXXd arr2) {
+ArrayXXd DotProduct(const ArrayXXd& arr1, const ArrayXXd& arr2) {
   int rows = arr1.rows();
   int cols = arr2.cols();
   ArrayXXd dot_product(rows, cols);
@@ -313,11 +319,77 @@ ArrayXXd DotProduct(ArrayXXd arr1, ArrayXXd arr2) {
  * @param  arr 16 x 16 Eigen array.
  * @return     16 x 16 diagonal of array.
  */
-Array16_16d GetDiagonal(Array16_16d arr) {
+Array16_16d GetDiagonal(const Array16_16d& arr) {
   Array16_16d diagonal = Array16_16d::Zero();
   auto vec = arr.matrix().diagonal();
   for (int i = 0; i < vec.size(); ++i) {
     diagonal(i, i) = vec(i);
   }
   return diagonal;
+}
+
+/**
+ * Returns true if the two given doubles are equal to each other within epsilon
+ * precision.
+ *
+ * @param  a First double.
+ * @param  b Second double.
+ * @return   True if the two doubles are equal to each other.
+ */
+bool Equal(double a, double b) {
+  return fabs(a - b) < kEpsilon;
+}
+
+/**
+ * Generates a random double in [min, max].
+ *
+ * @param  min Min range.
+ * @param  max Max range.
+ * @return     Random number in [min, max].
+ */
+double fRand(double min, double max) {
+  double f = (double) rand() / RAND_MAX;
+  return min + f * (max - min);
+}
+
+/**
+ * Generates a random sample in the given the range.
+ *
+ * @param  range Samples generated from the set [0, range-1].
+ * @param  p     Array of probabilities associated with each entry in the
+ *               samples generated by range.
+ * @return       Random element based on p probabilities from samples generated
+ *               by range.
+ */
+int RandomChoice(int range, const ArrayXd &p) {
+  // Picks random number using p probabilities.
+  double weight_sum = p.sum();
+  double random_idx = fRand(0.0, weight_sum);
+  for (int i = 0; i < range; ++i) {
+    if (random_idx < p(i)) {
+      return i;
+    }
+    random_idx -= p(i);
+  }
+  return -1;  // ERROR: This should never happen.
+}
+
+/**
+ * Generates a random sample in the given range.
+ *
+ * @param  range Samples generated from the set [0, range-1].
+ * @param  p     Array of probabilities associated with each entry in the
+ *               samples generated by range.
+ * @param  size  Output shape, for generating multiple random samples.
+ * @return       Random samples based on p probabilities from samples generated
+ *               by range.
+ */
+ArrayXd RandomChoice(int range, const ArrayXd& p, int size) {
+  // Creates size array to hold random samples.
+  ArrayXd random_samples(size);
+  while (size > 0) {
+    size--;
+    random_samples(size) = RandomChoice(range, p);
+  }
+  return random_samples;
 }

@@ -28,9 +28,6 @@ TrioModel::TrioModel()
 }
 
 /**
- * FIXME: Objects created by this constructor have an incorrect probability of
- *        mutation even though the parameter values appear to be identical.
- *
  * Constructor to customize parameters.
  *
  * @param  population_mutation_rate Population mutation rate.
@@ -48,13 +45,13 @@ TrioModel::TrioModel(double population_mutation_rate,
                      double somatic_mutation_rate,
                      double sequencing_error_rate,
                      double dirichlet_dispersion,
-                     double nucleotide_frequencies[kNucleotideCount])
+                     const Array4d& nucleotide_frequencies)
     : population_mutation_rate_{population_mutation_rate},
       germline_mutation_rate_{germline_mutation_rate},
       somatic_mutation_rate_{somatic_mutation_rate},
       sequencing_error_rate_{sequencing_error_rate},
-      dirichlet_dispersion_{dirichlet_dispersion} {
-  TrioModel::set_nucleotide_frequencies(nucleotide_frequencies);
+      dirichlet_dispersion_{dirichlet_dispersion},
+      nucleotide_frequencies_{nucleotide_frequencies} {
   population_priors_ = TrioModel::PopulationPriors();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
@@ -94,7 +91,7 @@ TrioModel::TrioModel(double population_mutation_rate,
  * @param   data_vec Read counts in order of child, mother and father.
  * @return           Probability of mutation given read data and parameters.
  */
-double TrioModel::MutationProbability(ReadDataVector data_vec) {
+double TrioModel::MutationProbability(const ReadDataVector& data_vec) {
   // Creates and sets sequencing probabilities given read data.
   sequencing_probability_mat_ = TrioModel::SequencingProbabilityMat(data_vec);
   Array16d child_vec = sequencing_probability_mat_.row(0);
@@ -161,7 +158,7 @@ double TrioModel::MutationProbability(ReadDataVector data_vec) {
  * For example, both parents have genotype AA, resulting in N = 4:
  *
  * population_mutation_rate_ = 0.00025;
- * nucleotide_frequencies_ = {0.25, 0.25, 0.25, 0.25};
+ * nucleotide_frequencies_ << 0.25, 0.25, 0.25, 0.25;
  * nucleotide_counts = {4, 0, 0, 0};
  *
  * @return  1 x 256 Eigen probability array in log e space where the (i, j)
@@ -170,21 +167,16 @@ double TrioModel::MutationProbability(ReadDataVector data_vec) {
  */
 Array256d TrioModel::PopulationPriors() {
   // Calculates nucleotide mutation frequencies using given mutation rate.
-  Array4d nucleotide_mutation_frequencies;
-  for (int i = 0; i < kNucleotideCount; ++i) {
-    nucleotide_mutation_frequencies(i) = (nucleotide_frequencies_[i] *
-      population_mutation_rate_);
-  }
+  Array4d nucleotide_mutation_frequencies = (nucleotide_frequencies_ *
+    population_mutation_rate_);
 
-  Matrix16_16_4d genotype_counts = TwoParentCounts();
-  Array16_16d population_priors = Array16_16d::Zero(kGenotypeCount,
-                                                    kGenotypeCount);
+  Array16_16d population_priors = Array16_16d::Zero();
   // Resizes population_priors to 1 x 256 array.
   Array256d population_priors_flattened;
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
       // Convert nucleotide_counts to ReadData for DirichletMultinomialLog().
-      Array4d nucleotide_counts = genotype_counts(i, j);
+      Array4d nucleotide_counts = kTwoParentCounts(i, j);
       ReadData nucleotide_read;
       for (int k = 0; k < kNucleotideCount; ++k) {
         nucleotide_read.reads[k] = nucleotide_counts(k);
@@ -329,7 +321,7 @@ Array16_16d TrioModel::SomaticProbabilityMat() {
  * @param  data_vec ReadDataVector containing nucleotide counts for trio family.
  * @return          3 x 16 Eigen probability array.
  */
-Array3_16d TrioModel::SequencingProbabilityMat(ReadDataVector data_vec) {
+Array3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector& data_vec) {
   Array3_16d sequencing_probability_mat = Array3_16d::Zero();
   Array16_4d alphas = GetAlphas(sequencing_error_rate_) * dirichlet_dispersion_;
   for (int read = 0; read < 3; ++read) {
@@ -343,6 +335,34 @@ Array3_16d TrioModel::SequencingProbabilityMat(ReadDataVector data_vec) {
   double max_element = sequencing_probability_mat.maxCoeff();
   max_elements_.push_back(max_element);
   return exp(sequencing_probability_mat - max_element);
+}
+
+/**
+ * Returns true if the two TrioModel objects are equal to each other within
+ * epsilon precision.
+ * 
+ * @param  other TrioModel object to be compared.
+ * @return       True if the two TrioModel objects are equal to each other.
+ */
+bool TrioModel::Equals(const TrioModel& other) {
+  bool attr_table[11] = {
+    Equal(population_mutation_rate_, other.population_mutation_rate_),
+    Equal(germline_mutation_rate_, other.germline_mutation_rate_),
+    Equal(somatic_mutation_rate_, other.germline_mutation_rate_),
+    Equal(sequencing_error_rate_, other.sequencing_error_rate_),
+    Equal(dirichlet_dispersion_, other.dirichlet_dispersion_),
+    nucleotide_frequencies_.isApprox(other.nucleotide_frequencies_, kEpsilon),
+    genotype_mat_.isApprox(other.genotype_mat_, kEpsilon),
+    population_priors_.isApprox(other.population_priors_, kEpsilon),
+    germline_probability_mat_.isApprox(other.germline_probability_mat_, kEpsilon),
+    somatic_probability_mat_.isApprox(other.somatic_probability_mat_, kEpsilon),
+    sequencing_probability_mat_.isApprox(other.sequencing_probability_mat_, kEpsilon)
+  };
+  if (all_of(begin(attr_table), end(attr_table), [](bool i) { return i; })) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 double TrioModel::population_mutation_rate() {
@@ -389,17 +409,15 @@ void TrioModel::set_sequencing_error_rate(double rate) {
   sequencing_error_rate_ = rate;
 }
 
-double *TrioModel::nucleotide_frequencies() {
+Array4d TrioModel::nucleotide_frequencies() {
   return nucleotide_frequencies_;
 }
 
 /**
  * Sets nucleotide_frequencies_ and population_priors_.
  */
-void TrioModel::set_nucleotide_frequencies(double frequencies[kNucleotideCount]) {
-  for (int i = 0; i < kNucleotideCount; ++i) {
-    nucleotide_frequencies_[i] = frequencies[i];
-  }
+void TrioModel::set_nucleotide_frequencies(const Array4d& frequencies) {
+  nucleotide_frequencies_ = frequencies;
   population_priors_ = TrioModel::PopulationPriors();
 }
 
