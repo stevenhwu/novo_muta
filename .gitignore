@@ -17,3 +17,4 @@
 *.exe.stackdump
 *.core
 Eigen/
+gsl-1.16/
