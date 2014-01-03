@@ -1,4 +1,4 @@
-/*
+/**
  * @file count_bin.cc
  * @author Melissa Ip
  *
@@ -28,13 +28,13 @@
 
 using namespace std;
 
-const int kNumBins = 10;  // 10 bins cover 0-100% with 10% intervals.
+static const int kNumBins = 10;  // 10 bins cover 0-100% with 10% intervals.
 
 
-/*
+/**
  * Prints user defined errors and exits the program.
  *
- * @param msg Message to be printed.
+ * @param  msg Message to be printed.
  */
 void Die(const char *msg) {
   if (errno == EDOM) {
@@ -45,21 +45,21 @@ void Die(const char *msg) {
   exit(EXIT_FAILURE);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
   if (argc < 2) {        
     Die("USAGE: count_bin <input.txt>");
   }
 
-  char *file_name = argv[1];
+  const char *file_name = argv[1];
   string line;
   ifstream f(file_name);
   if (!f.is_open() || 0 != f.fail()) {
     Die("Input file cannot be read.");
   }
 
-  long counts[kNumBins] = {0L};
-  long totals[kNumBins] = {0L};
-  float probability = 0.0;
+  double counts[kNumBins] = {0.0};
+  double totals[kNumBins] = {0.0};
+  double probability = 0.0;
   int has_mutation = 0;
   int bin = 0;
   int i = 0;
@@ -79,8 +79,8 @@ int main(int argc, char *argv[]) {
 
   for (i = 0; i < kNumBins; i++) {
     if (totals[i] > 0) {
-      float has_mutation_percent = ((float) counts[i] / totals[i] * 100);
-      printf("%.2f%% or %ld/%ld sites in bin %d contain a mutation.\n",
+      double has_mutation_percent = counts[i] / totals[i] * 100.0;
+      printf("%.2f%% or %.f/%.f sites in bin %d contain a mutation.\n",
              has_mutation_percent, counts[i], totals[i], i);
     } else {
       printf("There are no sites in bin %d.\n", i);

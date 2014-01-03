@@ -7,7 +7,6 @@
  */
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <limits>
 #include <stdlib.h>
 #include <string>
@@ -110,7 +109,7 @@ Matrix16_16_4d ZeroMatrix16_16_4d() {
  *
  * @param  m Matrix16_16_4d object to be printed.
  */
-void PrintMatrix16_16_4d(const Matrix16_16_4d& m) {
+void PrintMatrix16_16_4d(const Matrix16_16_4d &m) {
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; i < kGenotypeCount; ++i) {
       cout << m(i, j) << endl;
@@ -206,7 +205,7 @@ Array16_4d GetAlphas(double rate) {
  * @param  data  Read counts or samples for each category in the multinomial.
  * @return       log_e(P) where P is the value calculated from the pdf.
  */
-double DirichletMultinomialLog(const Array4d& alpha, const ReadData& data) {
+double DirichletMultinomialLog(const Array4d &alpha, const ReadData &data) {
   double a = alpha.sum();
   int n = data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3];
   double constant_term = lgamma(a) - lgamma(n + a);
@@ -225,7 +224,7 @@ double DirichletMultinomialLog(const Array4d& alpha, const ReadData& data) {
  * @param  arr 4 x 16 Eigen array.
  * @return     16 x 256 Eigen array.
  */
-Array16_256d KroneckerProduct(const Array4_16d& arr) {
+Array16_256d KroneckerProduct(const Array4_16d &arr) {
   Array16_256d kronecker_product;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 16; ++j) {
@@ -247,7 +246,7 @@ Array16_256d KroneckerProduct(const Array4_16d& arr) {
  * @param  arr 4 x 4 Eigen array.
  * @return     16 x 16 Eigen array.
  */
-Array16_16d KroneckerProduct(const Array44d& arr) {
+Array16_16d KroneckerProduct(const Array44d &arr) {
   Array16_16d kronecker_product;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
@@ -270,7 +269,7 @@ Array16_16d KroneckerProduct(const Array44d& arr) {
  * @param  arr2 1 x 16 Eigen array.
  * @return      16 x 256 Eigen array.
  */
-Array256d KroneckerProduct(const Array16d& arr1, const Array16d& arr2) {
+Array256d KroneckerProduct(const Array16d &arr1, const Array16d &arr2) {
   Array256d kronecker_product;
   for (int i = 0; i < 16; ++i) {
     for (int j = 0; j < 16; ++j) {
@@ -290,7 +289,7 @@ Array256d KroneckerProduct(const Array16d& arr1, const Array16d& arr2) {
  * @param  arr2 Eigen array.
  * @return      Product of both arrays.
  */
-ArrayXXd DotProduct(const ArrayXXd& arr1, const ArrayXXd& arr2) {
+ArrayXXd DotProduct(const ArrayXXd &arr1, const ArrayXXd &arr2) {
   int rows = arr1.rows();
   int cols = arr2.cols();
   ArrayXXd dot_product(rows, cols);
@@ -319,7 +318,7 @@ ArrayXXd DotProduct(const ArrayXXd& arr1, const ArrayXXd& arr2) {
  * @param  arr 16 x 16 Eigen array.
  * @return     16 x 16 diagonal of array.
  */
-Array16_16d GetDiagonal(const Array16_16d& arr) {
+Array16_16d GetDiagonal(const Array16_16d &arr) {
   Array16_16d diagonal = Array16_16d::Zero();
   auto vec = arr.matrix().diagonal();
   for (int i = 0; i < vec.size(); ++i) {
@@ -339,6 +338,8 @@ Array16_16d GetDiagonal(const Array16_16d& arr) {
 bool Equal(double a, double b) {
   return fabs(a - b) < kEpsilon;
 }
+
+/* Below are functions used for simulation. */
 
 /**
  * Generates a random double in [min, max].
@@ -384,9 +385,9 @@ int RandomChoice(int range, const ArrayXd &p) {
  * @return       Random samples based on p probabilities from samples generated
  *               by range.
  */
-ArrayXd RandomChoice(int range, const ArrayXd& p, int size) {
+ArrayXi RandomChoice(int range, const ArrayXd &p, int size) {
   // Creates size array to hold random samples.
-  ArrayXd random_samples(size);
+  ArrayXi random_samples(size);
   while (size > 0) {
     size--;
     random_samples(size) = RandomChoice(range, p);
