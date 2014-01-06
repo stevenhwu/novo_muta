@@ -11,7 +11,6 @@
  * and write the probability of mutation to a text file.
  */
 #include <fstream>
-#include <iostream>
 #include <sstream>
 
 #include "trio_model.cc"

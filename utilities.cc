@@ -35,6 +35,7 @@ typedef Matrix<double, 16, 16> Matrix16_16d;
 typedef Matrix<double, 16, 256> Matrix16_256d;
 typedef Matrix<RowVector4d, 16, 16> Matrix16_16_4d;
 typedef vector<ReadData> ReadDataVector;
+typedef vector<ReadDataVector> TrioVector;
 
 // Global constants for specifying matrix size and iterating through numeric
 // representations of nucleotides and genotypes in lexicographical order.
@@ -163,7 +164,7 @@ static const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
  *
  * @param  data ReadData to be printed.
  */
-void PrintReadData(ReadData data) {
+void PrintReadData(const ReadData &data) {
   cout << data.reads[0] << " " << data.reads[1] << " " << data.reads[2] << " "
        << data.reads[3] << endl;
 }
@@ -174,7 +175,7 @@ void PrintReadData(ReadData data) {
  *
  * @param  data_vec ReadDataVector to be printed.
  */
-void PrintReadDataVector(ReadDataVector data_vec) {
+void PrintReadDataVector(const ReadDataVector &data_vec) {
   for (auto data : data_vec) {
     PrintReadData(data);
   }
@@ -225,11 +226,36 @@ ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat) {
     }
 
     if (!is_in_vec) {
-      ReadData data = {mat(i, 0), mat(i, 1), mat(i, 2), mat(i, 3)};
-      data_vec.push_back(new_data);
+      ReadData data = {0};
+      for (int j = 0; j < kNucleotideCount; ++j) {
+        data.reads[j] = mat(i, j);
+      }
+      data_vec.push_back(data);
     }
   }
   return data_vec;
+}
+
+/**
+ * Returns all possible and unique trio sets of sequencing counts for an
+ * individual sequenced at given coverage.
+ *
+ * @param  coverage Coverage or max nucleotide count.
+ * @return          Vector of ReadDataVector.
+ */
+TrioVector GetTrioVector(int coverage) {
+  TrioVector trio_vec;
+  MatrixXi mat = EnumerateNucleotideCounts(coverage);
+  ReadDataVector data_vec = GetUniqueReadDataVector(mat);
+  for (auto data1 : data_vec) {
+    for (auto data2 : data_vec) {
+      for (auto data3 : data_vec) {
+        ReadDataVector enum_data_vec = {data1, data2, data3};
+        trio_vec.push_back(enum_data_vec);
+      }
+    }
+  }
+  return trio_vec;
 }
 
 /**

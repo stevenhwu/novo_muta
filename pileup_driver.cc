@@ -18,7 +18,7 @@
 int main(int argc, const char *argv[]) {
   if (argc < 5) {
     Die("USAGE: pileup_driver <output.txt> <child.pileup> <mother.pileup> "
-    	  "<father.pileup>");
+        "<father.pileup>");
   }
 
   const string file_name = argv[1];
