@@ -111,14 +111,14 @@ ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
 void SimulationModel::WriteProbability(const string &file_name,
                                        int experiment_count) {
   // Generates experiment_count random samples using population priors as weights.
-  ArrayXi parent_genotypes = RandomChoice(
+  RowVectorXi parent_genotypes = RandomChoice(
     kGenotypeCount * kGenotypeCount,
     params_.population_priors(),
     experiment_count
   );
 
   // Extracts father genotype indices from samples.
-  ArrayXi father_genotypes(experiment_count);
+  RowVectorXi father_genotypes(experiment_count);
   father_genotypes = parent_genotypes / kGenotypeCount;
 
   ofstream fout;

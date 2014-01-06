@@ -45,7 +45,7 @@ TrioModel::TrioModel(double population_mutation_rate,
                      double somatic_mutation_rate,
                      double sequencing_error_rate,
                      double dirichlet_dispersion,
-                     const Array4d &nucleotide_frequencies)
+                     const RowVector4d &nucleotide_frequencies)
     : population_mutation_rate_{population_mutation_rate},
       germline_mutation_rate_{germline_mutation_rate},
       somatic_mutation_rate_{somatic_mutation_rate},
@@ -94,61 +94,55 @@ TrioModel::TrioModel(double population_mutation_rate,
 double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
   // Creates and sets sequencing probabilities given read data.
   sequencing_probability_mat_ = TrioModel::SequencingProbabilityMat(data_vec);
-  Array16d child_vec = sequencing_probability_mat_.row(0);
-  Array16d mother_vec = sequencing_probability_mat_.row(1);
-  Array16d father_vec = sequencing_probability_mat_.row(2);
+  RowVector16d child_vec = sequencing_probability_mat_.row(0);
+  RowVector16d mother_vec = sequencing_probability_mat_.row(1);
+  RowVector16d father_vec = sequencing_probability_mat_.row(2);
 
   // Multiplies vectors by somatic transition matrix.
-  Array16d child_probability = DotProduct(child_vec, somatic_probability_mat_);
-  Array16d mother_probability = DotProduct(mother_vec, somatic_probability_mat_);
-  Array16d father_probability = DotProduct(father_vec, somatic_probability_mat_);
+  RowVector16d child_probability = child_vec * somatic_probability_mat_;
+  RowVector16d mother_probability = mother_vec * somatic_probability_mat_;
+  RowVector16d father_probability = father_vec * somatic_probability_mat_;
 
   // Calculates denominator, probability of the observed data.
-  Array256d child_germline_probability = DotProduct(
-    child_probability,
-    germline_probability_mat_
-  );
-  Array256d parent_probability = KroneckerProduct(
+  RowVector256d child_germline_probability = (child_probability *
+    germline_probability_mat_);
+  RowVector256d parent_probability = KroneckerProduct(
     mother_probability,
     father_probability
   );
-  Array256d demoninator_mat = (child_germline_probability * parent_probability *
-    population_priors_);
+  RowVector256d demoninator_mat = (child_germline_probability.cwiseProduct(
+    parent_probability).cwiseProduct(population_priors_));
   double demoninator_sum = demoninator_mat.sum();
 
   // Calculates numerator, probability of no mutation.
-  Array16_16d somatic_probability_diag = GetDiagonal(somatic_probability_mat_);
-  Array16d child_probability_num = DotProduct(child_vec,
-                                              somatic_probability_diag);
-  Array16d mother_probability_num = DotProduct(mother_vec,
-                                               somatic_probability_diag);
-  Array16d father_probability_num = DotProduct(father_vec,
-                                               somatic_probability_diag);
+  Matrix16_16d somatic_probability_diag = somatic_probability_mat_.diagonal().asDiagonal();
+  RowVector16d child_probability_num = child_vec * somatic_probability_diag;
+  RowVector16d mother_probability_num = mother_vec * somatic_probability_diag;
+  RowVector16d father_probability_num = father_vec * somatic_probability_diag;
 
-  Array16_256d germline_probability_mat_num = TrioModel::GermlineProbabilityMat(true);
-  Array256d child_germline_probability_num = DotProduct(
-    child_probability_num,
-    germline_probability_mat_num
-  );
-  Array256d parent_probability_num = KroneckerProduct(
+  Matrix16_256d germline_probability_mat_num = TrioModel::GermlineProbabilityMat(true);
+  RowVector256d child_germline_probability_num = (child_probability_num *
+    germline_probability_mat_num);
+  RowVector256d parent_probability_num = KroneckerProduct(
     mother_probability_num,
     father_probability_num
   );
-  Array256d numerator_mat = (child_germline_probability_num *
-    parent_probability_num * population_priors_);
+  RowVector256d numerator_mat = (child_germline_probability_num.cwiseProduct(
+    parent_probability_num).cwiseProduct(population_priors_));
   double numerator_sum = numerator_mat.sum();
   
   return 1 - numerator_sum/demoninator_sum;
 }
 
 /**
- * Returns 1 x 256 Eigen probability array. This is an order-relevant
+ * Returns 1 x 256 Eigen probability RowVector. This is an order-relevant
  * representation of the possible events in the sample space that covers all
  * possible parent genotype combinations. For example:
  *
  * [P(AAAA), P(AAAC), P(AAAG), P(AAAT), P(AACA), P(AACC), P(AACG)...]
  *
- * Sets genotype_mat_ as the 1 x 16 Eigen probability array for a single parent.
+ * Sets genotype_mat_ as the 1 x 16 Eigen probability RowVector for a single
+ * parent.
  *
  * Creates nucleotide mutation frequencies {alpha_A, alpha_C, alpha_G, alpha_T}
  * based on the nucleotide frequencies and population mutation rate (theta).
@@ -161,22 +155,22 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
  * nucleotide_frequencies_ << 0.25, 0.25, 0.25, 0.25;
  * nucleotide_counts = {4, 0, 0, 0};
  *
- * @return  1 x 256 Eigen probability array in log e space where the (i, j)
+ * @return  1 x 256 Eigen probability RowVector in log e space where the (i, j)
  *          element is the probability that the mother has genotype i and the
  *          father has genotype j.
  */
-Array256d TrioModel::PopulationPriors() {
+RowVector256d TrioModel::PopulationPriors() {
   // Calculates nucleotide mutation frequencies using given mutation rate.
-  Array4d nucleotide_mutation_frequencies = (nucleotide_frequencies_ *
+  RowVector4d nucleotide_mutation_frequencies = (nucleotide_frequencies_ *
     population_mutation_rate_);
 
-  Array16_16d population_priors = Array16_16d::Zero();
-  // Resizes population_priors to 1 x 256 array.
-  Array256d population_priors_flattened;
+  Matrix16_16d population_priors = Matrix16_16d::Zero();
+  // Resizes population_priors to 1 x 256 RowVector.
+  RowVector256d population_priors_flattened;
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
       // Convert nucleotide_counts to ReadData for DirichletMultinomialLog().
-      Array4d nucleotide_counts = kTwoParentCounts(i, j);
+      RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
       ReadData nucleotide_read;
       for (int k = 0; k < kNucleotideCount; ++k) {
         nucleotide_read.reads[k] = nucleotide_counts(k);
@@ -220,14 +214,14 @@ double TrioModel::GermlineMutation(int child_nucleotide_idx,
   
   // Checks if the child nucleotide is in the parent genotype.
   auto parent_genotype = kGenotypeNumIndex.row(parent_genotype_idx);
-  bool is_in_array_flag = false;
+  bool is_in_vec_flag = false;
   if (child_nucleotide_idx == parent_genotype(0) ||
       child_nucleotide_idx == parent_genotype(1)) {
-    is_in_array_flag = true;
+    is_in_vec_flag = true;
   }
 
   // Determines if the comparison is homozygous, heterozygous or no match.
-  if (is_in_array_flag) {
+  if (is_in_vec_flag) {
     if (parent_genotype(0) == parent_genotype(1)) {
       return homozygous_match;
     } else {
@@ -247,18 +241,18 @@ double TrioModel::GermlineMutation(int child_nucleotide_idx,
 }
 
 /**
- * Calculates the probability array for the offspring using the given mutation
+ * Calculates the probability matrix for the offspring using the given mutation
  * rate, derived from the Kronecker product of a 4 x 16 Eigen parent 
- * probability array with itself.
+ * probability matrix with itself.
  *
  * This is a transition matrix used to mutate the child germline genotype.
  *
  * @param  no_mutation_flag False by default. Set to true to calculate
  *                          probability of no mutation.
- * @return                  16 x 256 Eigen probability array.
+ * @return                  16 x 256 Eigen probability matrix.
  */
-Array16_256d TrioModel::GermlineProbabilityMat(bool no_mutation_flag) {
-  Array4_16d germline_probability_mat = Array4_16d::Zero();
+Matrix16_256d TrioModel::GermlineProbabilityMat(bool no_mutation_flag) {
+  Matrix4_16d germline_probability_mat = Matrix4_16d::Zero();
   for (int i = 0; i < kNucleotideCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
       double probability = TrioModel::GermlineMutation(i, j, no_mutation_flag);
@@ -290,17 +284,17 @@ double TrioModel::SomaticMutation(int nucleotide_idx, int other_nucleotide_idx) 
 /**
  * Computes event space for somatic nucleotide given a genotype nucleotide for
  * a single chromosome. Combines event spaces for two chromosomes independent
- * of each other and calculates somatic mutation probability array for a 
+ * of each other and calculates somatic mutation probability matrix for a 
  * single parent.
  *
  * This is a transition matrix used to mutate the somatic genotypes.
  *
- * @return  16 x 16 Eigen probability array where the first dimension is the
+ * @return  16 x 16 Eigen probability matrix where the first dimension is the
  *          original somatic genotypes and the second dimension is the mutated 
  *          genotype.
  */
-Array16_16d TrioModel::SomaticProbabilityMat() {
-  Array44d somatic_probability_mat = Array44d::Zero();
+Matrix16_16d TrioModel::SomaticProbabilityMat() {
+  Matrix4d somatic_probability_mat = Matrix4d::Zero();
   for (int i = 0; i < kNucleotideCount; ++i) {
     for (int j = 0; j < kNucleotideCount; ++j) {
       double probability = TrioModel::SomaticMutation(i, j);
@@ -319,11 +313,11 @@ Array16_16d TrioModel::SomaticProbabilityMat() {
  * rescaling to normal space.
  *
  * @param  data_vec ReadDataVector containing nucleotide counts for trio family.
- * @return          3 x 16 Eigen probability array.
+ * @return          3 x 16 Eigen probability matrix.
  */
-Array3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
-  Array3_16d sequencing_probability_mat = Array3_16d::Zero();
-  Array16_4d alphas = GetAlphas(sequencing_error_rate_) * dirichlet_dispersion_;
+Matrix3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
+  Matrix3_16d sequencing_probability_mat = Matrix3_16d::Zero();
+  Matrix16_4d alphas = GetAlphas(sequencing_error_rate_) * dirichlet_dispersion_;
   for (int read = 0; read < 3; ++read) {
     for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
       auto alpha = alphas.row(genotype_idx);
@@ -334,7 +328,7 @@ Array3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
   // Rescales to normal space and records max element of all 3 reads together.
   double max_element = sequencing_probability_mat.maxCoeff();
   max_elements_.push_back(max_element);
-  return exp(sequencing_probability_mat - max_element);
+  return exp(sequencing_probability_mat.array() - max_element);
 }
 
 /**
@@ -409,14 +403,14 @@ void TrioModel::set_sequencing_error_rate(double rate) {
   sequencing_error_rate_ = rate;
 }
 
-Array4d TrioModel::nucleotide_frequencies() {
+RowVector4d TrioModel::nucleotide_frequencies() {
   return nucleotide_frequencies_;
 }
 
 /**
  * Sets nucleotide_frequencies_ and population_priors_.
  */
-void TrioModel::set_nucleotide_frequencies(const Array4d &frequencies) {
+void TrioModel::set_nucleotide_frequencies(const RowVector4d &frequencies) {
   nucleotide_frequencies_ = frequencies;
   population_priors_ = TrioModel::PopulationPriors();
 }
@@ -429,22 +423,22 @@ void TrioModel::set_dirichlet_dispersion(double dispersion) {
   dirichlet_dispersion_ = dispersion;
 }
 
-Array16d TrioModel::genotype_mat() {
+RowVector16d TrioModel::genotype_mat() {
   return genotype_mat_;
 }
 
-Array256d TrioModel::population_priors() {
+RowVector256d TrioModel::population_priors() {
   return population_priors_;
 }
 
-Array16_256d TrioModel::germline_probability_mat() {
+Matrix16_256d TrioModel::germline_probability_mat() {
   return germline_probability_mat_;
 }
 
-Array16_16d TrioModel::somatic_probability_mat() {
+Matrix16_16d TrioModel::somatic_probability_mat() {
   return somatic_probability_mat_;
 }
 
-Array3_16d TrioModel::sequencing_probability_mat() {
+Matrix3_16d TrioModel::sequencing_probability_mat() {
   return sequencing_probability_mat_;
 }
