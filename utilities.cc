@@ -157,6 +157,81 @@ Matrix16_16_4d TwoParentCounts() {
 }
 static const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
 
+
+/**
+ * Prints ReadData with each read separated by spaces.
+ *
+ * @param  data ReadData to be printed.
+ */
+void PrintReadData(ReadData data) {
+  cout << data.reads[0] << " " << data.reads[1] << " " << data.reads[2] << " "
+       << data.reads[3] << endl;
+}
+
+/**
+ * Prints ReadDataVector with each ReadData on a new line, and each read
+ * deliminated by spaces.
+ *
+ * @param  data_vec ReadDataVector to be printed.
+ */
+void PrintReadDataVector(ReadDataVector data_vec) {
+  for (auto data : data_vec) {
+    PrintReadData(data);
+  }
+}
+
+/**
+ * Enumerates all possible nucleotide counts for an individual sequenced at
+ * given coverage.
+ *
+ * @param  coverage  Coverage or max nucleotide count.
+ * @return           4^coverage x 4 Eigen matrix of nucleotide counts.
+ */
+MatrixXi EnumerateNucleotideCounts(int coverage) {
+  Matrix4i identity_mat = Matrix4i::Identity();
+  if (coverage == 1) {
+    return identity_mat;
+  } else {
+    int rows = (int) pow(kNucleotideCount, coverage);
+    MatrixXi counts(rows, kNucleotideCount);
+    MatrixXi recursive = EnumerateNucleotideCounts(coverage - 1);
+    for (int j = 0; j < recursive.rows(); ++j) {
+      for (int i = 0; i < kNucleotideCount; ++i) {
+        counts.row(i + j*kNucleotideCount) = (identity_mat.row(i) +
+          recursive.row(j));
+      }
+    }
+    return counts;
+  }
+}
+
+/**
+ * Converts nucleotide counts in mat to ReadData and appends to ReadDataVector
+ * if it does not already exists in the ReadDataVector.
+ *
+ * @param  mat Eigen matrix containing nucleotide counts.
+ * @return     ReadDataVector containing all unique nucleotide counts converted
+ *             to ReadData.
+ */
+ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat) {
+  ReadDataVector data_vec;
+  for (int i = 0; i < mat.rows(); ++i) {
+    bool is_in_vec = false;
+    for (auto data : data_vec) {
+      if (data.reads[0] == mat(i, 0) && data.reads[1] == mat(i, 1) && 
+          data.reads[2] == mat(i, 2) && data.reads[3] == mat(i, 3)) {
+        is_in_vec = true;
+      }
+    }
+
+    if (!is_in_vec) {
+      ReadData data = {mat(i, 0), mat(i, 1), mat(i, 2), mat(i, 3)};
+      data_vec.push_back(new_data);
+    }
+  }
+  return data_vec;
+}
+
 /**
  * Generates a 16 x 4 alpha frequencies matrix given the sequencing error rate.
  * The order of the alpha frequencies correspond to the genotypes. Each alpha

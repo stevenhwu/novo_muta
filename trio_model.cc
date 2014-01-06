@@ -214,14 +214,14 @@ double TrioModel::GermlineMutation(int child_nucleotide_idx,
   
   // Checks if the child nucleotide is in the parent genotype.
   auto parent_genotype = kGenotypeNumIndex.row(parent_genotype_idx);
-  bool is_in_vec_flag = false;
+  bool is_in_vec = false;
   if (child_nucleotide_idx == parent_genotype(0) ||
       child_nucleotide_idx == parent_genotype(1)) {
-    is_in_vec_flag = true;
+    is_in_vec = true;
   }
 
   // Determines if the comparison is homozygous, heterozygous or no match.
-  if (is_in_vec_flag) {
+  if (is_in_vec) {
     if (parent_genotype(0) == parent_genotype(1)) {
       return homozygous_match;
     } else {

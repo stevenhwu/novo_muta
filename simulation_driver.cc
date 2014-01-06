@@ -12,7 +12,7 @@
  * 0.00709331      1
  *
  * To compile on Herschel, use the following command to include the GSL library:
- * c++ -std=c++11  -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o simulation_driver simulation_driver.cc
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o simulation_driver simulation_driver.cc
  *
  * To run this file, provide the following command line inputs:
  * ./simulation_driver <output.txt> <#samples> <coverage> <germline mutation rate> <somatic mutation rate>
