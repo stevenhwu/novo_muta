@@ -24,7 +24,7 @@
 
 
 int main(int argc, const char *argv[]) {
-  if (argc < 6) {        
+  if (argc < 6) {
     Die("USAGE: simulation_driver <output.txt> <#samples> <coverage> "
         "<germline mutation rate> <somatic mutation rate>");
   }

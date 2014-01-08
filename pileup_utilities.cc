@@ -11,6 +11,7 @@
  * and write the probability of mutation to a text file.
  */
 #include <fstream>
+#include <iterator>
 #include <sstream>
 
 #include "trio_model.cc"
@@ -43,7 +44,7 @@ string TrimHeader(ifstream &f) {
       return line;
     }
   }
-  return "-1";  // ERROR: This should not happen.
+  return "";  // ERROR: This should not happen.
 }
 
 /**
@@ -129,17 +130,16 @@ void ProcessPileup(const string &file_name, const string &child_pileup,
     Die("Input file cannot be read.");
   }
   
-  ofstream fout;
-  fout.open(file_name);
+  ofstream fout(file_name);
   TrioModel params;
+  vector<double> probabilities;
 
   // Removes N sequences and writes probability of first valid line.
   string child_line = TrimHeader(child);
   string mother_line = TrimHeader(mother);
   string father_line = TrimHeader(father);
-  if (child_line.compare("-1") == 0 || mother_line.compare("-1") == 0 ||
-      father_line.compare("-1") == 0) {
-    Die("Pileup file does not contain sequences where the reference is not N.");
+  if (child_line.empty() || mother_line.empty() || father_line.empty()) {
+    Die("Pileup file does not contain valid sequences (no N reference).");
   }
 
   int sequence = 0;
@@ -150,22 +150,24 @@ void ProcessPileup(const string &file_name, const string &child_pileup,
   double probability = GetProbability(params, child_line, mother_line,
                                       father_line);
   if (probability >= kThreshold) {
-    fout << position << "\t" << probability << "\n";
+    probabilities.push_back(probability);
   }
 
-  // Writes probability of the rest of the sequences.
+  // Writes probabilities of the rest of the sequences.
   while (getline(child, child_line)) {
     getline(mother, mother_line);
     getline(father, father_line);
     stringstream str(child_line);
     str >> sequence;
     str >> position;
-    probability = GetProbability(params, child_line, mother_line,
-                                 father_line);
+    probability = GetProbability(params, child_line, mother_line, father_line);
     if (probability >= kThreshold) {
-      fout << position << "\t" << probability << "\n";
+      probabilities.push_back(probability);
     }
   }
+
+  ostream_iterator<double> output_iter(fout, "\n");
+  copy(probabilities.begin(), probabilities.end(), output_iter);
 
   child.close();
   mother.close();

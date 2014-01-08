@@ -32,7 +32,6 @@ int main(int argc, const char *argv[]) {
   }
 
   const char *file_name = argv[1];
-  string line;
   ifstream f(file_name);
   if (!f.is_open() || 0 != f.fail()) {
     Die("Input file cannot be read.");
@@ -43,6 +42,7 @@ int main(int argc, const char *argv[]) {
   double probability = 0.0;
   int has_mutation = 0;
   int bin = 0;
+  string line;
 
   while (getline(f, line)) {
     line.erase(remove(line.begin(), line.end(), '\n'), line.end());

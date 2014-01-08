@@ -44,7 +44,7 @@ SimulationModel::SimulationModel(unsigned int coverage,
  */
 int SimulationModel::Mutate(int genotype_idx, bool is_germline,
                             int parent_genotype_idx) {
-  // Sets probabilities array to use either germline or somatic probabilities.
+  // Sets probability matrices to use either germline or somatic probabilities.
   auto mat = params_.somatic_probability_mat().row(genotype_idx);
   if (is_germline) {
     mat = params_.germline_probability_mat().col(parent_genotype_idx);
@@ -58,6 +58,26 @@ int SimulationModel::Mutate(int genotype_idx, bool is_germline,
 }
 
 /**
+ * Generates a numeric child genotype by picking a random allele from each of
+ * the given numeric parent genotypes.
+ *
+ * @param  mother_genotype Numeric mother genotype.
+ * @param  father_genotype Numeric father genotype.
+ * @return                 Numeric child genotype.
+ */
+int SimulationModel::GetChildGenotype(int mother_genotype, int father_genotype) {
+  int child_allele1 = kGenotypeNumIndex(mother_genotype, rand() % 2);
+  int child_allele2 = kGenotypeNumIndex(father_genotype, rand() % 2);
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    if (child_allele1 == kGenotypeNumIndex(i, 0) &&
+        child_allele2 == kGenotypeNumIndex(i, 1)) {
+      return i;
+    }
+  }
+  return -1;  // ERROR: This should not happen.
+}
+
+/**
  * Uses alpha frequencies based on the somatic genotype to select nucleotide
  * frequencies and uses these frequencies to draw sequencing reads at a
  * specified coverage (Dirichlet multinomial).
@@ -66,9 +86,8 @@ int SimulationModel::Mutate(int genotype_idx, bool is_germline,
  * @return              Read counts drawn from Dirichlet multinomial.
  */
 ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
-  // Converts Eigen array alpha to double array.
-  auto alpha_vec = (GetAlphas(params_.sequencing_error_rate()) *
-    params_.dirichlet_dispersion()).row(genotype_idx);
+  // Converts alpha to double array.
+  auto alpha_vec = params_.alphas().row(genotype_idx);
   double alpha[kNucleotideCount] = {0.0};
   for (int i = 0; i < kNucleotideCount; ++i) {
     alpha[i] = alpha_vec(i);
@@ -121,23 +140,15 @@ void SimulationModel::WriteProbability(const string &file_name,
   RowVectorXi father_genotypes(experiment_count);
   father_genotypes = parent_genotypes / kGenotypeCount;
 
-  ofstream fout;
-  fout.open(file_name);
-  int child_genotype = -1;  // Will change to a row in kGenotypeNumIndex.
+  ofstream fout(file_name);
   for (int i = 0; i < experiment_count; ++i) {
     // Extracts mother genotype indices from samples.
     int mother_genotype = parent_genotypes(i) % kGenotypeCount;
     int father_genotype = father_genotypes(i);
 
     // Creates child genotype by picking a random allele from each parent.
-    int child_allele1 = kGenotypeNumIndex(mother_genotype, rand() % 2);
-    int child_allele2 = kGenotypeNumIndex(father_genotype, rand() % 2);
-    for (int i = 0; i < kGenotypeCount; ++i) {
-      if (child_allele1 == kGenotypeNumIndex(i, 0) &&
-          child_allele2 == kGenotypeNumIndex(i, 1)) {
-        child_genotype = i;
-      }
-    }
+    int child_genotype = SimulationModel::GetChildGenotype(mother_genotype,
+                                                           father_genotype);
 
     // Processes germline mutation.
     int child_germline_genotype = SimulationModel::Mutate(

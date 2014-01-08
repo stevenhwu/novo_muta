@@ -27,13 +27,13 @@ union ReadData {
 
 typedef Matrix<double, 1, 16> RowVector16d;
 typedef Matrix<double, 1, 256> RowVector256d;
-typedef Matrix<int, 16, 2> Matrix16_2i;
-typedef Matrix<double, 3, 16> Matrix3_16d;
-typedef Matrix<double, 4, 16> Matrix4_16d;
-typedef Matrix<double, 16, 4> Matrix16_4d;
-typedef Matrix<double, 16, 16> Matrix16_16d;
-typedef Matrix<double, 16, 256> Matrix16_256d;
-typedef Matrix<RowVector4d, 16, 16> Matrix16_16_4d;
+typedef Matrix<int, 16, 2, RowMajor> Matrix16_2i;
+typedef Matrix<double, 3, 16, RowMajor> Matrix3_16d;
+typedef Matrix<double, 4, 16, RowMajor> Matrix4_16d;
+typedef Matrix<double, 16, 4, RowMajor> Matrix16_4d;
+typedef Matrix<double, 16, 16, RowMajor> Matrix16_16d;
+typedef Matrix<double, 16, 256, RowMajor> Matrix16_256d;
+typedef Matrix<RowVector4d, 16, 16, RowMajor> Matrix16_16_4d;
 typedef vector<ReadData> ReadDataVector;
 typedef vector<ReadDataVector> TrioVector;
 
@@ -176,7 +176,7 @@ void PrintReadData(const ReadData &data) {
  * @param  data_vec ReadDataVector to be printed.
  */
 void PrintReadDataVector(const ReadDataVector &data_vec) {
-  for (auto data : data_vec) {
+  for (auto const &data : data_vec) {
     PrintReadData(data);
   }
 }
@@ -256,44 +256,6 @@ TrioVector GetTrioVector(int coverage) {
     }
   }
   return trio_vec;
-}
-
-/**
- * Generates a 16 x 4 alpha frequencies matrix given the sequencing error rate.
- * The order of the alpha frequencies correspond to the genotypes. Each alpha
- * should sum to 1.
- * 
- * Current values are placeholders until they are estimated in Spring 2014.
- *
- * @param  rate Sequencing error rate.
- * @return      16 x 4 Eigen matrix of Dirichlet multinomial alpha parameters
- *              alpha = (alpha_1, ..., alpha_K) for a K-category Dirichlet
- *              distribution (where K = 4 = kNucleotideCount) that vary with
- *              each combination of parental genotype and reference nucleotide.
- */
-Matrix16_4d GetAlphas(double rate) {
-  Matrix16_4d alphas;
-  //        A             C             G             T
-  alphas << 1 - rate,     rate/3,       rate/3,       rate/3,
-            0.5 - rate/3, 0.5 - rate/3, rate/3,       rate/3,
-            0.5 - rate/3, rate/3,       0.5 - rate/3, rate/3,
-            0.5 - rate/3, rate/3,       rate/3,       0.5 - rate/3,
-
-            0.5 - rate/3, 0.5 - rate/3, rate/3,       rate/3,
-            rate/3,       1 - rate,     rate/3,       rate/3,
-            rate/3,       0.5 - rate/3, 0.5 - rate/3, rate/3,
-            rate/3,       0.5 - rate/3, rate/3,       0.5 - rate/3,
-
-            0.5 - rate/3, rate/3,       0.5 - rate/3, rate/3,
-            rate/3,       0.5 - rate/3, 0.5 - rate/3, rate/3,
-            rate/3,       rate/3,       1 - rate,     rate/3,
-            rate/3,       rate/3,       0.5 - rate/3, 0.5 - rate/3,
-
-            0.5 - rate/3, rate/3,       rate/3,       0.5 - rate/3,
-            rate/3,       0.5 - rate/3, rate/3,       0.5 - rate/3,
-            rate/3,       rate/3,       0.5 - rate/3, 0.5 - rate/3,
-            rate/3,       rate/3,       rate/3,       1 - rate;
-  return alphas;
 }
 
 /**

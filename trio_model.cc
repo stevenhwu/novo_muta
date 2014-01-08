@@ -25,6 +25,7 @@ TrioModel::TrioModel()
   population_priors_ = TrioModel::PopulationPriors();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
+  alphas_ = TrioModel::Alphas();
 }
 
 /**
@@ -55,6 +56,7 @@ TrioModel::TrioModel(double population_mutation_rate,
   population_priors_ = TrioModel::PopulationPriors();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
+  alphas_ = TrioModel::Alphas();
 }
 
 /**
@@ -317,10 +319,9 @@ Matrix16_16d TrioModel::SomaticProbabilityMat() {
  */
 Matrix3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
   Matrix3_16d sequencing_probability_mat = Matrix3_16d::Zero();
-  Matrix16_4d alphas = GetAlphas(sequencing_error_rate_) * dirichlet_dispersion_;
   for (int read = 0; read < 3; ++read) {
     for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
-      auto alpha = alphas.row(genotype_idx);
+      auto alpha = alphas_.row(genotype_idx);
       double log_probability = DirichletMultinomialLog(alpha, data_vec[read]);
       sequencing_probability_mat(read, genotype_idx) = log_probability;
     }
@@ -329,6 +330,47 @@ Matrix3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) 
   double max_element = sequencing_probability_mat.maxCoeff();
   max_elements_.push_back(max_element);
   return exp(sequencing_probability_mat.array() - max_element);
+}
+
+/**
+ * Generates a 16 x 4 alpha frequencies matrix given the sequencing error rate
+ * and dirichlet dispersion. The order of the alpha frequencies correspond to
+ * the genotypes. Each alpha should sum to 1.
+ * 
+ * Current values are placeholders until they are estimated in Spring 2014.
+ *
+ * @return  16 x 4 Eigen matrix of Dirichlet multinomial alpha parameters
+ *          alpha = (alpha_1, ..., alpha_K) for a K-category Dirichlet
+ *          distribution (where K = 4 = kNucleotideCount) that vary with each
+ *          combination of parental genotype and reference nucleotide.
+ */
+Matrix16_4d TrioModel::Alphas() {
+  Matrix16_4d alphas;
+  double homozygous = 1.0 - sequencing_error_rate_;
+  double other = sequencing_error_rate_ / 3.0;
+  double heterozygous = 0.5 - other;
+
+  //        A             C             G             T
+  alphas << homozygous,   other,        other,        other,
+            heterozygous, heterozygous, other,        other,
+            heterozygous, other,        heterozygous, other,
+            heterozygous, other,        other,        heterozygous,
+
+            heterozygous, heterozygous, other,        other,
+            other,        homozygous,   other,        other,
+            other,        heterozygous, heterozygous, other,
+            other,        heterozygous, other,        heterozygous,
+            
+            heterozygous, other,        heterozygous, other,
+            other,        heterozygous, heterozygous, other,
+            other,        other,        homozygous,   other,
+            other,        other,        heterozygous, heterozygous,
+
+            heterozygous, other,        other,        heterozygous,
+            other,        heterozygous, other,        heterozygous,
+            other,        other,        heterozygous, heterozygous,
+            other,        other,        other,        homozygous;
+  return alphas * dirichlet_dispersion_;
 }
 
 /**
@@ -399,8 +441,12 @@ double TrioModel::sequencing_error_rate() {
   return sequencing_error_rate_;
 }
 
+/**
+ * Sets sequencing_error_rate_ and alphas_.
+ */
 void TrioModel::set_sequencing_error_rate(double rate) {
   sequencing_error_rate_ = rate;
+  alphas_ = TrioModel::Alphas();
 }
 
 RowVector4d TrioModel::nucleotide_frequencies() {
@@ -419,8 +465,12 @@ double TrioModel::dirichlet_dispersion() {
   return dirichlet_dispersion_;
 }
 
+/**
+ * Sets dirichlet_dispersion_ and alphas_.
+ */
 void TrioModel::set_dirichlet_dispersion(double dispersion) {
   dirichlet_dispersion_ = dispersion;
+  alphas_ = TrioModel::Alphas();
 }
 
 RowVector16d TrioModel::genotype_mat() {
@@ -441,4 +491,8 @@ Matrix16_16d TrioModel::somatic_probability_mat() {
 
 Matrix3_16d TrioModel::sequencing_probability_mat() {
   return sequencing_probability_mat_;
+}
+
+Matrix16_4d TrioModel::alphas() {
+  return alphas_;
 }

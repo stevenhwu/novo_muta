@@ -61,6 +61,7 @@ public:
   Matrix16_256d germline_probability_mat();
   Matrix16_16d somatic_probability_mat();
   Matrix3_16d sequencing_probability_mat();
+  Matrix16_4d alphas();
 
 private:
   // Methods for setting up the model and relevant arrays.
@@ -71,6 +72,7 @@ private:
   double SomaticMutation(int nucleotide_idx, int other_nucleotide_idx);
   Matrix16_16d SomaticProbabilityMat();
   Matrix3_16d SequencingProbabilityMat(const ReadDataVector &data_vec);
+  Matrix16_4d Alphas();
 
   // Instance variables.
   double population_mutation_rate_;
@@ -85,4 +87,5 @@ private:
   Matrix16_256d germline_probability_mat_;
   Matrix16_16d somatic_probability_mat_;
   Matrix3_16d sequencing_probability_mat_;
+  Matrix16_4d alphas_;
 };
