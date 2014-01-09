@@ -157,7 +157,7 @@ void SimulationModel::WriteProbability(const string &file_name,
     );
 
     // Processes somatic mutation.
-    int child_somatic_genotype = SimulationModel::Mutate(child_genotype);
+    int child_somatic_genotype = SimulationModel::Mutate(child_germline_genotype);
     int mother_somatic_genotype = SimulationModel::Mutate(mother_genotype);
     int father_somatic_genotype = SimulationModel::Mutate(father_genotype);
 
