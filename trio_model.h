@@ -56,6 +56,8 @@ public:
   void set_dirichlet_dispersion(double dispersion);
   RowVector4d nucleotide_frequencies();
   void set_nucleotide_frequencies(const RowVector4d &frequencies);
+  bool has_mutation();
+  void set_has_mutation(bool has_mutation);
   RowVector16d genotype_mat();
   RowVector256d population_priors();
   Matrix16_256d germline_probability_mat();
@@ -88,4 +90,5 @@ private:
   Matrix16_16d somatic_probability_mat_;
   Matrix3_16d sequencing_probability_mat_;
   Matrix16_4d alphas_;
+  bool has_mutation_;
 };

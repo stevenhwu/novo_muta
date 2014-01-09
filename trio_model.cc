@@ -21,7 +21,8 @@ TrioModel::TrioModel()
       somatic_mutation_rate_{0.00000002},
       sequencing_error_rate_{0.005},
       dirichlet_dispersion_{1000.0},
-      nucleotide_frequencies_{0.25, 0.25, 0.25, 0.25} {
+      nucleotide_frequencies_{0.25, 0.25, 0.25, 0.25},
+      has_mutation_{false} {
   population_priors_ = TrioModel::PopulationPriors();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
@@ -52,7 +53,8 @@ TrioModel::TrioModel(double population_mutation_rate,
       somatic_mutation_rate_{somatic_mutation_rate},
       sequencing_error_rate_{sequencing_error_rate},
       dirichlet_dispersion_{dirichlet_dispersion},
-      nucleotide_frequencies_{nucleotide_frequencies} {
+      nucleotide_frequencies_{nucleotide_frequencies},
+      has_mutation_{false} {
   population_priors_ = TrioModel::PopulationPriors();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
@@ -449,6 +451,18 @@ void TrioModel::set_sequencing_error_rate(double rate) {
   alphas_ = TrioModel::Alphas();
 }
 
+double TrioModel::dirichlet_dispersion() {
+  return dirichlet_dispersion_;
+}
+
+/**
+ * Sets dirichlet_dispersion_ and alphas_.
+ */
+void TrioModel::set_dirichlet_dispersion(double dispersion) {
+  dirichlet_dispersion_ = dispersion;
+  alphas_ = TrioModel::Alphas();
+}
+
 RowVector4d TrioModel::nucleotide_frequencies() {
   return nucleotide_frequencies_;
 }
@@ -461,16 +475,12 @@ void TrioModel::set_nucleotide_frequencies(const RowVector4d &frequencies) {
   population_priors_ = TrioModel::PopulationPriors();
 }
 
-double TrioModel::dirichlet_dispersion() {
-  return dirichlet_dispersion_;
+bool TrioModel::has_mutation() {
+  return has_mutation_;
 }
 
-/**
- * Sets dirichlet_dispersion_ and alphas_.
- */
-void TrioModel::set_dirichlet_dispersion(double dispersion) {
-  dirichlet_dispersion_ = dispersion;
-  alphas_ = TrioModel::Alphas();
+void TrioModel::set_has_mutation(bool has_mutation) {
+  has_mutation_ = has_mutation;
 }
 
 RowVector16d TrioModel::genotype_mat() {

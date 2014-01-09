@@ -8,10 +8,11 @@
  * probability of mutation using the generated sample (sequencing reads are
  * drawn from the Dirichlet multinomial).
  */
+#include <fstream>
+#include <iostream>
+
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <iostream>
-#include <fstream>
 
 #include "trio_model.cc"
 
@@ -28,6 +29,13 @@ public:
   
   // Generates random samples and probabilities in text file.
   void WriteProbability(const string &file_name, int experiment_count);
+  // Get and set methods.
+  unsigned int coverage();
+  void set_coverage(unsigned int coverage);
+  double germline_mutation_rate();
+  void set_germline_mutation_rate(double rate);
+  double somatic_mutation_rate();
+  void set_somatic_mutation_rate(double rate);
 
 private:
   // Simulation methods.

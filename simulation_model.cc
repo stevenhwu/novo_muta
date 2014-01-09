@@ -22,8 +22,7 @@
 SimulationModel::SimulationModel(unsigned int coverage,
                                  double germline_mutation_rate,
                                  double somatic_mutation_rate)
-    :  coverage_{coverage},
-       has_mutation_{false} {
+    :  coverage_{coverage} {
   params_.set_germline_mutation_rate(germline_mutation_rate);
   params_.set_somatic_mutation_rate(somatic_mutation_rate);
 }
@@ -52,7 +51,7 @@ int SimulationModel::Mutate(int genotype_idx, bool is_germline,
   // Randomly mutate the genotype using the probabilities as weights.
   int mutated_genotype_idx = RandomChoice(kGenotypeCount, mat);
   if (mutated_genotype_idx != genotype_idx) {
-    has_mutation_ = true;
+    params_.set_has_mutation(true);
   }
   return mutated_genotype_idx;
 }
@@ -170,8 +169,32 @@ void SimulationModel::WriteProbability(const string &file_name,
 
     // Writes probability to text file.
     double probability = params_.MutationProbability(data_vec);
-    fout << probability << "\t" << has_mutation_ << "\n";
-    has_mutation_ = false;  // Resets for the next simulation.
+    fout << probability << "\t" << params_.has_mutation() << "\n";
+    params_.set_has_mutation(false);  // Resets for the next simulation.
   }
   fout.close();
+}
+
+unsigned int SimulationModel::coverage() {
+  return coverage_;
+}
+
+void SimulationModel::set_coverage(unsigned int coverage) {
+  coverage_ = coverage;
+}
+
+double SimulationModel::germline_mutation_rate() {
+  return params_.germline_mutation_rate();
+}
+
+void SimulationModel::set_germline_mutation_rate(double rate) {
+  params_.set_germline_mutation_rate(rate);
+}
+
+double SimulationModel::somatic_mutation_rate() {
+  return params_.somatic_mutation_rate();
+}
+
+void SimulationModel::set_somatic_mutation_rate(double rate) {
+  params_.set_somatic_mutation_rate(rate);
 }
