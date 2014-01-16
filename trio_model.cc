@@ -230,7 +230,7 @@ double TrioModel::GermlineMutation(int child_nucleotide_idx,
       return homozygous_match;
     } else {
       if (no_mutation_flag) {
-        return homozygous_match/2;
+        return homozygous_match / 2;
       } else {
         return heterozygous_match;
       }

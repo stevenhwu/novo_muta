@@ -57,9 +57,9 @@ typedef vector<ReadDataVector> TrioVector;
 // 13     TC
 // 14     TG
 // 15     TT
-static const int kGenotypeCount = 16;
-static const int kNucleotideCount = 4;
-static const double kEpsilon = numeric_limits<double>::epsilon();
+const int kGenotypeCount = 16;
+const int kNucleotideCount = 4;
+const double kEpsilon = numeric_limits<double>::epsilon();
 
 /**
  * Returns 16 x 2 Eigen matrix where the first dimension represents genotypes
@@ -88,8 +88,7 @@ Matrix16_2i GenotypeNumIndex() {
                       3, 0, 3, 1, 3, 2, 3, 3;
   return genotypeNumIndex;
 }
-static const Matrix16_2i kGenotypeNumIndex = GenotypeNumIndex();
-
+const Matrix16_2i kGenotypeNumIndex = GenotypeNumIndex();
 
 /**
  * Returns a 16 x 16 x 4 Eigen matrix filled with zeros. The third dimension is
@@ -156,8 +155,7 @@ Matrix16_16_4d TwoParentCounts() {
   }
   return genotype_count;
 }
-static const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
-
+const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
 
 /**
  * Prints ReadData with each read separated by spaces.

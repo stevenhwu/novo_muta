@@ -28,27 +28,30 @@ SimulationModel::SimulationModel(unsigned int coverage,
 }
 
 /**
- * Mutates a numeric genotype based on either germline or somatic transition
- * matrix in the TrioModel.
- *
- * is_germline is false by default to process somatic mutation. If this is set
- * to true, then this method will process germline mutation and assume
- * parent_genotype_idx is not -1.
- *
- * @param  genotype_idx        Index of genotype.
- * @param  is_germline         False by default. Set to true to process germline
- *                             mutation.
- * @param  parent_genotype_idx Index of parent genotype.
- * @return                     Index of mutated genotype.
- */
+* Mutates a numeric genotype based on either germline or somatic transition
+* matrix in the TrioModel.
+*
+* is_germline is false by default to process somatic mutation. If this is set
+* to true, then this method will process germline mutation and assume
+* parent_genotype_idx is not -1.
+*
+* @param  genotype_idx        Index of genotype.
+* @param  is_germline         False by default. Set to true to process germline
+*                             mutation.
+* @param  parent_genotype_idx Index of parent genotype.
+* @return                     Index of mutated genotype.
+*/
 int SimulationModel::Mutate(int genotype_idx, bool is_germline,
                             int parent_genotype_idx) {
   // Sets probability matrices to use either germline or somatic probabilities.
-  auto mat = params_.somatic_probability_mat().row(genotype_idx);
-  if (is_germline) {
+  RowVector16d mat;
+  if (!is_germline) {
+    mat = params_.somatic_probability_mat().row(genotype_idx);
+  } else {
     mat = params_.germline_probability_mat().col(parent_genotype_idx);
   }
-  // Randomly mutate the genotype using the probabilities as weights.
+
+  // Randomly mutates the genotype using the probabilities as weights.
   int mutated_genotype_idx = RandomChoice(kGenotypeCount, mat);
   if (mutated_genotype_idx != genotype_idx) {
     params_.set_has_mutation(true);
