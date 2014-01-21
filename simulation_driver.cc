@@ -17,12 +17,10 @@
  * To run this file, provide the following command line inputs:
  * ./simulation_driver <output.txt> <#samples> <coverage> <germline mutation rate> <somatic mutation rate>
  */
-#include <stdio.h>
-#include <time.h>
 
 #include "simulation_model.cc"
 
-
+ 
 int main(int argc, const char *argv[]) {
   if (argc < 6) {
     Die("USAGE: simulation_driver <output.txt> <#samples> <coverage> "
@@ -34,10 +32,10 @@ int main(int argc, const char *argv[]) {
   const unsigned int coverage = strtoull(argv[3], NULL, 10);
   const double germline_mutation_rate = strtod(argv[4], NULL);
   const double somatic_mutation_rate = strtod(argv[5], NULL);
-
-  srand(time(NULL));
+  
   SimulationModel sim(coverage, germline_mutation_rate, somatic_mutation_rate);
   sim.WriteProbability(file_name, experiment_count);
+  sim.Free();
 
   return 0;
 }

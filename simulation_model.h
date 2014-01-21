@@ -8,8 +8,11 @@
  * probability of mutation using the generated sample (sequencing reads are
  * drawn from the Dirichlet multinomial).
  */
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <stdio.h>
+#include <time.h>
 
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
@@ -27,6 +30,9 @@ public:
   SimulationModel(unsigned int coverage, double germline_mutation_rate,
                   double somatic_mutation_rate);
   
+  // Seeds random number generator during initialization.
+  void Seed();
+  void Free();
   // Generates random samples and probabilities in text file.
   void WriteProbability(const string &file_name, int experiment_count);
   // Get and set methods.
@@ -43,9 +49,13 @@ private:
              int parent_genotype_idx=-1);
   int GetChildGenotype(int mother_genotype, int father_genotype);
   ReadData DirichletMultinomialSample(int genotype_idx);
-
+  int RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities);
+  RowVectorXi RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities,
+                                   int size);
+  
   // Instance variables.
   TrioModel params_;  // Default initialization.
   unsigned int coverage_;
   bool has_mutation_;
+  gsl_rng *r;
 };
