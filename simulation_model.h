@@ -48,11 +48,13 @@ private:
   int Mutate(int genotype_idx, bool is_germline=false,
              int parent_genotype_idx=-1);
   int GetChildGenotype(int mother_genotype, int father_genotype);
+  vector<RowVectorXi> GetGenotypesMatrix(int size);
   ReadData DirichletMultinomialSample(int genotype_idx);
   int RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities);
   RowVectorXi RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities,
                                    int size);
-  
+
+
   // Instance variables.
   TrioModel params_;  // Default initialization.
   unsigned int coverage_;

@@ -103,6 +103,40 @@ int SimulationModel::GetChildGenotype(int mother_genotype, int father_genotype) 
 }
 
 /**
+ * Generates a 3 x size Eigen matrix of random genotypes for child, mother,
+ * and father.
+ *
+ * @param  size Number of genotypes to generate.
+ * @return      3 x size Eigen matrix of genotypes.
+ */
+vector<RowVectorXi> SimulationModel::GetGenotypesMatrix(int size) {
+  // Generates experiment_count random samples using population priors as weights.
+  RowVectorXi parent_genotypes = SimulationModel::RandomDiscreteChoice(
+    kGenotypeCount * kGenotypeCount,
+    params_.population_priors(),
+    size
+  );
+
+  // Extracts parent genotypes from samples and gets child genotypes.
+  RowVectorXi child_genotypes(size);
+  RowVectorXi mother_genotypes(size);
+  RowVectorXi father_genotypes(size);
+  father_genotypes = parent_genotypes / kGenotypeCount;
+  for (int i = 0; i < size; ++i) {
+    mother_genotypes(i) = parent_genotypes(i) % kGenotypeCount;
+    child_genotypes(i) = SimulationModel::GetChildGenotype(mother_genotypes(i),
+                                                           father_genotypes(i));
+  }
+
+  // Adds each vector to dynamic matrix.
+  vector<RowVectorXi> genotypes_vec;
+  genotypes_vec.push_back(child_genotypes);
+  genotypes_vec.push_back(mother_genotypes);
+  genotypes_vec.push_back(father_genotypes);
+  return genotypes_vec;
+}
+
+/**
  * Uses alpha frequencies based on the somatic genotype to select nucleotide
  * frequencies and uses these frequencies to draw sequencing reads at a
  * specified coverage (Dirichlet multinomial). K is kNucleotideCount.
@@ -143,26 +177,12 @@ ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
  */
 void SimulationModel::WriteProbability(const string &file_name,
                                        int experiment_count) {
-  // Generates experiment_count random samples using population priors as weights.
-  RowVectorXi parent_genotypes = SimulationModel::RandomDiscreteChoice(
-    kGenotypeCount * kGenotypeCount,
-    params_.population_priors(),
-    experiment_count
-  );
-
-  // Extracts father genotype indices from samples.
-  RowVectorXi father_genotypes(experiment_count);
-  father_genotypes = parent_genotypes / kGenotypeCount;
-
   ofstream fout(file_name);
+  vector<RowVectorXi> genotypes_vec = SimulationModel::GetGenotypesMatrix(experiment_count);
   for (int i = 0; i < experiment_count; ++i) {
-    // Extracts mother genotype indices from samples.
-    int mother_genotype = parent_genotypes(i) % kGenotypeCount;
-    int father_genotype = father_genotypes(i);
-
-    // Creates child genotype by picking a random allele from each parent.
-    int child_genotype = SimulationModel::GetChildGenotype(mother_genotype,
-                                                           father_genotype);
+    int child_genotype = genotypes_vec[0](i);
+    int mother_genotype = genotypes_vec[1](i);
+    int father_genotype = genotypes_vec[2](i);
 
     // Processes germline mutation. Germline matrix requires no Kronecker.
     int child_germline_genotype = SimulationModel::Mutate(
