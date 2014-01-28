@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <cmath>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <string>
 #include <vector>
@@ -58,6 +59,7 @@ typedef vector<ReadDataVector> TrioVector;
 // 15     TT
 const int kGenotypeCount = 16;
 const int kNucleotideCount = 4;
+const int kTrioCount = 42875;
 const double kEpsilon = numeric_limits<double>::epsilon();
 
 /**
@@ -157,6 +159,38 @@ Matrix16_16_4d TwoParentCounts() {
 const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
 
 /**
+ * Returns true if the two ReadDatas are equal. Assume the ReadData has a field
+ * uint16_t reads[4].
+ *
+ * @param  data1 First ReadData.
+ * @param  data2 Second ReadData.
+ * @return       True if the ReadDatas are equal.
+ */
+bool EqualsReadData(const ReadData &data1, const ReadData &data2) {
+  return equal(begin(data1.reads), end(data1.reads), begin(data2.reads));
+}
+
+/**
+ * Returns true if the two ReadDataVectors are equal. Assume all ReadData has a
+ * field uint16_t reads[4].
+ *
+ * @param  data_vec1 First ReadDataVector.
+ * @param  data_vec2 Second ReadDataVector.
+ * @return           True if the ReadDataVectors are equal.
+ */
+bool EqualsReadDataVector(const ReadDataVector &data_vec1,
+                          const ReadDataVector &data_vec2) {
+  bool table[3] = {EqualsReadData(data_vec1[0], data_vec2[0]),
+                   EqualsReadData(data_vec1[1], data_vec2[1]),
+                   EqualsReadData(data_vec1[2], data_vec2[2])};
+  if (all_of(begin(table), end(table), [](bool i) { return i; })) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/**
  * Prints ReadData with each read separated by spaces.
  *
  * @param  data ReadData to be printed.
@@ -253,6 +287,23 @@ TrioVector GetTrioVector(int coverage) {
     }
   }
   return trio_vec;
+}
+
+/**
+ * Returns the index of a ReadDataVector in the TrioVector of all trios at 4x
+ * coverage. Assumes the ReadDataVector has 4x coverage.
+ *
+ * @param  data_vec ReadDataVector.
+ * @return          Index of ReadDataVector in TrioVector list.    
+ */
+int IndexOfReadDataVector(const ReadDataVector &data_vec) {
+  TrioVector trio_vec = GetTrioVector(kNucleotideCount);
+  for (int i = 0; i < kTrioCount; ++i) {
+    if (EqualsReadDataVector(data_vec, trio_vec[i])) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 /**

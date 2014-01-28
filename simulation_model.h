@@ -34,7 +34,9 @@ public:
   void Seed();
   void Free();
   // Generates random samples and probabilities in text file.
-  void WriteProbability(const string &file_name, int experiment_count);
+  void WriteProbability(const string &file_name, int size);
+
+  void PrintMutationCounts(int size);
   // Get and set methods.
   unsigned int coverage();
   void set_coverage(unsigned int coverage);
@@ -48,16 +50,17 @@ private:
   int Mutate(int genotype_idx, bool is_germline=false,
              int parent_genotype_idx=-1);
   int GetChildGenotype(int mother_genotype, int father_genotype);
-  vector<RowVectorXi> GetGenotypesMatrix(int size);
   ReadData DirichletMultinomialSample(int genotype_idx);
+  vector<RowVectorXi> GetGenotypesMatrix(int size);
+  TrioVector GetRandomTrios(int size);
   int RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities);
   RowVectorXi RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities,
                                    int size);
 
-
   // Instance variables.
   TrioModel params_;  // Default initialization.
   unsigned int coverage_;
-  bool has_mutation_;
+  vector<bool> has_mutation_vec_;
+  vector<bool> mutation_table_[42875];
   gsl_rng *r;
 };

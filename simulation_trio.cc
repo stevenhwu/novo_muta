@@ -6,7 +6,6 @@
  * coverage.
  */
 #include <fstream>
-#include <iterator>
 
 #include "trio_model.cc"
 

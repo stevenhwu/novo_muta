@@ -103,6 +103,36 @@ int SimulationModel::GetChildGenotype(int mother_genotype, int father_genotype) 
 }
 
 /**
+ * Uses alpha frequencies based on the somatic genotype to select nucleotide
+ * frequencies and uses these frequencies to draw sequencing reads at a
+ * specified coverage (Dirichlet multinomial). K is kNucleotideCount.
+ *
+ * @param  genotype_idx Index of genotype.
+ * @return              Read counts drawn from Dirichlet multinomial.
+ */
+ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
+  // Converts alpha to double array.
+  auto alpha_vec = params_.alphas().row(genotype_idx);
+  const double alpha[kNucleotideCount] = {alpha_vec(0), alpha_vec(1),
+                                          alpha_vec(2), alpha_vec(3)};
+
+  // Sets alpha frequencies using dirichlet distribution in theta.
+  double theta[kNucleotideCount] = {0.0};
+  gsl_ran_dirichlet(r, kNucleotideCount, alpha, theta);
+
+  // Sets sequencing reads using multinomial distribution in reads.
+  unsigned int reads[kNucleotideCount] = {0};
+  gsl_ran_multinomial(r, kNucleotideCount, coverage_, theta, reads);
+
+  // Converts reads to ReadData.
+  ReadData data = {0};
+  for (int i = 0; i < kNucleotideCount; ++i) {
+    data.reads[i] = reads[i];
+  }
+  return data;
+}
+
+/**
  * Generates a 3 x size Eigen matrix of random genotypes for child, mother,
  * and father.
  *
@@ -137,49 +167,16 @@ vector<RowVectorXi> SimulationModel::GetGenotypesMatrix(int size) {
 }
 
 /**
- * Uses alpha frequencies based on the somatic genotype to select nucleotide
- * frequencies and uses these frequencies to draw sequencing reads at a
- * specified coverage (Dirichlet multinomial). K is kNucleotideCount.
+ * Generates size random trios and keeps track of whether each ReadDataVector
+ * has a mutation by adding it to the has_mutation_vec_.
  *
- * @param  genotype_idx Index of genotype.
- * @return              Read counts drawn from Dirichlet multinomial.
+ * @param  size Number of random trios.
+ * @return      TrioVector containing random trios.
  */
-ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
-  // Converts alpha to double array.
-  auto alpha_vec = params_.alphas().row(genotype_idx);
-  const double alpha[kNucleotideCount] = {alpha_vec(0), alpha_vec(1),
-                                          alpha_vec(2), alpha_vec(3)};
-
-  // Sets alpha frequencies using dirichlet distribution in theta.
-  double theta[kNucleotideCount] = {0.0};
-  gsl_ran_dirichlet(r, kNucleotideCount, alpha, theta);
-
-  // Sets sequencing reads using multinomial distribution in reads.
-  unsigned int reads[kNucleotideCount] = {0};
-  gsl_ran_multinomial(r, kNucleotideCount, coverage_, theta, reads);
-
-  // Converts reads to ReadData.
-  ReadData data = {0};
-  for (int i = 0; i < kNucleotideCount; ++i) {
-    data.reads[i] = reads[i];
-  }
-  return data;
-}
-
-/**
- * Generates experiment_count random samples using population priors as weights
- * and outputs their probabilities and whether that site contains a mutation
- * (1=true, 0=false) to a text file. The file is tab deliminated and each site
- * is on a new line.
- *
- * @param  file_name              File name.
- * @param  experiment_count       Number of experiments.
- */
-void SimulationModel::WriteProbability(const string &file_name,
-                                       int experiment_count) {
-  ofstream fout(file_name);
-  vector<RowVectorXi> genotypes_vec = SimulationModel::GetGenotypesMatrix(experiment_count);
-  for (int i = 0; i < experiment_count; ++i) {
+TrioVector SimulationModel::GetRandomTrios(int size) {
+  TrioVector random_trios;
+  vector<RowVectorXi> genotypes_vec = SimulationModel::GetGenotypesMatrix(size);
+  for (int i = 0; i < size; ++i) {
     int child_genotype = genotypes_vec[0](i);
     int mother_genotype = genotypes_vec[1](i);
     int father_genotype = genotypes_vec[2](i);
@@ -201,13 +198,59 @@ void SimulationModel::WriteProbability(const string &file_name,
     ReadData mother_read = SimulationModel::DirichletMultinomialSample(mother_somatic_genotype);
     ReadData father_read = SimulationModel::DirichletMultinomialSample(father_somatic_genotype);
     ReadDataVector data_vec = {child_read, mother_read, father_read};
+    random_trios.push_back(data_vec);
 
-    // Writes probability to text file.
-    double probability = params_.MutationProbability(data_vec);
-    fout << probability << "\t" << params_.has_mutation() << "\n";
+    // Records has_mutation_ in order relevant vector.
+    int trio_index = IndexOfReadDataVector(data_vec);
+    if (trio_index != -1) {
+      mutation_table_[trio_index].push_back(params_.has_mutation());
+    }
+    has_mutation_vec_.push_back(params_.has_mutation());
     params_.set_has_mutation(false);  // Resets for the next simulation.
   }
+  return random_trios;
+}
+
+/**
+ * Generates size random samples using population priors as weights and outputs
+ * their probabilities and whether that site contains a mutation
+ * (1=true, 0=false) to a text file. The file is tab deliminated and each site
+ * is on a new line.
+ *
+ * @param  file_name  File name.
+ * @param  size       Number of experiments or trios.
+ */
+void SimulationModel::WriteProbability(const string &file_name, int size) {
+  ofstream fout(file_name);
+  TrioVector random_trios = SimulationModel::GetRandomTrios(size);
+  for (int i = 0; i < size; ++i) {
+    double probability = params_.MutationProbability(random_trios[i]);
+    fout << probability << "\t" << has_mutation_vec_[i] << "\n";
+  }
   fout.close();
+}
+
+/**
+ * Writes to stdout the index of the key trio, how many random trios had a
+ * mutation, how many random trios had no mutation, tab deliminated, each trio
+ * is placed on a new line. Assumes 4x coverage.
+ *
+ * @param  size Number of random trios.
+ */
+void SimulationModel::PrintMutationCounts(int size) {
+  TrioVector random_trios = SimulationModel::GetRandomTrios(size);
+  for (int i = 0; i < kTrioCount; ++i) {
+    vector<bool> mutations = mutation_table_[i];
+    int has_mutation_total = 0;
+    int has_no_mutation_total = 0;
+    if (mutations.size() > 0) {
+      has_mutation_total = count(mutations.begin(), mutations.end(), true);
+      has_no_mutation_total = mutations.size() - has_mutation_total;
+    }
+
+    cout << i << "\t" << has_mutation_total << "\t"
+         << has_no_mutation_total << endl;
+  }
 }
 
 /**

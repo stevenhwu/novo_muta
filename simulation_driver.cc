@@ -34,7 +34,8 @@ int main(int argc, const char *argv[]) {
   const double somatic_mutation_rate = strtod(argv[5], NULL);
   
   SimulationModel sim(coverage, germline_mutation_rate, somatic_mutation_rate);
-  sim.WriteProbability(file_name, experiment_count);
+  // sim.WriteProbability(file_name, experiment_count);
+  sim.PrintMutationCounts(experiment_count);
   sim.Free();
 
   return 0;
