@@ -249,7 +249,7 @@ void SimulationModel::PrintMutationCounts(int size) {
     }
 
     cout << i << "\t" << has_mutation_total << "\t"
-         << has_no_mutation_total << endl;
+         << has_no_mutation_total << "\n";
   }
 }
 
