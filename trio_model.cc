@@ -175,7 +175,7 @@ RowVector256d TrioModel::PopulationPriors() {
     for (int j = 0; j < kGenotypeCount; ++j) {
       RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
       double probability = TrioModel::SpectrumProbability(nucleotide_counts);
-      population_priors(i, j) = exp(probability);
+      population_priors(i, j) = probability;
       int idx = i * kGenotypeCount + j;
       population_priors_flattened(idx) = population_priors(i, j);
     }
@@ -200,13 +200,13 @@ double TrioModel::SpectrumProbability(const RowVector4d &nucleotide_counts) {
   double p4_0 = 1.0 - p3_1 - p2_2;
 
   if (IsInVector(nucleotide_counts, 4.0)) {
-    return p4_0;
+    return p4_0 * 0.25;  // p(4 allele)
   } else if (IsInVector(nucleotide_counts, 3.0)) {
-    return p3_1 * 0.25 / 3.0 * 2.0 * 0.25;
-  } else if (IsInVector(nucleotide_counts, 2.0)) {
-    return p2_2 * 0.25 / 3.0 * 2.0 / 6.0;
+    return p3_1 * 0.25 / 3.0 * 0.25;  // p(3 allele) * p(1 allele) * p(position)
+  } else if (IsInVector(nucleotide_counts, 2.0) && !IsInVector(nucleotide_counts, 1.0)) {
+    return p2_2 * 0.25 / 3.0 * 2.0 / 6.0;  // p(2 allele) * p(2 allele) * pair qualifier * p(position)
   } else {
-    return -1.0; // ERROR: This should not happen.
+    return 0.0;  // counts do not match 4-0, 3-0, or 2-2 allele spectrum
   }
 }
 

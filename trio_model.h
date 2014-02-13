@@ -41,8 +41,6 @@ public:
 
   // Calculates probability of mutation given input data.
   double MutationProbability(const ReadDataVector &data_vec);
-  // Calculates probability of allele spectrum given read counts.
-  double SpectrumProbability(const RowVector4d &nucleotide_counts);
   // True if the two TrioModel objects are equal to each other.
   bool Equals(const TrioModel &other);
   // Get and set methods.
@@ -70,6 +68,8 @@ public:
 private:
   // Methods for setting up the model and relevant arrays.
   RowVector256d PopulationPriors();
+  // Calculates probability of allele spectrum given read counts.
+  double SpectrumProbability(const RowVector4d &nucleotide_counts);
   double GermlineMutation(int child_nucleotide_idx, int parent_genotype_idx,
                           bool no_mutation_flag);
   Matrix16_256d GermlineProbabilityMat(bool no_mutation_flag=false);
