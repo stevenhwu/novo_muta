@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include <gsl/gsl_randist.h>
+
 #include "Eigen/Core"
 #include "Eigen/Dense"
 
@@ -304,6 +306,22 @@ int IndexOfReadDataVector(const ReadDataVector &data_vec) {
     }
   }
   return -1;
+}
+
+/**
+ * Returns true if the element is in the RowVector.
+ *
+ * @param  vec  Eigen RowVector. 
+ * @param  elem Element to look for in RowVector.
+ * @return      True if element is in the RowVector.
+ */
+bool IsInVector(const RowVector4d &vec, double elem) {
+  for (int i = 0; i < kNucleotideCount; ++i) {
+    if (vec(i) == elem) {  // elem is [2.0, 4.0]
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

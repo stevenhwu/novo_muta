@@ -41,6 +41,8 @@ public:
 
   // Calculates probability of mutation given input data.
   double MutationProbability(const ReadDataVector &data_vec);
+  // Calculates probability of allele spectrum given read counts.
+  double SpectrumProbability(const RowVector4d &nucleotide_counts);
   // True if the two TrioModel objects are equal to each other.
   bool Equals(const TrioModel &other);
   // Get and set methods.

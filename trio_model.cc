@@ -173,18 +173,9 @@ RowVector256d TrioModel::PopulationPriors() {
   RowVector256d population_priors_flattened;
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
-      // Convert nucleotide_counts to ReadData for DirichletMultinomialLog().
       RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
-      ReadData nucleotide_read;
-      for (int k = 0; k < kNucleotideCount; ++k) {
-        nucleotide_read.reads[k] = nucleotide_counts(k);
-      }
-      // Calculates probability using the Dirichlet multinomial in normal space.
-      double log_probability = DirichletMultinomialLog(
-        nucleotide_mutation_frequencies,
-        nucleotide_read
-      );
-      population_priors(i, j) = exp(log_probability);
+      double probability = TrioModel::SpectrumProbability(nucleotide_counts);
+      population_priors(i, j) = exp(probability);
       int idx = i * kGenotypeCount + j;
       population_priors_flattened(idx) = population_priors(i, j);
     }
@@ -194,6 +185,29 @@ RowVector256d TrioModel::PopulationPriors() {
   genotype_mat_ = population_priors.rowwise().sum();
 
   return population_priors_flattened;
+}
+
+/**
+ * Returns the probability of the drawn alleles having a 4-0, 3-1, or 2-2
+ * spectrum.
+ *
+ * @param  nucleotide_counts RowVector containing allele counts.
+ * @return                   Probability of allele spectrum.
+ */
+double TrioModel::SpectrumProbability(const RowVector4d &nucleotide_counts) {
+  double p2_2 = population_mutation_rate_ / 2.0;
+  double p3_1 = population_mutation_rate_ + population_mutation_rate_ / 3.0;
+  double p4_0 = 1.0 - p3_1 - p2_2;
+
+  if (IsInVector(nucleotide_counts, 4.0)) {
+    return p4_0;
+  } else if (IsInVector(nucleotide_counts, 3.0)) {
+    return p3_1 * 0.25 / 3.0 * 2.0 * 0.25;
+  } else if (IsInVector(nucleotide_counts, 2.0)) {
+    return p2_2 * 0.25 / 3.0 * 2.0 / 6.0;
+  } else {
+    return -1.0; // ERROR: This should not happen.
+  }
 }
 
 /**
@@ -324,7 +338,13 @@ Matrix3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) 
   for (int read = 0; read < 3; ++read) {
     for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
       auto alpha = alphas_.row(genotype_idx);
-      double log_probability = DirichletMultinomialLog(alpha, data_vec[read]);
+      // converts alpha to double array
+      double p[kNucleotideCount] = {alpha(0), alpha(1), alpha(2), alpha(3)};
+      // converts read to unsigned int array
+      ReadData data = data_vec[read];
+      unsigned int n[kNucleotideCount] = {data.reads[0], data.reads[1],
+                                          data.reads[2], data.reads[3]};
+      double log_probability = gsl_ran_multinomial_lnpdf(kNucleotideCount, p, n);
       sequencing_probability_mat(read, genotype_idx) = log_probability;
     }
   }
@@ -372,7 +392,7 @@ Matrix16_4d TrioModel::Alphas() {
             other,        heterozygous, other,        heterozygous,
             other,        other,        heterozygous, heterozygous,
             other,        other,        other,        homozygous;
-  return alphas * dirichlet_dispersion_;
+  return alphas;
 }
 
 /**
