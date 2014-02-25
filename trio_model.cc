@@ -21,12 +21,14 @@ TrioModel::TrioModel()
       somatic_mutation_rate_{0.00000002},
       sequencing_error_rate_{0.005},
       dirichlet_dispersion_{1000.0},
-      nucleotide_frequencies_{0.25, 0.25, 0.25, 0.25},
-      has_mutation_{false} {
+      nucleotide_frequencies_{0.25, 0.25, 0.25, 0.25} {
   population_priors_ = TrioModel::PopulationPriors();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
+  germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
+  somatic_probability_mat_diag_ = TrioModel::SomaticProbabilityMatDiag();
   alphas_ = TrioModel::Alphas();
+  read_dependent_data_.has_mutation = false;
 }
 
 /**
@@ -53,12 +55,59 @@ TrioModel::TrioModel(double population_mutation_rate,
       somatic_mutation_rate_{somatic_mutation_rate},
       sequencing_error_rate_{sequencing_error_rate},
       dirichlet_dispersion_{dirichlet_dispersion},
-      nucleotide_frequencies_{nucleotide_frequencies},
-      has_mutation_{false} {
+      nucleotide_frequencies_{nucleotide_frequencies} {
   population_priors_ = TrioModel::PopulationPriors();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
+  germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
+  somatic_probability_mat_diag_ = TrioModel::SomaticProbabilityMatDiag();
   alphas_ = TrioModel::Alphas();
+  read_dependent_data_.has_mutation = false;
+}
+
+/**
+ * Returns S_Som the number of nucleotide mismatches between all x and x′.
+ * Calculated during the E-step of expectation-maximization algorithm.
+ *
+ * @return  double representing number of expected somatic mutations
+ */
+double TrioModel::GetSomaticStatistic() {
+  Matrix16_16d somatic_mutation_counts = TrioModel::SomaticMutationCountsMatrix();
+  double somatic_stat = 0.0;
+  return somatic_stat;
+}
+
+/**
+ * Generates a 16 x 16 Eigen matrix holding the number of somatic mutations
+ * where each allele site segregation is counted as a mutation in the infinite
+ * sites model. For example:
+ *
+ *          Zygotic
+ * Somatic  AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
+ * AA       0  1  1  1  1  2  2  2  1  2  2  2  1  2  2  2
+ * AC       1  0  1  1  2  1  2  2  2  1  2  2  2  1  2  2
+ * ...            0
+ *
+ * @return  16 x 16 Eigen matrix holding the number of somatic mutations.
+ */
+Matrix16_16d TrioModel::SomaticMutationCountsMatrix() {
+  Matrix16_16d mat = Matrix16_16d::Zero();
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      if (i != j) {  // leaves diagonal as 0's
+        auto somatic_genotype = kGenotypeNumIndex.row(i);
+        auto zygotic_genotype = kGenotypeNumIndex.row(j);
+        // 1 mutation count per allele site segregation
+        if (somatic_genotype(0) != zygotic_genotype(0)) {
+          mat(i, j)++;
+        }
+        if (somatic_genotype(1) != zygotic_genotype(1)) {
+          mat(i, j)++;
+        }
+      }
+    }
+  }
+  return mat;
 }
 
 /**
@@ -89,53 +138,23 @@ TrioModel::TrioModel(double population_mutation_rate,
  *                               Genotype Genotype  Genotype
  *                               Reads    Reads     Reads
  *
- * Initializes and updates sequencing_probability_mat_ using
- * sequencing_error_rate_ and dirichlet_dispersion_.
+ * Initializes and updates read_dependent_data.sequencing_probability_mat,
+ * read_dependent_data.child_vec, read_dependent_data.mother_vec, and
+ * read_dependent_data.father_vec using sequencing_error_rate_.
+ * dirichlet_dispersion_ is not used.
  *
  * @param   data_vec Read counts in order of child, mother and father.
  * @return           Probability of mutation given read data and parameters.
  */
 double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
-  // Creates and sets sequencing probabilities given read data.
-  sequencing_probability_mat_ = TrioModel::SequencingProbabilityMat(data_vec);
-  RowVector16d child_vec = sequencing_probability_mat_.row(0);
-  RowVector16d mother_vec = sequencing_probability_mat_.row(1);
-  RowVector16d father_vec = sequencing_probability_mat_.row(2);
+  TrioModel::SequencingProbabilityMat(data_vec);
+  TrioModel::SomaticTransition();
+  TrioModel::GermlineTransition();
+  TrioModel::SomaticTransition(true);
+  TrioModel::GermlineTransition(true);
 
-  // Multiplies vectors by somatic transition matrix.
-  RowVector16d child_probability = child_vec * somatic_probability_mat_;
-  RowVector16d mother_probability = mother_vec * somatic_probability_mat_;
-  RowVector16d father_probability = father_vec * somatic_probability_mat_;
-
-  // Calculates denominator, probability of the observed data.
-  RowVector256d child_germline_probability = (child_probability *
-    germline_probability_mat_);
-  RowVector256d parent_probability = KroneckerProduct(
-    mother_probability,
-    father_probability
-  );
-  RowVector256d demoninator_mat = (child_germline_probability.cwiseProduct(
-    parent_probability).cwiseProduct(population_priors_));
-  double demoninator_sum = demoninator_mat.sum();
-
-  // Calculates numerator, probability of no mutation.
-  Matrix16_16d somatic_probability_diag = somatic_probability_mat_.diagonal().asDiagonal();
-  RowVector16d child_probability_num = child_vec * somatic_probability_diag;
-  RowVector16d mother_probability_num = mother_vec * somatic_probability_diag;
-  RowVector16d father_probability_num = father_vec * somatic_probability_diag;
-
-  Matrix16_256d germline_probability_mat_num = TrioModel::GermlineProbabilityMat(true);
-  RowVector256d child_germline_probability_num = (child_probability_num *
-    germline_probability_mat_num);
-  RowVector256d parent_probability_num = KroneckerProduct(
-    mother_probability_num,
-    father_probability_num
-  );
-  RowVector256d numerator_mat = (child_germline_probability_num.cwiseProduct(
-    parent_probability_num).cwiseProduct(population_priors_));
-  double numerator_sum = numerator_mat.sum();
-  
-  return 1 - numerator_sum/demoninator_sum;
+  return 1 - (read_dependent_data_.numerator.sum /
+    read_dependent_data_.denominator.sum);
 }
 
 /**
@@ -148,26 +167,14 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
  * Sets genotype_mat_ as the 1 x 16 Eigen probability RowVector for a single
  * parent.
  *
- * Creates nucleotide mutation frequencies {alpha_A, alpha_C, alpha_G, alpha_T}
- * based on the nucleotide frequencies and population mutation rate (theta).
- * These frequencies and nucleotide counts {n_A, n_C, n_G, n_T} are used in the
- * Dirichlet multinomial.
- *
- * For example, both parents have genotype AA, resulting in N = 4:
- *
- * population_mutation_rate_ = 0.00025;
- * nucleotide_frequencies_ << 0.25, 0.25, 0.25, 0.25;
- * nucleotide_counts = {4, 0, 0, 0};
+ * Calls SpectrumProbability assuming infinite sites model using all enumerated
+ * nucleotide counts at coverage 4x.
  *
  * @return  1 x 256 Eigen probability RowVector in log e space where the (i, j)
  *          element is the probability that the mother has genotype i and the
  *          father has genotype j.
  */
 RowVector256d TrioModel::PopulationPriors() {
-  // Calculates nucleotide mutation frequencies using given mutation rate.
-  RowVector4d nucleotide_mutation_frequencies = (nucleotide_frequencies_ *
-    population_mutation_rate_);
-
   Matrix16_16d population_priors = Matrix16_16d::Zero();
   // Resizes population_priors to 1 x 256 RowVector.
   RowVector256d population_priors_flattened;
@@ -200,10 +207,11 @@ double TrioModel::SpectrumProbability(const RowVector4d &nucleotide_counts) {
   double p4_0 = 1.0 - p3_1 - p2_2;
 
   if (IsInVector(nucleotide_counts, 4.0)) {
-    return p4_0 * 0.25;  // p(4 allele)
+    return p4_0 * 0.25;  // p(4 allele) * p(position)
   } else if (IsInVector(nucleotide_counts, 3.0)) {
     return p3_1 * 0.25 / 3.0 * 0.25;  // p(3 allele) * p(1 allele) * p(position)
-  } else if (IsInVector(nucleotide_counts, 2.0) && !IsInVector(nucleotide_counts, 1.0)) {
+  } else if (IsInVector(nucleotide_counts, 2.0) &&
+      !IsInVector(nucleotide_counts, 1.0)) {
     return p2_2 * 0.25 / 3.0 * 2.0 / 6.0;  // p(2 allele) * p(2 allele) * pair qualifier * p(position)
   } else {
     return 0.0;  // counts do not match 4-0, 3-0, or 2-2 allele spectrum
@@ -323,18 +331,27 @@ Matrix16_16d TrioModel::SomaticProbabilityMat() {
 }
 
 /**
+ * Returns diagonal of somatic_probability_mat_. Assumes SomaticProbabilityMat
+ * has been called.
+ *
+ * @return  16 x 16 Eigen matrix diagonal of somatic_probability_mat_.
+ */
+Matrix16_16d TrioModel::SomaticProbabilityMatDiag() {
+  return somatic_probability_mat_.diagonal().asDiagonal();
+}
+
+/**
  * Calculates the probability of sequencing error for all read data. Assume
  * data contains 3 reads (child, mother, father). Assume each chromosome is
  * equally likely to be sequenced.
  *
- * Adds the max element of all reads in ReadDataVector to max_elements_ before
- * rescaling to normal space.
+ * Adds the max element of all reads in ReadDataVector to
+ * read_dependent_data_.max_elements before rescaling to normal space.
  *
  * @param  data_vec ReadDataVector containing nucleotide counts for trio family.
- * @return          3 x 16 Eigen probability matrix.
  */
-Matrix3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
-  Matrix3_16d sequencing_probability_mat = Matrix3_16d::Zero();
+void TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
+  read_dependent_data_.sequencing_probability_mat = Matrix3_16d::Zero();
   for (int read = 0; read < 3; ++read) {
     for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
       auto alpha = alphas_.row(genotype_idx);
@@ -345,13 +362,102 @@ Matrix3_16d TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) 
       unsigned int n[kNucleotideCount] = {data.reads[0], data.reads[1],
                                           data.reads[2], data.reads[3]};
       double log_probability = gsl_ran_multinomial_lnpdf(kNucleotideCount, p, n);
-      sequencing_probability_mat(read, genotype_idx) = log_probability;
+      read_dependent_data_.sequencing_probability_mat(read, genotype_idx) = log_probability;
     }
   }
+  
   // Rescales to normal space and records max element of all 3 reads together.
-  double max_element = sequencing_probability_mat.maxCoeff();
-  max_elements_.push_back(max_element);
-  return exp(sequencing_probability_mat.array() - max_element);
+  double max_element = read_dependent_data_.sequencing_probability_mat.maxCoeff();
+  read_dependent_data_.max_elements.push_back(max_element);
+
+  // Calculates sequencing_probability_mat and splits into individual child
+  // mother, and father vectors.
+  read_dependent_data_.sequencing_probability_mat = exp(
+    read_dependent_data_.sequencing_probability_mat.array() - max_element
+  );
+  read_dependent_data_.child_vec = read_dependent_data_.sequencing_probability_mat.row(0);
+  read_dependent_data_.mother_vec = read_dependent_data_.sequencing_probability_mat.row(1);
+  read_dependent_data_.father_vec = read_dependent_data_.sequencing_probability_mat.row(2);
+}
+
+/**
+ * Multiplies sequencing probability vectors by somatic transition matrix.
+ *
+ * @param  is_numerator True if calculating probability of numerator.
+ */
+void TrioModel::SomaticTransition(bool is_numerator) {
+  if (!is_numerator) {
+    read_dependent_data_.denominator.child_probability = (
+      read_dependent_data_.child_vec * somatic_probability_mat_
+    );
+    read_dependent_data_.denominator.mother_probability = (
+      read_dependent_data_.mother_vec * somatic_probability_mat_
+    );
+    read_dependent_data_.denominator.father_probability = (
+      read_dependent_data_.father_vec * somatic_probability_mat_
+    );
+  } else {
+    read_dependent_data_.numerator.child_probability = (
+      read_dependent_data_.child_vec * somatic_probability_mat_diag_
+    );
+    read_dependent_data_.numerator.mother_probability = (
+      read_dependent_data_.mother_vec * somatic_probability_mat_diag_
+    );
+    read_dependent_data_.numerator.father_probability = (
+      read_dependent_data_.father_vec * somatic_probability_mat_diag_
+    );
+  }
+}
+
+/**
+ * Calculates denominator, probability of the observed data or numerator,
+ * probability of no mutation.
+ *
+ * @param  is_numerator True if calculating probability of numerator.
+ */
+void TrioModel::GermlineTransition(bool is_numerator) {
+  if (!is_numerator) {
+    read_dependent_data_.denominator.child_germline_probability = (
+      read_dependent_data_.denominator.child_probability *
+      germline_probability_mat_
+    );
+    read_dependent_data_.denominator.parent_probability = KroneckerProduct(
+      read_dependent_data_.denominator.mother_probability,
+      read_dependent_data_.denominator.father_probability
+    );
+    read_dependent_data_.denominator.root_mat = TrioModel::GetRootMat(
+      read_dependent_data_.denominator.child_germline_probability,
+      read_dependent_data_.denominator.parent_probability
+    );
+    read_dependent_data_.denominator.sum = read_dependent_data_.denominator.root_mat.sum();
+  } else {
+    read_dependent_data_.numerator.child_germline_probability = (
+      read_dependent_data_.numerator.child_probability *
+      germline_probability_mat_num_
+    );
+    read_dependent_data_.numerator.parent_probability = KroneckerProduct(
+      read_dependent_data_.numerator.mother_probability,
+      read_dependent_data_.numerator.father_probability
+    );
+    read_dependent_data_.numerator.root_mat = TrioModel::GetRootMat(
+      read_dependent_data_.numerator.child_germline_probability,
+      read_dependent_data_.numerator.parent_probability
+    );
+    read_dependent_data_.numerator.sum = read_dependent_data_.numerator.root_mat.sum();
+  }
+}
+
+/**
+ * Returns root matrix for use in MutationProbability.
+ *
+ * @param  child_germline_probability Matrix after child germline transition.
+ * @param  parent_probability         Kronecker product of both parent vectors.
+ * @return                            1 x 256 final matrix at the root of tree.
+ */
+RowVector256d TrioModel::GetRootMat(const RowVector256d &child_germline_probability,
+                                    const RowVector256d &parent_probability) {
+  return child_germline_probability.cwiseProduct(
+    parent_probability).cwiseProduct(population_priors_);
 }
 
 /**
@@ -414,7 +520,10 @@ bool TrioModel::Equals(const TrioModel &other) {
     population_priors_.isApprox(other.population_priors_, kEpsilon),
     germline_probability_mat_.isApprox(other.germline_probability_mat_, kEpsilon),
     somatic_probability_mat_.isApprox(other.somatic_probability_mat_, kEpsilon),
-    sequencing_probability_mat_.isApprox(other.sequencing_probability_mat_, kEpsilon)
+    read_dependent_data_.sequencing_probability_mat.isApprox(
+      other.read_dependent_data_.sequencing_probability_mat,
+      kEpsilon
+    )
   };
   if (all_of(begin(attr_table), end(attr_table), [](bool i) { return i; })) {
     return true;
@@ -440,11 +549,13 @@ double TrioModel::germline_mutation_rate() {
 }
 
 /**
- * Sets germline_mutation_rate_ and germline_probability_mat_.
+ * Sets germline_mutation_rate_, germline_probability_mat_ and
+ * germline_probability_mat_num_.
  */
 void TrioModel::set_germline_mutation_rate(double rate) {
   germline_mutation_rate_ = rate;
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
+  germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
 }
 
 double TrioModel::somatic_mutation_rate() {
@@ -452,11 +563,13 @@ double TrioModel::somatic_mutation_rate() {
 }
 
 /**
- * Sets somatic_mutation_rate_ and somatic_probability_mat_.
+ * Sets somatic_mutation_rate_, somatic_probability_mat_ and
+ * somatic_probability_mat_diag_.
  */
 void TrioModel::set_somatic_mutation_rate(double rate) {
   somatic_mutation_rate_ = rate;
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
+  somatic_probability_mat_ = TrioModel::SomaticProbabilityMatDiag();
 }
 
 double TrioModel::sequencing_error_rate() {
@@ -496,11 +609,11 @@ void TrioModel::set_nucleotide_frequencies(const RowVector4d &frequencies) {
 }
 
 bool TrioModel::has_mutation() {
-  return has_mutation_;
+  return read_dependent_data_.has_mutation;
 }
 
 void TrioModel::set_has_mutation(bool has_mutation) {
-  has_mutation_ = has_mutation;
+  read_dependent_data_.has_mutation = has_mutation;
 }
 
 RowVector16d TrioModel::genotype_mat() {
@@ -520,7 +633,7 @@ Matrix16_16d TrioModel::somatic_probability_mat() {
 }
 
 Matrix3_16d TrioModel::sequencing_probability_mat() {
-  return sequencing_probability_mat_;
+  return read_dependent_data_.sequencing_probability_mat;
 }
 
 Matrix16_4d TrioModel::alphas() {
