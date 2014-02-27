@@ -73,8 +73,33 @@ TrioModel::TrioModel(double population_mutation_rate,
  */
 double TrioModel::GetSomaticStatistic() {
   Matrix16_16d somatic_mutation_counts = TrioModel::SomaticMutationCountsMatrix();
-  double somatic_stat = 0.0;
-  return somatic_stat;
+  Matrix16_16d mat = somatic_probability_mat_.cwiseProduct(somatic_mutation_counts);
+  // P(R|somatic genotype)
+  RowVector16d mat_num1 = read_dependent_data_.denominator.child_vec * mat;
+  RowVector16d mat_num2 = read_dependent_data_.denominator.mother_vec * mat;
+  RowVector16d mat_num3 = read_dependent_data_.denominator.father_vec * mat;
+  // P(R|zygotic genotype)
+  RowVector16d mat_num4 = read_dependent_data_.denominator.child_probability * mat;  // + 1.0?
+  RowVector16d mat_num5 = read_dependent_data_.denominator.mother_probability * mat;
+  RowVector16d mat_num6 = read_dependent_data_.denominator.father_probability * mat;
+  // P(R|mom and dad genotype)*P(mom and dad genotype)
+  // RowVector256d mat_num7 = read_dependent_data_.denominator.root_mat * mat;
+  //Matrix16_16d mat_num8 = read_dependent_data.denominator.sum * mat;
+  double num_sum = (mat_num1.sum() + mat_num2.sum() + mat_num3.sum() +
+    mat_num4.sum() + mat_num5.sum() + mat_num6.sum());
+
+  RowVector16d mat1 = read_dependent_data_.denominator.child_vec * somatic_probability_mat_;
+  RowVector16d mat2 = read_dependent_data_.denominator.mother_vec * somatic_probability_mat_;
+  RowVector16d mat3 = read_dependent_data_.denominator.father_vec * somatic_probability_mat_;
+  RowVector16d mat4 = read_dependent_data_.denominator.child_probability * somatic_probability_mat_;
+  RowVector16d mat5 = read_dependent_data_.denominator.mother_probability * somatic_probability_mat_;
+  RowVector16d mat6 = read_dependent_data_.denominator.father_probability * somatic_probability_mat_;
+  // RowVector256d mat7 = read_dependent_data_.denominator.root_mat * somatic_probability_mat_;
+  //Matrix16_16d mat8 = read_dependent_data.denominator.sum * somatic_probability_mat_;
+  double denom_sum = (mat1.sum() + mat2.sum() + mat3.sum() + mat4.sum() +
+    mat5.sum() + mat6.sum());
+
+  return num_sum / denom_sum;
 }
 
 /**
