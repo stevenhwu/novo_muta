@@ -69,7 +69,7 @@ TrioModel::TrioModel(double population_mutation_rate,
  * Returns S_Som the number of nucleotide mismatches between all x and x′.
  * Calculated during the E-step of expectation-maximization algorithm.
  *
- * @return  1 x 16 matrix containing number of expected somatic mutations
+ * @return  number of expected somatic mutations
  */
  double TrioModel::GetSomaticStatistic() {
   Matrix16_16d somatic_mutation_counts = TrioModel::SomaticMutationCountsMatrix();
