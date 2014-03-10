@@ -71,7 +71,7 @@ public:
   Matrix16_4d alphas();
 
   // E-step methods.
-  double GetSomaticStatistic();
+  RowVector16d GetSomaticStatistic();
 
 private:
   // Helper methods for MutationProbability.
@@ -95,7 +95,7 @@ private:
   Matrix16_4d Alphas();
   
   // E-step methods.
-  Matrix16_16d SomaticMutationCountsMatrix();
+  double SomaticMutationCountsMatrix();
 
   // Instance variables.
   double population_mutation_rate_;

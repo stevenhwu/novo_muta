@@ -17,10 +17,9 @@
  * To run this file, provide the following command line inputs:
  * ./simulation_driver <output.txt> <#samples> <coverage> <germline mutation rate> <somatic mutation rate>
  */
-
 #include "simulation_model.cc"
 
- 
+
 int main(int argc, const char *argv[]) {
   if (argc < 6) {
     Die("USAGE: simulation_driver <output.txt> <#samples> <coverage> "

@@ -69,37 +69,89 @@ TrioModel::TrioModel(double population_mutation_rate,
  * Returns S_Som the number of nucleotide mismatches between all x and x′.
  * Calculated during the E-step of expectation-maximization algorithm.
  *
- * @return  double representing number of expected somatic mutations
+ * @return  1 x 16 matrix containing number of expected somatic mutations
  */
-double TrioModel::GetSomaticStatistic() {
+ double TrioModel::GetSomaticStatistic() {
   Matrix16_16d somatic_mutation_counts = TrioModel::SomaticMutationCountsMatrix();
-  Matrix16_16d mat = somatic_probability_mat_.cwiseProduct(somatic_mutation_counts);
-  // P(R|somatic genotype)
-  RowVector16d mat_num1 = read_dependent_data_.denominator.child_vec * mat;
-  RowVector16d mat_num2 = read_dependent_data_.denominator.mother_vec * mat;
-  RowVector16d mat_num3 = read_dependent_data_.denominator.father_vec * mat;
-  // P(R|zygotic genotype)
-  RowVector16d mat_num4 = read_dependent_data_.denominator.child_probability * mat;  // + 1.0?
-  RowVector16d mat_num5 = read_dependent_data_.denominator.mother_probability * mat;
-  RowVector16d mat_num6 = read_dependent_data_.denominator.father_probability * mat;
-  // P(R|mom and dad genotype)*P(mom and dad genotype)
-  // RowVector256d mat_num7 = read_dependent_data_.denominator.root_mat * mat;
-  //Matrix16_16d mat_num8 = read_dependent_data.denominator.sum * mat;
-  double num_sum = (mat_num1.sum() + mat_num2.sum() + mat_num3.sum() +
-    mat_num4.sum() + mat_num5.sum() + mat_num6.sum());
 
-  RowVector16d mat1 = read_dependent_data_.denominator.child_vec * somatic_probability_mat_;
-  RowVector16d mat2 = read_dependent_data_.denominator.mother_vec * somatic_probability_mat_;
-  RowVector16d mat3 = read_dependent_data_.denominator.father_vec * somatic_probability_mat_;
-  RowVector16d mat4 = read_dependent_data_.denominator.child_probability * somatic_probability_mat_;
-  RowVector16d mat5 = read_dependent_data_.denominator.mother_probability * somatic_probability_mat_;
-  RowVector16d mat6 = read_dependent_data_.denominator.father_probability * somatic_probability_mat_;
-  // RowVector256d mat7 = read_dependent_data_.denominator.root_mat * somatic_probability_mat_;
-  //Matrix16_16d mat8 = read_dependent_data.denominator.sum * somatic_probability_mat_;
-  double denom_sum = (mat1.sum() + mat2.sum() + mat3.sum() + mat4.sum() +
-    mat5.sum() + mat6.sum());
+  RowVector16d s_som = RowVector16d::Zero();  // initially 0
+  RowVector16d s_som_mother = RowVector16d::Zero();
+  RowVector16d s_som_father = RowVector16d::Zero();
+  RowVector16d s_som_child = RowVector16d::Zero();
 
-  return num_sum / denom_sum;
+  RowVector16d r_x = RowVector16d::Zero();
+  RowVector16d r_x_mother = RowVector16d::Zero();
+  RowVector16d r_x_father = RowVector16d::Zero();
+  RowVector16d r_x_child = RowVector16d::Zero();
+
+  double mother_term1 = 0.0;
+  double father_term1 = 0.0;
+  double child_term1 = 0.0;
+  double mother_term2 = 0.0;
+  double father_term2 = 0.0;
+  double child_term2 = 0.0;
+
+  // for each x genotype in population priors
+  for (int x = 0; x < kGenotypeCount * kGenotypeCount; ++x) {
+    // P(R|somatic genotype)
+    for (int i = 0; i < kGenotypeCount; ++i) {
+      for (int j = 0; j < kGenotypeCount; ++j) {
+        // s_som is 0, somatic_mutation_counts is term2
+        mother_term1 = somatic_probability_mat_(i, j) * read_dependent_data_.mother_vec(j);
+        father_term1 = somatic_probability_mat_(i, j) * read_dependent_data_.father_vec(j);
+        child_term1 = somatic_probability_mat_(i, j) * read_dependent_data_.child_vec(j);
+
+        r_x_mother(j) += mother_term1;
+        r_x_father(j) += father_term1;
+        r_x_child(j) += child_term1;
+
+        // sum over y_j
+        s_som_mother(j) += mother_term1 * somatic_mutation_counts(i, j) / mother_term1;
+        s_som_father(j) += father_term1 * somatic_mutation_counts(i, j) / father_term1;
+        s_som_child(j) += child_term1 * somatic_mutation_counts(i, j) / child_term1;
+      }
+    }
+
+    // P(R|zygotic genotype)
+    for (int i = 0; i < kGenotypeCount; ++i) {
+      for (int j = 0; j < kGenotypeCount; ++j) {
+        mother_term1 = (somatic_probability_mat_(i, j) *
+          read_dependent_data_.denominator.mother_probability(j));
+        father_term1 = (somatic_probability_mat_(i, j) *
+          read_dependent_data_.denominator.father_probability(j));
+        child_term1 = (somatic_probability_mat_(i, j) *
+          read_dependent_data_.denominator.child_probability(j));
+
+        r_x_mother(j) += mother_term1;
+        r_x_father(j) += father_term1;
+        r_x_child(j) += child_term1;
+
+        mother_term2 = s_som_mother(j) + somatic_mutation_counts(i, j);
+        father_term2 = s_som_father(j) + somatic_mutation_counts(i, j);
+        child_term2 = s_som_child(j) + somatic_mutation_counts(i, j);
+
+        // sum over y_j
+        s_som_mother(j) += mother_term1 * mother_term2 / mother_term1; 
+        s_som_father(j) += father_term1 * father_term2 / father_term1;
+        s_som_child(j) += child_term1 * child_term2 / child_term1;
+      }
+    }
+
+    // merge j branches
+    s_som = s_som_mother + s_som_father;
+    for (int i = 0; i < kGenotypeCount * kGenotypeCount; ++i) {
+      for (int j = 0; j < kGenotypeCount; ++j) {
+        child_term1 = (germline_probability_mat_(j, i) *
+          read_dependent_data_.denominator.child_probability(j));
+        s_som(j) += child_term1 * s_som_child(j) / child_term1;
+      }
+    }
+
+    // calculate s_som at root of tree
+    r_x = r_x_mother * r_x_father * r_x_child;
+  }
+
+  return 0.0;  // temp
 }
 
 /**

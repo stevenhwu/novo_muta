@@ -4,6 +4,9 @@
  *
  * This file contains useful constants and functions to support the TrioModel 
  * including the Dirichlet multinomial and alphas.
+ *
+ * To compile on Herschel, use the following command to include the GSL library:
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o <file_name> <file_name>.cc
  */
 #include <algorithm>
 #include <cerrno>
