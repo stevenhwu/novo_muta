@@ -21,18 +21,13 @@ Matrix16_16d SomaticMutationCounts();
  * @return  number of expected somatic mutations
  */
 double GetSomaticStatistic(TrioModel params) {
-/*  ReadDependentData *data = params.read_dependent_data();
+  ReadDependentData *data = params.read_dependent_data();
   Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
 
   RowVector256d s_som = RowVector256d::Zero();  // initially 0
   RowVector16d s_som_mother = RowVector16d::Zero();
   RowVector16d s_som_father = RowVector16d::Zero();
   RowVector16d s_som_child = RowVector16d::Zero();
-
-  RowVector16d r_x = RowVector16d::Zero();
-  RowVector16d r_x_mother = RowVector16d::Zero();
-  RowVector16d r_x_father = RowVector16d::Zero();
-  RowVector16d r_x_child = RowVector16d::Zero();
 
   double mother_term1 = 0.0;
   double father_term1 = 0.0;
@@ -51,10 +46,6 @@ double GetSomaticStatistic(TrioModel params) {
         father_term1 = params.somatic_probability_mat()(i, j) * data->father_vec(j);
         child_term1 = params.somatic_probability_mat()(i, j) * data->child_vec(j);
 
-        r_x_mother(j) += mother_term1;
-        r_x_father(j) += father_term1;
-        r_x_child(j) += child_term1;
-
         // sum over y_j
         s_som_mother(j) += mother_term1 * somatic_mutation_counts(i, j) / mother_term1;
         s_som_father(j) += father_term1 * somatic_mutation_counts(i, j) / father_term1;
@@ -71,10 +62,6 @@ double GetSomaticStatistic(TrioModel params) {
           data->denominator.father_probability(j));
         child_term1 = (params.somatic_probability_mat()(i, j) *
           data->denominator.child_probability(j));
-
-        r_x_mother(j) += mother_term1;
-        r_x_father(j) += father_term1;
-        r_x_child(j) += child_term1;
 
         mother_term2 = s_som_mother(j) + somatic_mutation_counts(i, j);
         father_term2 = s_som_father(j) + somatic_mutation_counts(i, j);
@@ -97,11 +84,13 @@ double GetSomaticStatistic(TrioModel params) {
       }
     }
 
-    // calculate s_som at root of tree
-    r_x = r_x_mother.cwiseProduct(r_x_father).cwiseProduct(r_x_child);
-  }*/
+    s_som(x) = (
+      s_som(x) * data->denominator.root_mat(x) * params.population_priors()(x) /
+      data->denominator.root_mat(x) * params.population_priors()(x)
+    );
+  }
 
-  return 0.0;  // temp
+  return s_som.sum();
 }
 
 /**
