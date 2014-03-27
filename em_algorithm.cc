@@ -24,6 +24,7 @@ double GetSomaticStatistic(TrioModel params) {
   ReadDependentData *data = params.read_dependent_data();
   Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
 
+  RowVector256d s_som_final = RowVector256d::Zero();
   RowVector256d s_som = RowVector256d::Zero();  // initially 0
   RowVector16d s_som_mother = RowVector16d::Zero();
   RowVector16d s_som_father = RowVector16d::Zero();
@@ -81,16 +82,26 @@ double GetSomaticStatistic(TrioModel params) {
           data->denominator.child_probability(i));
         s_som(j) += child_term1 * s_som_child(i) / child_term1;
         s_som(j) += s_som_mother(j % kGenotypeCount) + s_som_father(j / kGenotypeCount);
+        // if (x == 63) {
+        //   cout << s_som_child(i) << endl;
+        //   cout << child_term1 << endl;
+        //   cout << s_som_mother(j % kGenotypeCount);
+        //   cout << s_som_father(j / kGenotypeCount);
+        //   return s_som(j);
+        // }
       }
     }
 
-    s_som(x) = (
+    s_som_final(x) = (
       s_som(x) * data->denominator.root_mat(x) * params.population_priors()(x) /
       data->denominator.root_mat(x) * params.population_priors()(x)
     );
   }
+  
+  // prints out numbers that are nan because division by 0
+  //cout << s_som_final << endl;
 
-  return s_som.sum();
+  return s_som_final.sum();
 }
 
 /**
