@@ -24,7 +24,6 @@ double GetSomaticStatistic(TrioModel params) {
   ReadDependentData *data = params.read_dependent_data();
   Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
 
-  RowVector256d s_som_final = RowVector256d::Zero();
   RowVector256d s_som = RowVector256d::Zero();  // initially 0
   RowVector16d s_som_mother = RowVector16d::Zero();
   RowVector16d s_som_father = RowVector16d::Zero();
@@ -37,71 +36,87 @@ double GetSomaticStatistic(TrioModel params) {
   double father_term2 = 0.0;
   double child_term2 = 0.0;
 
-  // for each x genotype in population priors
-  for (int x = 0; x < kGenotypeCount * kGenotypeCount; ++x) {
-    // P(R|somatic genotype)
-    for (int i = 0; i < kGenotypeCount; ++i) {
-      for (int j = 0; j < kGenotypeCount; ++j) {
-        // s_som is 0, somatic_mutation_counts is term2
-        mother_term1 = params.somatic_probability_mat()(i, j) * data->mother_vec(j);
-        father_term1 = params.somatic_probability_mat()(i, j) * data->father_vec(j);
-        child_term1 = params.somatic_probability_mat()(i, j) * data->child_vec(j);
+  // P(R|somatic genotype)
+  for (int x = 0; x < kGenotypeCount; ++x) {
+    for (int y = 0; y < kGenotypeCount; ++y) {
+      mother_term1 = (params.somatic_probability_mat()(x, y) *
+                      data->sequencing_probability_mat(1, y));
+      father_term1 = (params.somatic_probability_mat()(x, y) *
+                      data->sequencing_probability_mat(2, y));
 
-        // sum over y_j
-        s_som_mother(j) += mother_term1 * somatic_mutation_counts(i, j) / mother_term1;
-        s_som_father(j) += father_term1 * somatic_mutation_counts(i, j) / father_term1;
-        s_som_child(j) += child_term1 * somatic_mutation_counts(i, j) / child_term1;
+      mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+      father_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+
+      s_som_mother(x) += mother_term1 * mother_term2;  // sum over y_j
+      s_som_father(x) += father_term1 * father_term2;
+    }
+    s_som_mother(x) /= data->mother_vec(x);
+    s_som_father(x) /= data->father_vec(x);
+  }
+
+  // P(R|zygotic genotype)
+  for (int x = 0; x < kGenotypeCount; ++x) {
+    for (int y = 0; y < kGenotypeCount; ++y) {
+      mother_term1 = (params.somatic_probability_mat()(x, y) *
+                      data->sequencing_probability_mat(1, y));
+      father_term1 = (params.somatic_probability_mat()(x, y) *
+                      data->sequencing_probability_mat(2, y));
+
+      mother_term2 = s_som_mother(x) + somatic_mutation_counts(x, y);
+      father_term2 = s_som_father(x) + somatic_mutation_counts(x, y);
+
+      s_som_mother(x) += mother_term1 * mother_term2;  // sum over y_j
+      s_som_father(x) += father_term1 * father_term2;
+    }
+    s_som_mother(x) /= data->denominator.mother_probability(x);
+    s_som_father(x) /= data->denominator.father_probability(x);
+  }
+
+  // for each genotype in population priors
+  for (int genotype = 0; genotype < kGenotypeCount * kGenotypeCount; ++genotype) {
+    // P(R|somatic genotype)
+    for (int x = 0; x < kGenotypeCount; ++x) {
+      for (int y = 0; y < kGenotypeCount; ++y) {
+        child_term1 = (params.somatic_probability_mat()(x, y) *
+                       data->sequencing_probability_mat(0, y));
+        child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+        
+        s_som_child(x) += child_term1 * child_term2;  // sum over y_j
       }
+      s_som_child(x) /= data->child_vec(x);
     }
 
     // P(R|zygotic genotype)
-    for (int i = 0; i < kGenotypeCount; ++i) {
-      for (int j = 0; j < kGenotypeCount; ++j) {
-        mother_term1 = (params.somatic_probability_mat()(i, j) *
-          data->denominator.mother_probability(j));
-        father_term1 = (params.somatic_probability_mat()(i, j) *
-          data->denominator.father_probability(j));
-        child_term1 = (params.somatic_probability_mat()(i, j) *
-          data->denominator.child_probability(j));
+    for (int x = 0; x < kGenotypeCount; ++x) {
+      for (int y = 0; y < kGenotypeCount; ++y) {
+        child_term1 = (params.somatic_probability_mat()(x, y) *
+                       data->sequencing_probability_mat(0, y));
+        child_term2 = s_som_child(x) + somatic_mutation_counts(x, y);
 
-        mother_term2 = s_som_mother(j) + somatic_mutation_counts(i, j);
-        father_term2 = s_som_father(j) + somatic_mutation_counts(i, j);
-        child_term2 = s_som_child(j) + somatic_mutation_counts(i, j);
-
-        // sum over y_j
-        s_som_mother(j) += mother_term1 * mother_term2 / mother_term1; 
-        s_som_father(j) += father_term1 * father_term2 / father_term1;
-        s_som_child(j) += child_term1 * child_term2 / child_term1;
+        s_som_child(x) += child_term1 * child_term2;  // sum over y_j
       }
+      s_som_child(x) /= data->denominator.child_probability(x);
     }
 
     // merge j branches
-    for (int i = 0; i < kGenotypeCount; ++i) {
-      for (int j = 0; j < kGenotypeCount * kGenotypeCount; ++j) {
-        child_term1 = (params.germline_probability_mat()(i, j) *
-          data->denominator.child_probability(i));
-        s_som(j) += child_term1 * s_som_child(i) / child_term1;
-        s_som(j) += s_som_mother(j % kGenotypeCount) + s_som_father(j / kGenotypeCount);
-        // if (x == 63) {
-        //   cout << s_som_child(i) << endl;
-        //   cout << child_term1 << endl;
-        //   cout << s_som_mother(j % kGenotypeCount);
-        //   cout << s_som_father(j / kGenotypeCount);
-        //   return s_som(j);
-        // }
+    for (int y = 0; y < kGenotypeCount * kGenotypeCount; ++y) {
+      for (int x = 0; x < kGenotypeCount; ++x) {
+        child_term1 = (params.germline_probability_mat()(x, y) *
+                       data->sequencing_probability_mat(0, x));
+        child_term2 = s_som_child(x) /* + 0 */;
+
+        s_som(y) += child_term1 * child_term2;
+        s_som(y) += (s_som_mother(y % kGenotypeCount) +
+                     s_som_father(y / kGenotypeCount));
+        s_som(y) /= data->denominator.child_probability(x);  // check
       }
     }
 
-    s_som_final(x) = (
-      s_som(x) * data->denominator.root_mat(x) * params.population_priors()(x) /
-      data->denominator.root_mat(x) * params.population_priors()(x)
-    );
+    s_som(genotype) *= (params.population_priors()(genotype) /
+                        data->denominator.root_mat(genotype));  // check
   }
-  
-  // prints out numbers that are nan because division by 0
-  //cout << s_som_final << endl;
 
-  return s_som_final.sum();
+  return s_som.sum();
 }
 
 /**
