@@ -78,7 +78,9 @@ TrioModel::TrioModel(double population_mutation_rate,
  * GermlineMutation()              |   \             / |  
  * GermlineProbabilityMat()        |    v           v  |
  *                                 |      Daughter     |
+ *                                 |      Zygotic      |
  *                                 |      Diploid      |
+ *                                 |      Genotype     |
  * SomaticMutation()               |         |         |
  * SomaticProbabilityMat()         v         v         v
  *                               Mother   Daughter  Father
