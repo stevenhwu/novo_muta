@@ -28,9 +28,9 @@ double GetSomaticStatistic(TrioModel params) {
   RowVector16d s_som_mother = RowVector16d::Zero();
   RowVector16d s_som_father = RowVector16d::Zero();
   RowVector16d s_som_child = RowVector16d::Zero();
-  RowVector16d s_som_mother_x = RowVector16d::Zero();
-  RowVector16d s_som_father_x = RowVector16d::Zero();
-  RowVector16d s_som_child_x = RowVector16d::Zero();
+  RowVector256d s_som_mother_x = RowVector256d::Zero();
+  RowVector256d s_som_father_x = RowVector256d::Zero();
+  RowVector256d s_som_child_x = RowVector256d::Zero();
 
   double mother_term1 = 0.0;
   double father_term1 = 0.0;
@@ -39,59 +39,37 @@ double GetSomaticStatistic(TrioModel params) {
   double father_term2 = 0.0;
   double child_term2 = 0.0;
 
+  // P(R|zygotic genotype)
+  // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
+  for (int x = 0; x < kGenotypeCount; ++x) {
+    for (int y = 0; y < kGenotypeCount; ++y) {
+      child_term1 = data->denominator.child_probability(x);  // zygotic genotypes
+      mother_term1 = data->denominator.mother_probability(x);
+      father_term1 = data->denominator.father_probability(x);
+
+      // child_term1 = (params.somatic_probability_mat()(x, y) *
+      //                data->sequencing_probability_mat(0, y));
+      // mother_term1 = (params.somatic_probability_mat()(x, y) *
+      //                 data->sequencing_probability_mat(1, y));
+      // father_term1 = (params.somatic_probability_mat()(x, y) *
+      //                 data->sequencing_probability_mat(2, y));
+
+      child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+      mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+      father_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+
+      s_som_child(x) += child_term1 * child_term2;  // sum over y_j
+      s_som_mother(x) += mother_term1 * mother_term2;
+      s_som_father(x) += father_term1 * father_term2;
+    }
+
+    s_som_child(x) /= data->denominator.child_probability(x);
+    s_som_mother(x) /= data->denominator.mother_probability(x);
+    s_som_father(x) /= data->denominator.father_probability(x);
+  }
+
   // for each genotype in population priors
   for (int genotype = 0; genotype < kGenotypeCount * kGenotypeCount; ++genotype) {
-    // P(R|zygotic genotype)
-    // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
-    for (int x = 0; x < kGenotypeCount; ++x) {
-      for (int y = 0; y < kGenotypeCount; ++y) {
-        child_term1 = data->denominator.child_probability(x);  // zygotic genotypes
-        mother_term1 = data->denominator.mother_probability(x);
-        father_term1 = data->denominator.father_probability(x);
-
-        // child_term1 = (params.somatic_probability_mat()(x, y) *
-        //                data->sequencing_probability_mat(0, y));
-        // mother_term1 = (params.somatic_probability_mat()(x, y) *
-        //                 data->sequencing_probability_mat(1, y));
-        // father_term1 = (params.somatic_probability_mat()(x, y) *
-        //                 data->sequencing_probability_mat(2, y));
-
-        child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
-        mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
-        father_term2 = /* 0 + */ somatic_mutation_counts(x, y);
-
-        s_som_child(x) += child_term1 * child_term2;  // sum over y_j
-        s_som_mother(x) += mother_term1 * mother_term2;
-        s_som_father(x) += father_term1 * father_term2;
-      }
-
-      s_som_child(x) /= data->denominator.child_probability(x);
-      s_som_mother(x) /= data->denominator.mother_probability(x);
-      s_som_father(x) /= data->denominator.father_probability(x);
-    }
-
-    // P(R|somatic)
-    // S(R_mom, mom_somatic=x), S(R_dad, dad_somatic=x), S(R_child, child_somatic=x)
-    for (int x = 0; x < kGenotypeCount; ++x) {
-      for (int y = 0; y < kGenotypeCount; ++y) {
-        child_term1 = data->child_vec(x);  // somatic genotypes
-        mother_term1 = data->mother_vec(x);
-        father_term1 = data->father_vec(x);
-
-        child_term2 = s_som_child(x) + somatic_mutation_counts(x, y);
-        mother_term2 = s_som_mother(x) + somatic_mutation_counts(x, y);
-        father_term2 = s_som_father(x) + somatic_mutation_counts(x, y);
-
-        s_som_child(x) += child_term1 * child_term2;  // sum over y_j
-        s_som_mother(x) += mother_term1 * mother_term2;
-        s_som_father(x) += father_term1 * father_term2;
-      }
-
-      s_som_child(x) /= data->child_vec(x);
-      s_som_mother(x) /= data->mother_vec(x);
-      s_som_father(x) /= data->father_vec(x);
-    }
-
     // at top of branches
     // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
     // where s_som_mother and s_som_father do not change
