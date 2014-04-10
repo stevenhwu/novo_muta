@@ -66,8 +66,8 @@ double GetSomaticStatistic(TrioModel params) {
       }
 
       s_som_child(x) /= data->denominator.child_probability(x);
-      s_som_mother(x) /= data->denominatormother_probability(x);
-      s_som_father(x) /= data->denominatorfather_probability(x);
+      s_som_mother(x) /= data->denominator.mother_probability(x);
+      s_som_father(x) /= data->denominator.father_probability(x);
     }
 
     // P(R|somatic)
@@ -76,7 +76,7 @@ double GetSomaticStatistic(TrioModel params) {
       for (int y = 0; y < kGenotypeCount; ++y) {
         child_term1 = data->child_vec(x);  // somatic genotypes
         mother_term1 = data->mother_vec(x);
-        father_term1 = data->father_vec(X);
+        father_term1 = data->father_vec(x);
 
         child_term2 = s_som_child(x) + somatic_mutation_counts(x, y);
         mother_term2 = s_som_mother(x) + somatic_mutation_counts(x, y);
