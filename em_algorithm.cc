@@ -43,16 +43,12 @@ double GetSomaticStatistic(TrioModel params) {
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
   for (int x = 0; x < kGenotypeCount; ++x) {
     for (int y = 0; y < kGenotypeCount; ++y) {
-      child_term1 = data->denominator.child_probability(x);  // zygotic genotypes
-      mother_term1 = data->denominator.mother_probability(x);
-      father_term1 = data->denominator.father_probability(x);
-
-      // child_term1 = (params.somatic_probability_mat()(x, y) *
-      //                data->sequencing_probability_mat(0, y));
-      // mother_term1 = (params.somatic_probability_mat()(x, y) *
-      //                 data->sequencing_probability_mat(1, y));
-      // father_term1 = (params.somatic_probability_mat()(x, y) *
-      //                 data->sequencing_probability_mat(2, y));
+      child_term1 = (params.somatic_probability_mat()(x, y) *
+                     data->sequencing_probability_mat(0, y));
+      mother_term1 = (params.somatic_probability_mat()(x, y) *
+                      data->sequencing_probability_mat(1, y));
+      father_term1 = (params.somatic_probability_mat()(x, y) *
+                      data->sequencing_probability_mat(2, y));
 
       child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
       mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
@@ -69,53 +65,30 @@ double GetSomaticStatistic(TrioModel params) {
   }
 
   // for each genotype in population priors
-  for (int genotype = 0; genotype < kGenotypeCount * kGenotypeCount; ++genotype) {
+  for (int x = 0; x < kGenotypeCount * kGenotypeCount; ++x) {
     // at top of branches
     // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
     // where s_som_mother and s_som_father do not change
-    for (int y = 0; y < kGenotypeCount * kGenotypeCount; ++y) {  // for each parent pair
-      for (int x = 0; x < kGenotypeCount; ++x) {
-        // s_som_mother first element corresponds to first row of somatic_probability_matrix
-        // for x=parent pair the P(Yj|x) is 1, thus [1x16] of 1's
-        // mother_term1 = /* 1 * */ data->denominator.mother_probability(x);
-        // mother_term2 = s_som_mother(x)  + 0 ;
-        // s_som_mother_x(y) += mother_term1 * mother_term2;  // each y element contains sum of s_som_mother
-
-        // father_term1 = /* 1 * */ data->denominator.father_probability(x);
-        // father_term2 = s_som_father(x) /* + 0 */;
-        // s_som_father_x(y) += father_term1 * father_term2;
-
-        // s_som_mother_x(y) /= data->denominator.mother_probability(x);
-        // s_som_father_x(y) /= data->denominator.father_probability(x);
-
-        // child_term1 = (params.germline_probability_mat()(x, y) *
-        //                data->denominator.child_probability(x));
-
-        child_term1 = data->denominator.child_germline_probability(y);  // germline genotype given parent pair=x
-        child_term2 = s_som_child(x) /* + 0 */;
-        s_som_child_x(y) += child_term1 * child_term2;
-      }
-
-      s_som_child_x(y) /= data->denominator.child_germline_probability(y);
+    for (int y = 0; y < kGenotypeCount; ++y) {
+      child_term1 = (params.germline_probability_mat()(y, x) *  // germline genotype given parent pair=x
+                     data->denominator.child_probability(y));
+      child_term2 = s_som_child(y) /* + 0 */;
+      s_som_child_x(x) += child_term1 * child_term2;
     }
+
+    s_som_child_x(x) /= data->denominator.child_germline_probability(x);
     
     // merge j branches
     // S(R_mom,R_dad,R_child, parent_pair=x)
-    s_som(genotype) += (s_som_child_x(genotype) +
-                        s_som_mother(genotype % kGenotypeCount) +
-                        s_som_father(genotype / kGenotypeCount));
+    s_som(x) += (s_som_child_x(x) +
+                 s_som_mother(x % kGenotypeCount) +
+                 s_som_father(x / kGenotypeCount));
 
     // S(R_mom,R_dad,R_child)
-    s_som(genotype) *= (data->denominator.root_mat(genotype) *
-                        params.population_priors()(genotype));
+    s_som(x) *= data->denominator.root_mat(x);
   }
 
-  for (int genotype = 0; genotype < kGenotypeCount * kGenotypeCount; ++genotype) {
-    s_som(genotype) /= (data->denominator.root_mat(genotype) *
-                        params.population_priors()(genotype));
-  }
-  
-  return s_som.sum();
+  return s_som.sum() / data->denominator.sum;
 }
 
 /**

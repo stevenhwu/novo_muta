@@ -15,9 +15,9 @@
 int main() {
   TrioModel params;
   ReadDataVector data = {
-  	{4, 0, 0, 0},
-  	{4, 0, 0, 0},
-  	{4, 0, 0, 0}
+  	{20, 0, 20, 0},
+  	{40, 0, 0, 0},
+  	{40, 0, 0, 0}
   };
 
   cout << params.MutationProbability(data) << endl;
