@@ -11,6 +11,7 @@
 #ifndef READ_DEPENDENT_DATA_H
 #define READ_DEPENDENT_DATA_H
 
+// #include "tree_peel.cc"  // FIXME: change to .h
 #include "utilities.cc"
 
 
@@ -28,14 +29,14 @@ public:
   RowVector16d child_somatic_probability;
   RowVector16d mother_somatic_probability;
   RowVector16d father_somatic_probability;
-  struct TreePeels {
-    RowVector16d child_zygotic_probability;  // P(R|zygotic genotype)
+  struct TreePeel {  // TODO: change to TreePeel class
+    RowVector16d child_zygotic_probability; // P(R|zygotic genotype)
     RowVector16d mother_zygotic_probability;
     RowVector16d father_zygotic_probability;
     RowVector256d child_germline_probability;
-    RowVector256d parent_probability;  // P(R|mom and dad genotype)
-    RowVector256d root_mat;  // P(R|mom and dad genotype) * P(mom and dad genotype)
-    double sum;  // P(R)
+    RowVector256d parent_probability; // P(R|mom and dad genotype)
+    RowVector256d root_mat; // P(R|mom and dad genotype) * P(mom and dad genotype)
+    double sum; // P(R)
   } denominator, numerator;
   bool has_mutation;  // simulation only
 };

@@ -13,5 +13,11 @@
  * Default constructor.
  */
 ReadDependentData::ReadDependentData()
-		:  has_mutation{false} {
+    : has_mutation{false} {
+  sequencing_probability_mat = Matrix3_16d::Zero();
+  child_somatic_probability = RowVector16d::Zero();
+  mother_somatic_probability = RowVector16d::Zero();
+  father_somatic_probability = RowVector16d::Zero();
+  denominator = TreePeel();
+  numerator = TreePeel();
 };

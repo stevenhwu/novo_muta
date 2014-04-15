@@ -52,7 +52,7 @@ public:
 
   // Calculates probability of mutation given input data.
   double MutationProbability(const ReadDataVector &data_vec);
-  void SetReadDependentData(const ReadDataVector &data_vec)
+  void SetReadDependentData(const ReadDataVector &data_vec);
 
   // True if the two TrioModel objects are equal to each other.
   bool Equals(const TrioModel &other);
