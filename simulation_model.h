@@ -57,7 +57,7 @@ private:
   RowVectorXi RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities,
                                    int size);
 
-  // Instance variables.
+  // Instance member variables.
   TrioModel params_;  // Default initialization.
   unsigned int coverage_;
   vector<bool> has_mutation_vec_;

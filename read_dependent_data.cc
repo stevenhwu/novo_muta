@@ -15,4 +15,3 @@
 ReadDependentData::ReadDependentData()
 		:  has_mutation{false} {
 };
-

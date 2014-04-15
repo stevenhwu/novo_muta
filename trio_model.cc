@@ -13,7 +13,9 @@
  * Default constructor.
  * 
  * sequencing_probability_mat_ is created or updated if sequencing_error_rate_
- * or dirichlet_dispersion_ is changed when MutationProbability() is called.
+ * or dirichlet_dispersion_ is changed when MutationProbability() or
+ * SetReadDependentData() is called. dirichlet_dispersion_ is not used in the
+ * infinite sites model version.
  */
 TrioModel::TrioModel()
     : population_mutation_rate_{0.001},
@@ -93,23 +95,34 @@ TrioModel::TrioModel(double population_mutation_rate,
  *                               Genotype Genotype  Genotype
  *                               Reads    Reads     Reads
  *
- * Initializes and updates read_dependent_data.sequencing_probability_mat,
- * read_dependent_data.child_vec, read_dependent_data.mother_vec, and
- * read_dependent_data.father_vec using sequencing_error_rate_.
- * dirichlet_dispersion_ is not used.
+ * ReadDependentData is initialized in SetReadDependentData() call.
  *
  * @param   data_vec Read counts in order of child, mother and father.
  * @return           Probability of mutation given read data and parameters.
  */
 double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
+  TrioModel::SetReadDependentData(data_vec);
+
+  return 1 - (read_dependent_data_.numerator.sum /
+    read_dependent_data_.denominator.sum);
+}
+
+/**
+ * Initializes and updates read_dependent_data.sequencing_probability_mat,
+ * read_dependent_data.child_vec, read_dependent_data.mother_vec, and
+ * read_dependent_data.father_vec using sequencing_error_rate_.
+ * dirichlet_dispersion_ is not used.
+ *
+ * Follows the model diagram in MutationProbability.
+ *
+ * @param   data_vec Read counts in order of child, mother and father.
+ */
+void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
   TrioModel::SequencingProbabilityMat(data_vec);
   TrioModel::SomaticTransition();
   TrioModel::GermlineTransition();
   TrioModel::SomaticTransition(true);
   TrioModel::GermlineTransition(true);
-
-  return 1 - (read_dependent_data_.numerator.sum /
-    read_dependent_data_.denominator.sum);
 }
 
 /**
@@ -330,9 +343,9 @@ void TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
   read_dependent_data_.sequencing_probability_mat = exp(
     read_dependent_data_.sequencing_probability_mat.array() - max_element
   );
-  read_dependent_data_.child_vec = read_dependent_data_.sequencing_probability_mat.row(0);
-  read_dependent_data_.mother_vec = read_dependent_data_.sequencing_probability_mat.row(1);
-  read_dependent_data_.father_vec = read_dependent_data_.sequencing_probability_mat.row(2);
+  read_dependent_data_.child_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(0);
+  read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);
+  read_dependent_data_.father_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(2);
 }
 
 /**
@@ -342,24 +355,24 @@ void TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
  */
 void TrioModel::SomaticTransition(bool is_numerator) {
   if (!is_numerator) {
-    read_dependent_data_.denominator.child_probability = (
-      read_dependent_data_.child_vec * somatic_probability_mat_
+    read_dependent_data_.denominator.child_zygotic_probability = (
+      read_dependent_data_.child_somatic_probability * somatic_probability_mat_
     );
-    read_dependent_data_.denominator.mother_probability = (
-      read_dependent_data_.mother_vec * somatic_probability_mat_
+    read_dependent_data_.denominator.mother_zygotic_probability = (
+      read_dependent_data_.mother_somatic_probability * somatic_probability_mat_
     );
-    read_dependent_data_.denominator.father_probability = (
-      read_dependent_data_.father_vec * somatic_probability_mat_
+    read_dependent_data_.denominator.father_zygotic_probability = (
+      read_dependent_data_.father_somatic_probability * somatic_probability_mat_
     );
   } else {
-    read_dependent_data_.numerator.child_probability = (
-      read_dependent_data_.child_vec * somatic_probability_mat_diag_
+    read_dependent_data_.numerator.child_zygotic_probability = (
+      read_dependent_data_.child_somatic_probability * somatic_probability_mat_diag_
     );
-    read_dependent_data_.numerator.mother_probability = (
-      read_dependent_data_.mother_vec * somatic_probability_mat_diag_
+    read_dependent_data_.numerator.mother_zygotic_probability = (
+      read_dependent_data_.mother_somatic_probability * somatic_probability_mat_diag_
     );
-    read_dependent_data_.numerator.father_probability = (
-      read_dependent_data_.father_vec * somatic_probability_mat_diag_
+    read_dependent_data_.numerator.father_zygotic_probability = (
+      read_dependent_data_.father_somatic_probability * somatic_probability_mat_diag_
     );
   }
 }
@@ -373,12 +386,12 @@ void TrioModel::SomaticTransition(bool is_numerator) {
 void TrioModel::GermlineTransition(bool is_numerator) {
   if (!is_numerator) {
     read_dependent_data_.denominator.child_germline_probability = (
-      read_dependent_data_.denominator.child_probability *
+      read_dependent_data_.denominator.child_zygotic_probability *
       germline_probability_mat_
     );
     read_dependent_data_.denominator.parent_probability = KroneckerProduct(
-      read_dependent_data_.denominator.mother_probability,
-      read_dependent_data_.denominator.father_probability
+      read_dependent_data_.denominator.mother_zygotic_probability,
+      read_dependent_data_.denominator.father_zygotic_probability
     );
     read_dependent_data_.denominator.root_mat = TrioModel::GetRootMat(
       read_dependent_data_.denominator.child_germline_probability,
@@ -387,12 +400,12 @@ void TrioModel::GermlineTransition(bool is_numerator) {
     read_dependent_data_.denominator.sum = read_dependent_data_.denominator.root_mat.sum();
   } else {
     read_dependent_data_.numerator.child_germline_probability = (
-      read_dependent_data_.numerator.child_probability *
+      read_dependent_data_.numerator.child_zygotic_probability *
       germline_probability_mat_num_
     );
     read_dependent_data_.numerator.parent_probability = KroneckerProduct(
-      read_dependent_data_.numerator.mother_probability,
-      read_dependent_data_.numerator.father_probability
+      read_dependent_data_.numerator.mother_zygotic_probability,
+      read_dependent_data_.numerator.father_zygotic_probability
     );
     read_dependent_data_.numerator.root_mat = TrioModel::GetRootMat(
       read_dependent_data_.numerator.child_germline_probability,

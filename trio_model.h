@@ -12,14 +12,22 @@
  * Cartwright et al.: Family-Based Method for Capturing De Novo Mutations
  * http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3728889/
  *
+ * This is the implementation for an improved trio model with
+ * Dirichlet-multinomial approximations.
+ *
+ * If this is on the infinite_sites_model branch, this is the simplified trio
+ * model (infinite sites model) with simpler multinomial approximations for
+ * practicing implementing the expectation-maximization algorithm.
+ *
  * Example usage:
  *
- *   TrioModel params;
- *   ReadDataVector data = {
+ *   TrioModel params;  // uses default parameters
+ *   ReadDataVector data = {  // sequencing data in order: child, mother, father
  *     {30, 0, 0, 0},
  *     {30, 0, 0, 0},
  *     {30, 0, 0, 0}
  *   };
+ *
  *   double probability = params.MutationProbability(data);
  *   data.set_germline_mutation_rate(0.000001);
  *   double new_probability = params.MutationProbability(data);
@@ -27,7 +35,8 @@
 #ifndef TRIO_MODEL_H
 #define TRIO_MODEL_H
 
-#include "read_dependent_data.cc"  // temp change to .h
+#include "read_dependent_data.cc"  // FIXME: change to .h
+
 
 /**
  * TrioModel class header. See top of file for a complete description.
@@ -43,6 +52,7 @@ public:
 
   // Calculates probability of mutation given input data.
   double MutationProbability(const ReadDataVector &data_vec);
+  void SetReadDependentData(const ReadDataVector &data_vec)
 
   // True if the two TrioModel objects are equal to each other.
   bool Equals(const TrioModel &other);
@@ -91,7 +101,7 @@ private:
   void SequencingProbabilityMat(const ReadDataVector &data_vec);
   Matrix16_4d Alphas();
 
-  // Instance variables.
+  // Instance member variables.
   double population_mutation_rate_;
   double germline_mutation_rate_;
   double somatic_mutation_rate_;

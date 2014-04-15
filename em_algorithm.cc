@@ -3,11 +3,13 @@
  * @author Melissa Ip
  *
  * This file contains the implementation of the expectation-maximization
- * algorithm applied to a simplified and modified version of the trio model,
- * which will be updated as necessary to more complex and biologically realistic
- * models including the custom model using the Drichlet multinomial.
+ * algorithm applied to a simplified and modified version of the trio model
+ * (infinite sites model), which will be updated as necessary in Fall 2014 and
+ * Spring 2015 to more complex and biologically realistic models including the
+ * custom model using Dirichlet-multinomial approximations instead of
+ * multinomial approximations.
  */
-#include "trio_model.cc"  // temp change to .h
+#include "trio_model.cc"  // FIXME: change to .h
 
 // E-step methods.
 double GetSomaticStatistic();
@@ -15,16 +17,20 @@ Matrix16_16d SomaticMutationCounts();
 
 
 /**
- * Returns S_Som the number of nucleotide mismatches between all x and x′.
- * Calculated during the E-step of expectation-maximization algorithm.
+ * Returns S_Som the number of nucleotide mismatches between all x and x′,
+ * or the expected number of somatic mutations. Calculated during the E-step of
+ * expectation-maximization algorithm.
  *
- * @return  number of expected somatic mutations
+ * @param  params TrioModel object containing parameters.
+ * @return        Number of expected somatic mutations.
  */
 double GetSomaticStatistic(TrioModel params) {
   ReadDependentData *data = params.read_dependent_data();
+  Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
   Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
+  Matrix16_256d germline_probability_mat = params.germline_probability_mat();
 
-  RowVector256d s_som = RowVector256d::Zero();  // initially 0
+  RowVector256d s_som = RowVector256d::Zero();
   RowVector16d s_som_mother = RowVector16d::Zero();
   RowVector16d s_som_father = RowVector16d::Zero();
   RowVector16d s_som_child = RowVector16d::Zero();
@@ -43,12 +49,9 @@ double GetSomaticStatistic(TrioModel params) {
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
   for (int x = 0; x < kGenotypeCount; ++x) {
     for (int y = 0; y < kGenotypeCount; ++y) {
-      child_term1 = (params.somatic_probability_mat()(x, y) *
-                     data->sequencing_probability_mat(0, y));
-      mother_term1 = (params.somatic_probability_mat()(x, y) *
-                      data->sequencing_probability_mat(1, y));
-      father_term1 = (params.somatic_probability_mat()(x, y) *
-                      data->sequencing_probability_mat(2, y));
+      child_term1 = somatic_probability_mat(x, y) * data->child_somatic_probability(y);
+      mother_term1 = somatic_probability_mat(x, y) * data->mother_somatic_probability(y);
+      father_term1 = somatic_probability_mat(x, y) * data->father_somatic_probability(y);
 
       child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
       mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
@@ -59,33 +62,33 @@ double GetSomaticStatistic(TrioModel params) {
       s_som_father(x) += father_term1 * father_term2;
     }
 
-    s_som_child(x) /= data->denominator.child_probability(x);
-    s_som_mother(x) /= data->denominator.mother_probability(x);
-    s_som_father(x) /= data->denominator.father_probability(x);
+    s_som_child(x) /= data->denominator.child_zygotic_probability(x);
+    s_som_mother(x) /= data->denominator.mother_zygotic_probability(x);
+    s_som_father(x) /= data->denominator.father_zygotic_probability(x);
   }
 
-  // for each genotype in population priors
+  // for each genotype x in population priors
   for (int x = 0; x < kGenotypeCount * kGenotypeCount; ++x) {
     // at top of branches
     // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
     // where s_som_mother and s_som_father do not change
     for (int y = 0; y < kGenotypeCount; ++y) {
-      child_term1 = (params.germline_probability_mat()(y, x) *  // germline genotype given parent pair=x
-                     data->denominator.child_probability(y));
+      child_term1 = (germline_probability_mat(y, x) *  // germline genotype given parent pair=x
+                     data->denominator.child_zygotic_probability(y));  // uses zygotic
       child_term2 = s_som_child(y) /* + 0 */;
       s_som_child_x(x) += child_term1 * child_term2;
     }
 
     s_som_child_x(x) /= data->denominator.child_germline_probability(x);
     
-    // merge j branches
+    // merges j branches
     // S(R_mom,R_dad,R_child, parent_pair=x)
-    s_som(x) += (s_som_child_x(x) +
-                 s_som_mother(x % kGenotypeCount) +
+    s_som(x) += (s_som_child_x(x) + s_som_mother(x % kGenotypeCount) +
                  s_som_father(x / kGenotypeCount));
 
+    // at root of tree
     // S(R_mom,R_dad,R_child)
-    s_som(x) *= data->denominator.root_mat(x);
+    s_som(x) *= data->denominator.root_mat(x);  // root_mat includes population_priors
   }
 
   return s_som.sum() / data->denominator.sum;
@@ -121,5 +124,6 @@ Matrix16_16d SomaticMutationCounts() {
       }
     }
   }
+
   return mat;
 }
