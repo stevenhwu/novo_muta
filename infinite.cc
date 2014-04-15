@@ -13,16 +13,17 @@
 
 int main() {
   TrioModel params;
-  params.set_germline_mutation_rate(0.0000000002);  // smaller germline mutation rate increases likelihood of somatic mutation
-  
+  //params.set_germline_mutation_rate(0.0000000002);  // smaller germline mutation rate increases likelihood of somatic mutation
+
   ReadDataVector data = {
-  	{20, 0, 20, 0},
+  	{0, 0, 40, 0},
   	{40, 0, 0, 0},
   	{40, 0, 0, 0}
   };
 
   cout << params.MutationProbability(data) << endl;  // must call this or SetReadDependentData first to set ReadDependentData
   cout << GetSomaticStatistic(params) << endl;
+  cout << GetGermlineStatistic(params) << endl;
 
   return 0;
 }
