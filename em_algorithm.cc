@@ -169,10 +169,12 @@ Matrix16_256d GermlineMutationCounts() {
       auto father_genotype = kGenotypeNumIndex.row(father_idx);
       auto child_genotype = kGenotypeNumIndex.row(i);
       // 1 mutation count per allele site segregation
-      if ((child_genotype(0) != mother_genotype(0) &&
-          child_genotype(0) != mother_genotype(1)) ||
-          (child_genotype(1) != father_genotype(0) &&
-          child_genotype(1) != father_genotype(1))) {
+      if (child_genotype(0) != mother_genotype(0) &&
+          child_genotype(0) != mother_genotype(1)) {
+        mat(i, j)++;
+      }
+      if (child_genotype(1) != father_genotype(0) &&
+          child_genotype(1) != father_genotype(1)) {
         mat(i, j)++;
       }
     }
