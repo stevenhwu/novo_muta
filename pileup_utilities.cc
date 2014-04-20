@@ -17,7 +17,7 @@
 #include "trio_model.cc"
 
 // Any greater probability than this number is printed.
-static const double kThreshold = 0.01;
+const double kThreshold = 0.01;
 
 
 /**

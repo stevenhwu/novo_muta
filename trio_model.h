@@ -42,7 +42,7 @@
  * TrioModel class header. See top of file for a complete description.
  */
 class TrioModel {
-public:
+ public:
   // Default constructor and constructor to customize parameters.
   TrioModel();
   TrioModel(double population_mutation_rate, double germline_mutation_rate,
@@ -50,10 +50,10 @@ public:
             double dirichlet_dispersion,
             const RowVector4d &nucleotide_frequencies);
 
-  // Calculates probability of mutation given input data.
+  // Calculates probability of mutation given input read data.
   double MutationProbability(const ReadDataVector &data_vec);
   void SetReadDependentData(const ReadDataVector &data_vec);
-  void SetGermlineMutationProbabilities();
+
   // True if the two TrioModel objects are equal to each other.
   bool Equals(const TrioModel &other);
 
@@ -75,7 +75,7 @@ public:
   void set_nucleotide_frequencies(const RowVector4d &frequencies);
   bool has_mutation();
   void set_has_mutation(bool has_mutation);
-  RowVector16d genotype_mat();
+  RowVector16d population_priors_single();
   RowVector256d population_priors();
   Matrix4_16d germline_probability_mat_single();
   Matrix16_256d germline_probability_mat();
@@ -84,7 +84,9 @@ public:
   Matrix16_4d alphas();
   ReadDependentData* read_dependent_data();
 
-private:
+ private:
+
+
   // Helper functions for MutationProbability.
   void GermlineTransition(bool is_numerator=false);
   void SomaticTransition(bool is_numerator=false);
@@ -96,6 +98,9 @@ private:
 
   // Functions for setting up the model and relevant arrays.
   RowVector256d PopulationPriors();
+  Matrix16_16d PopulationPriorsExpanded();
+  RowVector16d PopulationPriorsSingle();
+  void SetGermlineMutationProbabilities();
   double GermlineMutation(int child_nucleotide_idx, int parent_genotype_idx,
                           bool no_mutation_flag);
   Matrix4_16d GermlineProbabilityMatSingle(bool no_mutation_flag=false);
@@ -117,7 +122,7 @@ private:
   double dirichlet_dispersion_;  // unused
   RowVector4d nucleotide_frequencies_;
   Matrix16_4d alphas_;
-  RowVector16d genotype_mat_;  // unused
+  RowVector16d population_priors_single_;  // unused
   RowVector256d population_priors_;
   Matrix4_16d germline_probability_mat_single_;
   Matrix16_256d germline_probability_mat_;

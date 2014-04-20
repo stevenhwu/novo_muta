@@ -25,6 +25,7 @@ TrioModel::TrioModel()
       dirichlet_dispersion_{1000.0},
       nucleotide_frequencies_{0.25, 0.25, 0.25, 0.25} {
   population_priors_ = TrioModel::PopulationPriors();
+  population_priors_single_ = TrioModel::PopulationPriorsSingle();
   TrioModel::SetGermlineMutationProbabilities();
   germline_probability_mat_single_ = TrioModel::GermlineProbabilityMatSingle();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
@@ -60,6 +61,7 @@ TrioModel::TrioModel(double population_mutation_rate,
       dirichlet_dispersion_{dirichlet_dispersion},
       nucleotide_frequencies_{nucleotide_frequencies} {
   population_priors_ = TrioModel::PopulationPriors();
+  population_priors_single_ = TrioModel::PopulationPriorsSingle();
   TrioModel::SetGermlineMutationProbabilities();
   germline_probability_mat_single_ = TrioModel::GermlineProbabilityMatSingle();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
@@ -108,7 +110,7 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
   TrioModel::SetReadDependentData(data_vec);
 
   return 1 - (read_dependent_data_.numerator.sum /
-    read_dependent_data_.denominator.sum);
+              read_dependent_data_.denominator.sum);
 }
 
 /**
@@ -136,34 +138,51 @@ void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
  *
  * [P(AAAA), P(AAAC), P(AAAG), P(AAAT), P(AACA), P(AACC), P(AACG)...]
  *
- * Sets genotype_mat_ as the 1 x 16 Eigen probability RowVector for a single
- * parent.
+ * @return  1 x 256 Eigen probability RowVector in log e space where the i
+ *          element is a unique parent pair genotype.
+ */
+RowVector256d TrioModel::PopulationPriors() {
+  RowVector256d population_priors_flattened;
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      int idx = i * kGenotypeCount + j;
+      population_priors_flattened(idx) = TrioModel::PopulationPriorsExpanded()(i, j);
+    }
+  }
+
+  return population_priors_flattened;
+}
+
+/**
+ * Returns 16 x 16 Eigen matrix. This is an order-relevant representation
+ * of the possible events in the sample space that covers all possible parent
+ * genotype combinations.
  *
  * Calls SpectrumProbability assuming infinite sites model using all enumerated
  * nucleotide counts at coverage 4x.
  *
- * @return  1 x 256 Eigen probability RowVector in log e space where the (i, j)
- *          element is the probability that the mother has genotype i and the
- *          father has genotype j.
+ * @return  16 x 16 Eigen matrix in log e space where the (i, j) element is the
+ *          probability that the mother has genotype i and the father has
+ *          genotype j.
  */
-RowVector256d TrioModel::PopulationPriors() {
+Matrix16_16d TrioModel::PopulationPriorsExpanded() {
   Matrix16_16d population_priors = Matrix16_16d::Zero();
-  // Resizes population_priors to 1 x 256 RowVector.
-  RowVector256d population_priors_flattened;
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
       RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
       double probability = TrioModel::SpectrumProbability(nucleotide_counts);
       population_priors(i, j) = probability;
-      int idx = i * kGenotypeCount + j;
-      population_priors_flattened(idx) = population_priors(i, j);
     }
   }
 
-  // Sets genotype_mat_ to collapsed single parent probability matrix.
-  genotype_mat_ = population_priors.rowwise().sum();
+  return population_priors;
+}
 
-  return population_priors_flattened;
+/**
+ * Returns 1 x 16 Eigen RowVector population priors for a single parent.
+ */
+RowVector16d TrioModel::PopulationPriorsSingle() {
+  return TrioModel::PopulationPriorsExpanded().rowwise().sum();
 }
 
 /**
@@ -464,29 +483,30 @@ RowVector256d TrioModel::GetRootMat(const RowVector256d &child_germline_probabil
 Matrix16_4d TrioModel::Alphas() {
   Matrix16_4d alphas;
   double homozygous = 1.0 - sequencing_error_rate_;
-  double other = sequencing_error_rate_ / 3.0;
-  double heterozygous = 0.5 - other;
+  double no_match = sequencing_error_rate_ / 3.0;
+  double heterozygous = 0.5 - no_match;
 
   //        A             C             G             T
-  alphas << homozygous,   other,        other,        other,
-            heterozygous, heterozygous, other,        other,
-            heterozygous, other,        heterozygous, other,
-            heterozygous, other,        other,        heterozygous,
+  alphas << homozygous,   no_match,     no_match,     no_match,
+            heterozygous, heterozygous, no_match,     no_match,
+            heterozygous, no_match,     heterozygous, no_match,
+            heterozygous, no_match,     no_match,     heterozygous,
 
-            heterozygous, heterozygous, other,        other,
-            other,        homozygous,   other,        other,
-            other,        heterozygous, heterozygous, other,
-            other,        heterozygous, other,        heterozygous,
+            heterozygous, heterozygous, no_match,     no_match,
+            no_match,     homozygous,   no_match,     no_match,
+            no_match,     heterozygous, heterozygous, no_match,
+            no_match,     heterozygous, no_match,     heterozygous,
             
-            heterozygous, other,        heterozygous, other,
-            other,        heterozygous, heterozygous, other,
-            other,        other,        homozygous,   other,
-            other,        other,        heterozygous, heterozygous,
+            heterozygous, no_match,     heterozygous, no_match,
+            no_match,     heterozygous, heterozygous, no_match,
+            no_match,     no_match,     homozygous,   no_match,
+            no_match,     no_match,     heterozygous, heterozygous,
 
-            heterozygous, other,        other,        heterozygous,
-            other,        heterozygous, other,        heterozygous,
-            other,        other,        heterozygous, heterozygous,
-            other,        other,        other,        homozygous;
+            heterozygous, no_match,     no_match,     heterozygous,
+            no_match,     heterozygous, no_match,     heterozygous,
+            no_match,     no_match,     heterozygous, heterozygous,
+            no_match,     no_match,     no_match,     homozygous;
+
   return alphas;
 }
 
@@ -505,16 +525,20 @@ bool TrioModel::Equals(const TrioModel &other) {
     Equal(sequencing_error_rate_, other.sequencing_error_rate_),
     Equal(dirichlet_dispersion_, other.dirichlet_dispersion_),
     nucleotide_frequencies_.isApprox(other.nucleotide_frequencies_, kEpsilon),
-    genotype_mat_.isApprox(other.genotype_mat_, kEpsilon),
+    population_priors_single_.isApprox(other.population_priors_single_, kEpsilon),
     population_priors_.isApprox(other.population_priors_, kEpsilon),
-    germline_probability_mat_single_.isApprox(other.germline_probability_mat_single_, kEpsilon),
-    germline_probability_mat_.isApprox(other.germline_probability_mat_, kEpsilon),
+    germline_probability_mat_single_.isApprox(
+        other.germline_probability_mat_single_,
+        kEpsilon),
+    germline_probability_mat_.isApprox(
+        other.germline_probability_mat_,
+        kEpsilon),
     somatic_probability_mat_.isApprox(other.somatic_probability_mat_, kEpsilon),
     read_dependent_data_.sequencing_probability_mat.isApprox(
-      other.read_dependent_data_.sequencing_probability_mat,
-      kEpsilon
-    )
+        other.read_dependent_data_.sequencing_probability_mat,
+        kEpsilon)
   };
+
   if (all_of(begin(attr_table), end(attr_table), [](bool i) { return i; })) {
     return true;
   } else {
@@ -527,11 +551,12 @@ double TrioModel::population_mutation_rate() {
 }
 
 /**
- * Sets population_mutation_rate_, genotype_mat_ and population_priors_.
+ * Sets population_mutation_rate_, population_priors_single_ and population_priors_.
  */
 void TrioModel::set_population_mutation_rate(double rate) {
   population_mutation_rate_ = rate;
   population_priors_ = PopulationPriors();
+  population_priors_single_ = TrioModel::PopulationPriorsSingle();
 }
 
 double TrioModel::germline_mutation_rate() {
@@ -620,8 +645,8 @@ void TrioModel::set_has_mutation(bool has_mutation) {
   read_dependent_data_.has_mutation = has_mutation;
 }
 
-RowVector16d TrioModel::genotype_mat() {
-  return genotype_mat_;
+RowVector16d TrioModel::population_priors_single() {
+  return population_priors_single_;
 }
 
 RowVector256d TrioModel::population_priors() {

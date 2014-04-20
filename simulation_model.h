@@ -24,7 +24,7 @@
  * SimulationModel class header. See top of file for a complete description.
  */
 class SimulationModel {
-public:
+ public:
   // No default constructor, because all parameters are given through command
   // line inputs.
   SimulationModel(unsigned int coverage, double germline_mutation_rate,
@@ -45,7 +45,7 @@ public:
   double somatic_mutation_rate();
   void set_somatic_mutation_rate(double rate);
 
-private:
+ private:
   // Simulation methods.
   int Mutate(int genotype_idx, bool is_germline=false,
              int parent_genotype_idx=-1);

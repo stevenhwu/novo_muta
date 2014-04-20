@@ -19,7 +19,7 @@
  * ReadDependentData class header. See top of file for a complete description.
  */
 class ReadDependentData {
-public:
+ public:
   // Default constructor.
   ReadDependentData();
 
