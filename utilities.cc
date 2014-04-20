@@ -42,31 +42,61 @@ typedef Matrix<RowVector4d, 16, 16, RowMajor> Matrix16_16_4d;
 typedef vector<ReadData> ReadDataVector;
 typedef vector<ReadDataVector> TrioVector;
 
-// Global constants for specifying matrix size and iterating through numeric
-// representations of nucleotides and genotypes in lexicographical order.
+// Forward declarations.
+Matrix16_2i GenotypeNumIndex();
+Matrix16_16_4d ZeroMatrix16_16_4d();
+void PrintMatrix16_16_4d(const Matrix16_16_4d &mat);
+Matrix16_16_4d TwoParentCounts();
+bool EqualsReadData(const ReadData &data1, const ReadData &data2);
+bool EqualsReadDataVector(const ReadDataVector &data_vec1,
+                          const ReadDataVector &data_vec2);
+void PrintReadData(const ReadData &data);
+void PrintReadDataVector(const ReadDataVector &data_vec);
+MatrixXi EnumerateNucleotideCounts(int coverage);
+ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat);
+TrioVector GetTrioVector(int coverage);
+int IndexOfReadDataVector(const ReadDataVector &data_vec);
+bool IsInVector(const RowVector4d &vec, double elem);
+bool IsAlleleInParentGenotype(int child_nucleotide_idx, int parent_genotype_idx);
+double DirichletMultinomialLog(const RowVector4d &alpha, const ReadData &data);
+Matrix16_256d KroneckerProduct(const Matrix4_16d &mat);
+Matrix16_16d KroneckerProduct(const Matrix4d &mat);
+RowVector256d KroneckerProduct(const RowVector16d &vec1,
+                               const RowVector16d &vec2);
+bool Equal(double a, double b);
+void Die(const char *msg);
 
-// INDEX  GENOTYPE  NUCLEOTIDE 
-// 0      AA        A
-// 1      AC        C
-// 2      AG        G
-// 3      AT        T
-// 4      CA
-// 5      CC
-// 6      CG
-// 7      CT
-// 8      GA
-// 9      GC
-// 10     GG
-// 11     GT
-// 12     TA
-// 13     TC
-// 14     TG
-// 15     TT
-const int kGenotypePairCount = 256;
+
+/**
+ * Global constants for specifying matrix size and iterating through numeric
+ * representations of nucleotides and genotypes in lexicographical order.
+ *
+ * INDEX  GENOTYPE  NUCLEOTIDE 
+ * 0      AA        A
+ * 1      AC        C
+ * 2      AG        G
+ * 3      AT        T
+ * 4      CA
+ * 5      CC
+ * 6      CG
+ * 7      CT
+ * 8      GA
+ * 9      GC
+ * 10     GG
+ * 11     GT
+ * 12     TA
+ * 13     TC
+ * 14     TG
+ * 15     TT
+ */
+const double kEpsilon = numeric_limits<double>::epsilon();
 const int kGenotypeCount = 16;
+const Matrix16_2i kGenotypeNumIndex = GenotypeNumIndex();
+const int kGenotypePairCount = 256;
 const int kNucleotideCount = 4;
 const int kTrioCount = 42875;
-const double kEpsilon = numeric_limits<double>::epsilon();
+const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
+
 
 /**
  * Returns 16 x 2 Eigen matrix where the first dimension represents genotypes
@@ -75,30 +105,28 @@ const double kEpsilon = numeric_limits<double>::epsilon();
  *
  * Used for generating the constant kGenotypeNumIndex only. This constant is
  * used to determine what nucleotides a genotype is composed of or what
- * genotype a pair of nucleotides is.
+ * genotype a pair of nucleotides is. The first allele can be determined by
+ * integer division. The second allele can be determined by modulus.
  *
- * AA  {{0, 0},
- * AC   {0, 1},
- * AG   {0, 2},
- * AT   {0, 3},
- *       ...
- * TT   {3, 3}}
- *
- * The first allele can be determined by integer division. The second allele
- * can be determined by modulus.
+ * GENOTYPE  INDEX
+ * AA        0, 0
+ * AC        0, 1
+ * AG        0, 2
+ * AT        0, 3
+ * ...       ...
+ * TT        3, 3
  *
  * @return  16 x 2 Eigen matrix.
  */
 Matrix16_2i GenotypeNumIndex() {
-  Matrix16_2i genotypeNumIndex;
-  //                     A|    C|    G|    T|
-  genotypeNumIndex << 0, 0, 0, 1, 0, 2, 0, 3,
-                      1, 0, 1, 1, 1, 2, 1, 3,
-                      2, 0, 2, 1, 2, 2, 2, 3,
-                      3, 0, 3, 1, 3, 2, 3, 3;
-  return genotypeNumIndex;
+  Matrix16_2i mat;
+  //        A|    C|    G|    T|
+  mat << 0, 0, 0, 1, 0, 2, 0, 3,  // A
+         1, 0, 1, 1, 1, 2, 1, 3,  // C
+         2, 0, 2, 1, 2, 2, 2, 3,  // G
+         3, 0, 3, 1, 3, 2, 3, 3;  // T
+  return mat;
 }
-const Matrix16_2i kGenotypeNumIndex = GenotypeNumIndex();
 
 /**
  * Returns a 16 x 16 x 4 Eigen matrix filled with zeros. The third dimension is
@@ -165,7 +193,6 @@ Matrix16_16_4d TwoParentCounts() {
   }
   return genotype_count;
 }
-const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
 
 /**
  * Returns true if the two ReadDatas are equal. Assume the ReadData has a field

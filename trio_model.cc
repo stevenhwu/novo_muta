@@ -550,6 +550,14 @@ void TrioModel::set_germline_mutation_rate(double rate) {
   germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
 }
 
+double TrioModel::homozygous_match() {
+  return homozygous_match_;
+}
+
+double TrioModel::heterozygous_match() {
+  return heterozygous_match_;
+}
+
 double TrioModel::no_match() {
   return no_match_;
 }

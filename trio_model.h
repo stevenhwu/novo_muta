@@ -62,6 +62,8 @@ public:
   void set_population_mutation_rate(double rate);
   double germline_mutation_rate();
   void set_germline_mutation_rate(double rate);
+  double homozygous_match();
+  double heterozygous_match();
   double no_match();
   double somatic_mutation_rate();
   void set_somatic_mutation_rate(double rate);
