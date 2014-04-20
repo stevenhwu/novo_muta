@@ -62,6 +62,7 @@ typedef vector<ReadDataVector> TrioVector;
 // 13     TC
 // 14     TG
 // 15     TT
+const int kGenotypePairCount = 256;
 const int kGenotypeCount = 16;
 const int kNucleotideCount = 4;
 const int kTrioCount = 42875;
@@ -82,6 +83,9 @@ const double kEpsilon = numeric_limits<double>::epsilon();
  * AT   {0, 3},
  *       ...
  * TT   {3, 3}}
+ *
+ * The first allele can be determined by integer division. The second allele
+ * can be determined by modulus.
  *
  * @return  16 x 2 Eigen matrix.
  */
@@ -325,6 +329,24 @@ bool IsInVector(const RowVector4d &vec, double elem) {
     }
   }
   return false;
+}
+
+/**
+ * Checks if the child nucleotide is in the parent genotype.
+ *
+ * @param  child_nucleotide_idx Index of child allele.
+ * @param  parent_genotype_idx  Index of parent genotype.
+ * @return                      True if child allele is in parent genotype.
+ */
+bool IsAlleleInParentGenotype(int child_nucleotide_idx, int parent_genotype_idx) {
+  int parent_allele1 = parent_genotype_idx / kNucleotideCount;
+  int parent_allele2 = parent_genotype_idx % kNucleotideCount;
+  if (child_nucleotide_idx == parent_allele1 ||
+      child_nucleotide_idx == parent_allele2) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 /**

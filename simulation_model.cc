@@ -94,8 +94,8 @@ int SimulationModel::GetChildGenotype(int mother_genotype, int father_genotype) 
   int child_allele1 = kGenotypeNumIndex(mother_genotype, rand() % 2);
   int child_allele2 = kGenotypeNumIndex(father_genotype, rand() % 2);
   for (int i = 0; i < kGenotypeCount; ++i) {
-    if (child_allele1 == kGenotypeNumIndex(i, 0) &&
-        child_allele2 == kGenotypeNumIndex(i, 1)) {
+    if (child_allele1 == i / kNucleotideCount &&
+        child_allele2 == i % kNucleotideCount) {
       return i;
     }
   }
@@ -142,7 +142,7 @@ ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
 vector<RowVectorXi> SimulationModel::GetGenotypesMatrix(int size) {
   // Generates experiment_count random samples using population priors as weights.
   RowVectorXi parent_genotypes = SimulationModel::RandomDiscreteChoice(
-    kGenotypeCount * kGenotypeCount,
+    kGenotypePairCount,
     params_.population_priors(),
     size
   );
@@ -151,9 +151,9 @@ vector<RowVectorXi> SimulationModel::GetGenotypesMatrix(int size) {
   RowVectorXi child_genotypes(size);
   RowVectorXi mother_genotypes(size);
   RowVectorXi father_genotypes(size);
-  father_genotypes = parent_genotypes / kGenotypeCount;
+  mother_genotypes = parent_genotypes / kGenotypeCount;
   for (int i = 0; i < size; ++i) {
-    mother_genotypes(i) = parent_genotypes(i) % kGenotypeCount;
+    father_genotypes(i) = parent_genotypes(i) % kGenotypeCount;
     child_genotypes(i) = SimulationModel::GetChildGenotype(mother_genotypes(i),
                                                            father_genotypes(i));
   }

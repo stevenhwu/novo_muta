@@ -25,6 +25,8 @@ TrioModel::TrioModel()
       dirichlet_dispersion_{1000.0},
       nucleotide_frequencies_{0.25, 0.25, 0.25, 0.25} {
   population_priors_ = TrioModel::PopulationPriors();
+  TrioModel::SetGermlineMutationProbabilities();
+  germline_probability_mat_single_ = TrioModel::GermlineProbabilityMatSingle();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
   germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
@@ -58,6 +60,8 @@ TrioModel::TrioModel(double population_mutation_rate,
       dirichlet_dispersion_{dirichlet_dispersion},
       nucleotide_frequencies_{nucleotide_frequencies} {
   population_priors_ = TrioModel::PopulationPriors();
+  TrioModel::SetGermlineMutationProbabilities();
+  germline_probability_mat_single_ = TrioModel::GermlineProbabilityMatSingle();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
   germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
@@ -187,6 +191,18 @@ double TrioModel::SpectrumProbability(const RowVector4d &nucleotide_counts) {
 }
 
 /**
+ * Calculates set of possible germline mutation probabilities given germline
+ * mutation rate. Weighted based on if parent genotype is homozygous or
+ * heterozygous.
+ */
+void TrioModel::SetGermlineMutationProbabilities() {
+  double exp_term = exp(-4.0/3.0 * germline_mutation_rate_);
+  homozygous_match_ = 0.25 + 0.75 * exp_term;
+  heterozygous_match_ = 0.25 + 0.25 * exp_term;
+  no_match_ = 0.25 - 0.25 * exp_term;
+}
+
+/**
  * Calculates the probability of germline mutation and parent chromosome
  * donation by default. Assume the first chromosome is associated with
  * the mother and the second chromosome is associated with the father.
@@ -200,44 +216,30 @@ double TrioModel::SpectrumProbability(const RowVector4d &nucleotide_counts) {
 double TrioModel::GermlineMutation(int child_nucleotide_idx,
                                    int parent_genotype_idx,
                                    bool no_mutation_flag) {
-  // Calculates set of possible probabilities using mutation rate.
-  double exp_term = exp(-4.0/3.0 * germline_mutation_rate_);
-  double homozygous_match = 0.25 + 0.75 * exp_term;
-  double heterozygous_match = 0.25 + 0.25 * exp_term;
-  double no_match = 0.25 - 0.25 * exp_term;
-  
-  // Checks if the child nucleotide is in the parent genotype.
-  auto parent_genotype = kGenotypeNumIndex.row(parent_genotype_idx);
-  bool is_in_vec = false;
-  if (child_nucleotide_idx == parent_genotype(0) ||
-      child_nucleotide_idx == parent_genotype(1)) {
-    is_in_vec = true;
-  }
-
   // Determines if the comparison is homozygous, heterozygous or no match.
-  if (is_in_vec) {
-    if (parent_genotype(0) == parent_genotype(1)) {
-      return homozygous_match;
+  if (IsAlleleInParentGenotype(child_nucleotide_idx, parent_genotype_idx)) {
+    if (parent_genotype_idx % 5 == 0) {  // homozygous genotypes are divisible by 5
+      return homozygous_match_;
     } else {
       if (no_mutation_flag) {
-        return homozygous_match / 2;
+        return homozygous_match_ / 2;
       } else {
-        return heterozygous_match;
+        return heterozygous_match_;
       }
     }
   } else {
     if (no_mutation_flag) {
       return 0.0;
     } else {
-      return no_match;
+      return no_match_;
     }
   }
 }
 
 /**
- * Calculates the probability matrix for the offspring using the given mutation
- * rate, derived from the Kronecker product of a 4 x 16 Eigen parent 
- * probability matrix with itself.
+ * Calculates the germline probability matrix for the offspring using the given
+ * mutation rate, derived from the Kronecker product of a 4 x 16 Eigen 
+ * germline probability matrix for a single parent with itself.
  *
  * This is a transition matrix used to mutate the child germline genotype.
  *
@@ -246,6 +248,24 @@ double TrioModel::GermlineMutation(int child_nucleotide_idx,
  * @return                  16 x 256 Eigen probability matrix.
  */
 Matrix16_256d TrioModel::GermlineProbabilityMat(bool no_mutation_flag) {
+  return KroneckerProduct(TrioModel::GermlineProbabilityMatSingle(no_mutation_flag));
+}
+
+/**
+ * Calculates the germline probability matrix for the offspring using the given
+ * mutation rate.
+ *
+ * This is a transition matrix used to mutate the child germline genotype, that
+ * is the probability of one random allele from one parent being mutated in the
+ * germline. The current trio model will use the Kronecker product of this
+ * matrix to produce the transition matrix of germline probabilities accounting
+ * for both parents.
+ *
+ * @param  no_mutation_flag False by default. Set to true to calculate
+ *                          probability of no mutation.
+ * @return                  4 x 16 Eigen probability matrix.
+ */
+Matrix4_16d TrioModel::GermlineProbabilityMatSingle(bool no_mutation_flag) {
   Matrix4_16d germline_probability_mat = Matrix4_16d::Zero();
   for (int i = 0; i < kNucleotideCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
@@ -253,7 +273,8 @@ Matrix16_256d TrioModel::GermlineProbabilityMat(bool no_mutation_flag) {
       germline_probability_mat(i, j) = probability;
     }
   }
-  return KroneckerProduct(germline_probability_mat);
+
+  return germline_probability_mat;
 }
 
 /**
@@ -477,7 +498,7 @@ Matrix16_4d TrioModel::Alphas() {
  * @return       True if the two TrioModel objects are equal to each other.
  */
 bool TrioModel::Equals(const TrioModel &other) {
-  bool attr_table[11] = {
+  bool attr_table[12] = {
     Equal(population_mutation_rate_, other.population_mutation_rate_),
     Equal(germline_mutation_rate_, other.germline_mutation_rate_),
     Equal(somatic_mutation_rate_, other.germline_mutation_rate_),
@@ -486,6 +507,7 @@ bool TrioModel::Equals(const TrioModel &other) {
     nucleotide_frequencies_.isApprox(other.nucleotide_frequencies_, kEpsilon),
     genotype_mat_.isApprox(other.genotype_mat_, kEpsilon),
     population_priors_.isApprox(other.population_priors_, kEpsilon),
+    germline_probability_mat_single_.isApprox(other.germline_probability_mat_single_, kEpsilon),
     germline_probability_mat_.isApprox(other.germline_probability_mat_, kEpsilon),
     somatic_probability_mat_.isApprox(other.somatic_probability_mat_, kEpsilon),
     read_dependent_data_.sequencing_probability_mat.isApprox(
@@ -517,13 +539,19 @@ double TrioModel::germline_mutation_rate() {
 }
 
 /**
- * Sets germline_mutation_rate_, germline_probability_mat_ and
- * germline_probability_mat_num_.
+ * Sets germline_mutation_rate_, germline_probability_mat_single,
+ * germline_probability_mat_ and germline_probability_mat_num_.
  */
 void TrioModel::set_germline_mutation_rate(double rate) {
   germline_mutation_rate_ = rate;
+  TrioModel::SetGermlineMutationProbabilities();
+  germline_probability_mat_single_ = TrioModel::GermlineProbabilityMatSingle();
   germline_probability_mat_ = TrioModel::GermlineProbabilityMat();
   germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
+}
+
+double TrioModel::no_match() {
+  return no_match_;
 }
 
 double TrioModel::somatic_mutation_rate() {
@@ -590,6 +618,10 @@ RowVector16d TrioModel::genotype_mat() {
 
 RowVector256d TrioModel::population_priors() {
   return population_priors_;
+}
+
+Matrix4_16d TrioModel::germline_probability_mat_single() {
+  return germline_probability_mat_single_;
 }
 
 Matrix16_256d TrioModel::germline_probability_mat() {

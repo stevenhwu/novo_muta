@@ -13,7 +13,7 @@
 
 int main() {
   TrioModel params;
-  //params.set_germline_mutation_rate(0.0000000002);  // smaller germline mutation rate increases likelihood of somatic mutation
+  // params.set_germline_mutation_rate(0.0000000002);  // smaller germline mutation rate increases likelihood of somatic mutation
 
   ReadDataVector data = {
   	{0, 0, 40, 0},

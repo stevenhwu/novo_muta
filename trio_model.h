@@ -53,7 +53,7 @@ public:
   // Calculates probability of mutation given input data.
   double MutationProbability(const ReadDataVector &data_vec);
   void SetReadDependentData(const ReadDataVector &data_vec);
-
+  void SetGermlineMutationProbabilities();
   // True if the two TrioModel objects are equal to each other.
   bool Equals(const TrioModel &other);
 
@@ -62,6 +62,7 @@ public:
   void set_population_mutation_rate(double rate);
   double germline_mutation_rate();
   void set_germline_mutation_rate(double rate);
+  double no_match();
   double somatic_mutation_rate();
   void set_somatic_mutation_rate(double rate);
   double sequencing_error_rate();
@@ -74,6 +75,7 @@ public:
   void set_has_mutation(bool has_mutation);
   RowVector16d genotype_mat();
   RowVector256d population_priors();
+  Matrix4_16d germline_probability_mat_single();
   Matrix16_256d germline_probability_mat();
   Matrix16_16d somatic_probability_mat();
   Matrix3_16d sequencing_probability_mat();
@@ -94,6 +96,7 @@ private:
   RowVector256d PopulationPriors();
   double GermlineMutation(int child_nucleotide_idx, int parent_genotype_idx,
                           bool no_mutation_flag);
+  Matrix4_16d GermlineProbabilityMatSingle(bool no_mutation_flag=false);
   Matrix16_256d GermlineProbabilityMat(bool no_mutation_flag=false);
   double SomaticMutation(int nucleotide_idx, int other_nucleotide_idx);
   Matrix16_16d SomaticProbabilityMat();
@@ -103,6 +106,9 @@ private:
 
   // Instance member variables.
   double population_mutation_rate_;
+  double homozygous_match_;
+  double heterozygous_match_;
+  double no_match_;
   double germline_mutation_rate_;
   double somatic_mutation_rate_;
   double sequencing_error_rate_;
@@ -111,6 +117,7 @@ private:
   Matrix16_4d alphas_;
   RowVector16d genotype_mat_;  // unused
   RowVector256d population_priors_;
+  Matrix4_16d germline_probability_mat_single_;
   Matrix16_256d germline_probability_mat_;
   Matrix16_256d germline_probability_mat_num_;
   Matrix16_16d somatic_probability_mat_;
