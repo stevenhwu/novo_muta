@@ -18,7 +18,7 @@
  * infinite sites model version.
  */
 TrioModel::TrioModel()
-    : population_mutation_rate_{0.001},
+    : population_mutation_rate_{1e-6/*0.001*/},
       germline_mutation_rate_{0.00000002},
       somatic_mutation_rate_{0.00000002},
       sequencing_error_rate_{0.005},
