@@ -243,7 +243,7 @@ void PrintReadData(const ReadData &data) {
  * @param  data_vec ReadDataVector to be printed.
  */
 void PrintReadDataVector(const ReadDataVector &data_vec) {
-  for (auto const &data : data_vec) {
+  for (const auto &data : data_vec) {
     PrintReadData(data);
   }
 }

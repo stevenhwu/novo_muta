@@ -124,7 +124,9 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
  * @param   data_vec Read counts in order of child, mother and father.
  */
 void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
-  TrioModel::SequencingProbabilityMat(data_vec);
+  read_dependent_data_ = ReadDependentData(data_vec);  // first intialized
+
+  TrioModel::SequencingProbabilityMat();
   TrioModel::SomaticTransition();
   TrioModel::GermlineTransition();
   TrioModel::SomaticTransition(true);
@@ -350,23 +352,21 @@ Matrix16_16d TrioModel::SomaticProbabilityMatDiag() {
 
 /**
  * Calculates the probability of sequencing error for all read data. Assume
- * data contains 3 reads (child, mother, father). Assume each chromosome is
+ * data contains 3 reads (child, mother, father). Assume the ReadDataVector is
+ * already initialized in read_dependent_data_. Assume each chromosome is
  * equally likely to be sequenced.
  *
  * Adds the max element of all reads in ReadDataVector to
  * read_dependent_data_.max_elements before rescaling to normal space.
- *
- * @param  data_vec ReadDataVector containing nucleotide counts for trio family.
  */
-void TrioModel::SequencingProbabilityMat(const ReadDataVector &data_vec) {
-  read_dependent_data_.sequencing_probability_mat = Matrix3_16d::Zero();
+void TrioModel::SequencingProbabilityMat() {
   for (int read = 0; read < 3; ++read) {
     for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
       auto alpha = alphas_.row(genotype_idx);
       // converts alpha to double array
       double p[kNucleotideCount] = {alpha(0), alpha(1), alpha(2), alpha(3)};
       // converts read to unsigned int array
-      ReadData data = data_vec[read];
+      const ReadData &data = read_dependent_data_.read_data_vec[read];
       unsigned int n[kNucleotideCount] = {data.reads[0], data.reads[1],
                                           data.reads[2], data.reads[3]};
       double log_probability = gsl_ran_multinomial_lnpdf(kNucleotideCount, p, n);

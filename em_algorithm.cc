@@ -12,12 +12,53 @@
 #include "trio_model.cc"  // FIXME: change to .h
 
 // E-step methods.
+double GetSequencingErrorStatistic(TrioModel params);
 double GetGermlineStatistic(TrioModel params);
 Matrix16_256d GermlineMutationCounts(TrioModel params);
 Matrix4_16d GermlineMutationCountsSingle(TrioModel params);
 double GetSomaticStatistic(TrioModel params);
 Matrix16_16d SomaticMutationCounts();
 
+/**
+ * Returns S_E the number of nucleotide mismatches between a somatic genotype
+ * and its sequencing reads. For example:
+ *
+ * ReadData  A  C  G T
+ *           20 10 0 1
+ *
+ *      AA AC ... TT
+ * S_E  11 1      30
+ *
+ * TODO: Change ReadDependentData to include ReadDataVector, because this
+ * function will need to access the sequencing reads for a given set of read
+ * dependent data.
+ *
+ * @param  params TrioModel object containing parameters.
+ * @return        Number of expected sequencing errors.
+ */
+double GetSequencingErrorStatistic(TrioModel params) {
+  ReadDependentData *data = params.read_dependent_data();
+  const ReadDataVector &data_vec = data->read_data_vec;
+  double sum = 0.0;
+
+  for (const ReadData &data : data_vec) {
+    for (int i = 0; i < kGenotypeCount; ++i) {
+      int allele1 = i / kNucleotideCount;
+      int allele2 = i % kNucleotideCount;
+
+      // Sums all nucleotide counts in ReadData and subtracts out the number of
+      // nucleotides that match the genotype. It does not subtract twice for
+      // homozygous genotypes.
+      sum += (data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3] -
+              data.reads[allele1]);  // homozygous
+      if (allele1 != allele2) {  // hetereogyzous
+        sum -= data.reads[allele2];
+      }
+    }
+  }
+
+  return sum;
+}
 
 /**
  * Returns S_Germ the total number of nucleotide mismatches between parent and

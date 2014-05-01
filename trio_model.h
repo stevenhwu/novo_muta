@@ -85,8 +85,6 @@ class TrioModel {
   ReadDependentData* read_dependent_data();
 
  private:
-
-
   // Helper functions for MutationProbability.
   void GermlineTransition(bool is_numerator=false);
   void SomaticTransition(bool is_numerator=false);
@@ -108,7 +106,7 @@ class TrioModel {
   double SomaticMutation(int nucleotide_idx, int other_nucleotide_idx);
   Matrix16_16d SomaticProbabilityMat();
   Matrix16_16d SomaticProbabilityMatDiag();
-  void SequencingProbabilityMat(const ReadDataVector &data_vec);
+  void SequencingProbabilityMat();
   Matrix16_4d Alphas();
 
   // Instance member variables.
