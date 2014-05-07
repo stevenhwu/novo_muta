@@ -16,7 +16,7 @@ int main() {
   // params.set_germline_mutation_rate(0.0000000002);  // smaller germline mutation rate increases likelihood of somatic mutation
 
   ReadDataVector data = {
-  	{40, 0, 0, 0},
+  	{20, 10, 0, 1},
   	{40, 0, 0, 0},
   	{40, 0, 0, 0}
   };
@@ -26,11 +26,12 @@ int main() {
   double germline = GetGermlineStatistic(params);
   double sum = somatic + germline;
 
-  cout << probability << endl;
-  cout << somatic << endl;
-  cout << germline << endl;
-  cout << sum << endl;
-  cout << Equal(probability, sum) << endl;
+  // cout << probability << endl;
+  // cout << somatic << endl;
+  // cout << germline << endl;
+  // cout << sum << endl;
+  // cout << Equal(probability, sum) << endl;
+  cout << GetSequencingErrorStatistic(params) << endl;
 
   return 0;
 }

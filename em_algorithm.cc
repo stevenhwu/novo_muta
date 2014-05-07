@@ -12,12 +12,39 @@
 #include "trio_model.cc"  // FIXME: change to .h
 
 // E-step methods.
+RowVector16d GetMismatches(const ReadData &data);
 double GetSequencingErrorStatistic(TrioModel params);
 double GetGermlineStatistic(TrioModel params);
 Matrix16_256d GermlineMutationCounts(TrioModel params);
 Matrix4_16d GermlineMutationCountsSingle(TrioModel params);
 double GetSomaticStatistic(TrioModel params);
 Matrix16_16d SomaticMutationCounts();
+
+
+/**
+ * Sums all nucleotide counts in ReadData and subtracts out the number of
+ * nucleotides that match the genotype. It does not subtract twice for
+ * homozygous genotypes. Returns 1 x 16 Eigen matrix holding number of
+ * mismatches per genotype.
+ *
+ * @param  data ReadData.
+ * @return      1 x 16 Eigen matrix containing number of mismatches per genotype.
+ */
+RowVector16d GetMismatches(const ReadData &data) {
+  RowVector16d s_e = RowVector16d::Zero();
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    int allele1 = i / kNucleotideCount;
+    int allele2 = i % kNucleotideCount;
+
+    s_e(i) += (data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3] -
+               data.reads[allele1]);  // homozygous
+    if (allele1 != allele2) {  // hetereogyzous
+      s_e(i) -= data.reads[allele2];
+    }
+  }
+
+  return s_e;
+}
 
 /**
  * Returns S_E the number of nucleotide mismatches between a somatic genotype
@@ -26,12 +53,10 @@ Matrix16_16d SomaticMutationCounts();
  * ReadData  A  C  G T
  *           20 10 0 1
  *
- *      AA AC ... TT
- * S_E  11 1      30
+ *      AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
+ * S_E  11 1  11 10 1  21 21 20 11 21 31 30 10 20 30 30
  *
- * TODO: Change ReadDependentData to include ReadDataVector, because this
- * function will need to access the sequencing reads for a given set of read
- * dependent data.
+ * Currently returns the sum of this 1 x 16 matrix for the child read.
  *
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected sequencing errors.
@@ -39,25 +64,13 @@ Matrix16_16d SomaticMutationCounts();
 double GetSequencingErrorStatistic(TrioModel params) {
   ReadDependentData *data = params.read_dependent_data();
   const ReadDataVector &data_vec = data->read_data_vec;
-  double sum = 0.0;
+  RowVector16d s_e_child = GetMismatches(data_vec[0]);
+  RowVector16d s_e_mother = GetMismatches(data_vec[1]);
+  RowVector16d s_e_father = GetMismatches(data_vec[2]);
 
-  for (const ReadData &data : data_vec) {
-    for (int i = 0; i < kGenotypeCount; ++i) {
-      int allele1 = i / kNucleotideCount;
-      int allele2 = i % kNucleotideCount;
+  // TODO: Weigh over underlying genotypes at all branches.
 
-      // Sums all nucleotide counts in ReadData and subtracts out the number of
-      // nucleotides that match the genotype. It does not subtract twice for
-      // homozygous genotypes.
-      sum += (data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3] -
-              data.reads[allele1]);  // homozygous
-      if (allele1 != allele2) {  // hetereogyzous
-        sum -= data.reads[allele2];
-      }
-    }
-  }
-
-  return sum;
+  return s_e_child.sum();
 }
 
 /**
