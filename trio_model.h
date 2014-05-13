@@ -35,7 +35,7 @@
 #ifndef TRIO_MODEL_H
 #define TRIO_MODEL_H
 
-#include "read_dependent_data.cc"  // FIXME: change to .h
+#include "read_dependent_data.h"
 
 
 /**

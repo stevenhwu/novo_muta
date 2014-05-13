@@ -6,9 +6,10 @@
  * implementation applied to the trio model.
  *
  * To compile on Herschel, use the following command to include the GSL library:
- * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o infinite infinite.cc
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o infinite utilities.cc trio_model.cc infinite.cc
  */
-#include "em_algorithm.cc"
+//#include "em_algorithm.cc"
+#include "trio_model.h"
 
 
 int main() {
@@ -22,16 +23,16 @@ int main() {
   };
 
   double probability = params.MutationProbability(data);  // must call this or SetReadDependentData first to set ReadDependentData
-  double somatic = GetSomaticStatistic(params);
-  double germline = GetGermlineStatistic(params);
-  double sum = somatic + germline;
+  // double somatic = GetSomaticStatistic(params);
+  // double germline = GetGermlineStatistic(params);
+  // double sum = somatic + germline;
 
-  // cout << probability << endl;
+  cout << probability << endl;
   // cout << somatic << endl;
   // cout << germline << endl;
   // cout << sum << endl;
   // cout << Equal(probability, sum) << endl;
-  cout << GetSequencingErrorStatistic(params) << endl;
+  // cout << GetSequencingErrorStatistic(params) << endl;
 
   return 0;
 }

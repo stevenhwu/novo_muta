@@ -11,8 +11,7 @@
 #ifndef READ_DEPENDENT_DATA_H
 #define READ_DEPENDENT_DATA_H
 
-// #include "tree_peel.cc"  // FIXME: change to .h
-#include "utilities.cc"
+#include "utilities.h"
 
 
 /**
