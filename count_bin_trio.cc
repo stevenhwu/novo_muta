@@ -20,7 +20,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "utilities.h"
+#include "utility.h"
 
 const int kNumBins = 10;  // 10 bins cover 0-100% with 10% intervals.
 

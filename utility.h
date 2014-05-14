@@ -1,12 +1,12 @@
 /**
- * @file utilities.h
+ * @file utility.h
  * @author Melissa Ip
  *
  * This file contains useful constants and functions to support the TrioModel 
  * including the Dirichlet multinomial and alphas.
  */
-#ifndef UTILITIES_H
-#define UTILITIES_H
+#ifndef UTILITY_H
+#define UTILITY_H
 
 #include <algorithm>
 #include <cerrno>

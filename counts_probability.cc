@@ -22,7 +22,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "utilities.h"
+#include "utility.h"
 
 
 int main(int argc, const char *argv[]) {

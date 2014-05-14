@@ -1,12 +1,12 @@
 /**
- * @file utilities.cc
+ * @file utility.cc
  * @author Melissa Ip
  *
  * This file contains the implementation of utilities.
  *
- * See top of utilities.h for a complete description.
+ * See top of utility.h for a complete description.
  */
-#include "utilities.h"
+#include "utility.h"
 
 
 /**
