@@ -8,6 +8,9 @@
  * probability of mutation using the generated sample (sequencing reads are
  * drawn from the Dirichlet multinomial).
  */
+#ifndef SIMULATION_MODEL_H
+#define SIMULATION_MODEL_H
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -17,7 +20,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 
-#include "trio_model.cc"
+#include "trio_model.h"
 
 
 /**
@@ -64,3 +67,5 @@ class SimulationModel {
   vector<bool> mutation_table_[42875];
   gsl_rng *r;
 };
+
+#endif

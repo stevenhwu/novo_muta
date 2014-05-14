@@ -7,7 +7,7 @@
  */
 #include <fstream>
 
-#include "trio_model.cc"
+#include "trio_model.h"
 
 
 int main(int argc, const char *argv[]) {
