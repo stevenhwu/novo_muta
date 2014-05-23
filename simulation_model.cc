@@ -220,8 +220,8 @@ TrioVector SimulationModel::GetRandomTrios(int size) {
  * (1=true, 0=false) to a text file. The file is tab deliminated and each site
  * is on a new line.
  *
- * @param  file_name  File name.
- * @param  size       Number of experiments or trios.
+ * @param  file_name File name.
+ * @param  size      Number of experiments or trios.
  */
 void SimulationModel::WriteProbability(const string &file_name, int size) {
   ofstream fout(file_name);
@@ -229,6 +229,32 @@ void SimulationModel::WriteProbability(const string &file_name, int size) {
   for (int i = 0; i < size; ++i) {
     double probability = params_.MutationProbability(random_trios[i]);
     fout << probability << "\t" << has_mutation_vec_[i] << "\n";
+  }
+  fout.close();
+}
+
+/**
+ * Writes to a text file the index of the key trio, how many random trios had a
+ * mutation, how many random trios had no mutation, tab deliminated, each trio
+ * is placed on a new line. Assumes 4x coverage.
+ *
+ * @param  file_name File name.
+ * @param  size      Number of random trios.
+ */
+void SimulationModel::WriteMutationCounts(const string &file_name, int size) {
+  ofstream fout(file_name);
+  TrioVector random_trios = SimulationModel::GetRandomTrios(size);
+  for (int i = 0; i < kTrioCount; ++i) {
+    vector<bool> mutations = mutation_table_[i];
+    int has_mutation_total = 0;
+    int has_no_mutation_total = 0;
+    if (mutations.size() > 0) {
+      has_mutation_total = count(mutations.begin(), mutations.end(), true);
+      has_no_mutation_total = mutations.size() - has_mutation_total;
+    }
+
+    fout << i << "\t" << has_mutation_total << "\t"
+         << has_no_mutation_total << "\n";
   }
   fout.close();
 }

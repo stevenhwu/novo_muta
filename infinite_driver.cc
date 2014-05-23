@@ -5,7 +5,7 @@
  * This is a test driver file for using the expectation-maximization
  * implementation applied to the trio model.
  *
- * To compile on Herschel, use the following command to include the GSL library:
+ * To compile on Herschel and include GSL:
  * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o infinite_driver utility.cc read_dependent_data.cc trio_model.cc em_algorithm.cc infinite_driver.cc
  */
 #include "em_algorithm.h"

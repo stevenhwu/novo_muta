@@ -43,22 +43,15 @@
  */
 class TrioModel {
  public:
-  // Default constructor and constructor to customize parameters.
-  TrioModel();
+  TrioModel();  // Default constructor and constructor to customize parameters.
   TrioModel(double population_mutation_rate, double germline_mutation_rate,
             double somatic_mutation_rate, double sequencing_error_rate,
             double dirichlet_dispersion,
             const RowVector4d &nucleotide_frequencies);
-
-  // Calculates probability of mutation given input read data.
-  double MutationProbability(const ReadDataVector &data_vec);
+  double MutationProbability(const ReadDataVector &data_vec);  // Calculates probability of mutation given input read data.
   void SetReadDependentData(const ReadDataVector &data_vec);
-
-  // True if the two TrioModel objects are equal to each other.
-  bool Equals(const TrioModel &other);
-
-  // Get and set functions.
-  double population_mutation_rate();
+  bool Equals(const TrioModel &other);  // True if the two TrioModel objects are equal to each other.
+  double population_mutation_rate();  // Get and set functions.
   void set_population_mutation_rate(double rate);
   double germline_mutation_rate();
   void set_germline_mutation_rate(double rate);
@@ -83,17 +76,12 @@ class TrioModel {
   ReadDependentData* read_dependent_data();
 
  private:
-  // Helper functions for MutationProbability.
-  void GermlineTransition(bool is_numerator=false);
+  void GermlineTransition(bool is_numerator=false);  // Helper functions for MutationProbability.
   void SomaticTransition(bool is_numerator=false);
   RowVector256d GetRootMat(const RowVector256d &child_germline_probability,
                            const RowVector256d &parent_probability);
-
-  // Calculates probability of allele spectrum given read counts.
-  double SpectrumProbability(const RowVector4d &nucleotide_counts);
-
-  // Functions for setting up the model and relevant arrays.
-  RowVector256d PopulationPriors();
+  double SpectrumProbability(const RowVector4d &nucleotide_counts);  // Calculates probability of allele spectrum given read counts.
+  RowVector256d PopulationPriors();  // Functions for setting up the model and relevant arrays.
   Matrix16_16d PopulationPriorsExpanded();
   RowVector16d PopulationPriorsSingle();
   void SetGermlineMutationProbabilities();
@@ -125,7 +113,6 @@ class TrioModel {
   Matrix16_256d germline_probability_mat_num_;
   Matrix16_16d somatic_probability_mat_;
   Matrix16_16d somatic_probability_mat_diag_;
-
   ReadDependentData read_dependent_data_;  // contains TreePeel class
 };
 

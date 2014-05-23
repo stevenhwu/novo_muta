@@ -28,21 +28,14 @@
  */
 class SimulationModel {
  public:
-  // No default constructor, because all parameters are given through command
-  // line inputs.
-  SimulationModel(unsigned int coverage, double germline_mutation_rate,
+  SimulationModel(unsigned int coverage, double germline_mutation_rate,  // No default constructor, because all parameters are given through command line inputs.
                   double somatic_mutation_rate);
-
-  // Seeds random number generator during initialization.
-  void Seed();
+  void Seed();  // Seeds random number generator during initialization.
   void Free();
-
-  // Generates random samples and probabilities in text file.
-  void WriteProbability(const string &file_name, int size);
-  void PrintMutationCounts(int size);
-
-  // Get and set functions.
-  unsigned int coverage();
+  void WriteProbability(const string &file_name, int size);  // Generates random samples and probabilities in text file.
+  void WriteMutationCounts(const string &file_name, int size);
+  void PrintMutationCounts(int size); // Simulates trios to stdout.
+  unsigned int coverage();  // Get and set functions.
   void set_coverage(unsigned int coverage);
   double germline_mutation_rate();
   void set_germline_mutation_rate(double rate);
