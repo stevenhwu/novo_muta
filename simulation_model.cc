@@ -11,9 +11,12 @@
 
 /**
  * Constructor to initialize SimulationModel object that contains necessary
- * parameters for the random generation of samples and probabilities.
+ * parameters for the random generation of samples and probabilities. Currently
+ * only coverage and germline and somatic mutation rates can be modified. All
+ * other parameters are set to default.
  *
- * has_mutation_ keeps track of whether each site contains a mutation.
+ * has_mutation_ keeps track of whether each site contains a mutation and is
+ * reused for all sites.
  *
  * @param  coverage               Coverage.
  * @param  germline_mutation_rate Germline mutation rate.
@@ -22,7 +25,7 @@
 SimulationModel::SimulationModel(unsigned int coverage,
                                  double germline_mutation_rate,
                                  double somatic_mutation_rate)
-    :  coverage_{coverage} {
+    :  coverage_{coverage}, has_mutation_{false} {
   params_.set_germline_mutation_rate(germline_mutation_rate);
   params_.set_somatic_mutation_rate(somatic_mutation_rate);
   SimulationModel::Seed();
@@ -64,7 +67,7 @@ void SimulationModel::Free() {
 int SimulationModel::Mutate(int genotype_idx, bool is_germline,
                             int parent_genotype_idx) {
   // Sets probability matrices to use either germline or somatic probabilities.
-  RowVector16d mat;
+  RowVector16d mat = RowVector16d::Zero();
   if (!is_germline) {
     mat = params_.somatic_probability_mat().row(genotype_idx);
   } else {
@@ -77,7 +80,7 @@ int SimulationModel::Mutate(int genotype_idx, bool is_germline,
     mat
   );
   if (mutated_genotype_idx != genotype_idx) {
-    params_.set_has_mutation(true);
+    has_mutation_ = true;
   }
   return mutated_genotype_idx;
 }
@@ -203,10 +206,10 @@ TrioVector SimulationModel::GetRandomTrios(int size) {
     // Records has_mutation_ in order relevant vector.
     int trio_index = IndexOfReadDataVector(data_vec);
     if (trio_index != -1) {
-      mutation_table_[trio_index].push_back(params_.has_mutation());
+      mutation_table_[trio_index].push_back(has_mutation_);
     }
-    has_mutation_vec_.push_back(params_.has_mutation());
-    params_.set_has_mutation(false);  // Resets for the next simulation.
+    has_mutation_vec_.push_back(has_mutation_);
+    has_mutation_ = false;  // Resets for the next simulation.
   }
   return random_trios;
 }
@@ -323,4 +326,12 @@ double SimulationModel::somatic_mutation_rate() {
 
 void SimulationModel::set_somatic_mutation_rate(double rate) {
   params_.set_somatic_mutation_rate(rate);
+}
+
+bool SimulationModel::has_mutation() {
+  return has_mutation_;
+}
+
+void SimulationModel::set_has_mutation(bool has_mutation) {
+  has_mutation_ = has_mutation;
 }

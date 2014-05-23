@@ -32,24 +32,26 @@ class SimulationModel {
   // line inputs.
   SimulationModel(unsigned int coverage, double germline_mutation_rate,
                   double somatic_mutation_rate);
-  
+
   // Seeds random number generator during initialization.
   void Seed();
   void Free();
+
   // Generates random samples and probabilities in text file.
   void WriteProbability(const string &file_name, int size);
-
   void PrintMutationCounts(int size);
-  // Get and set methods.
+
+  // Get and set functions.
   unsigned int coverage();
   void set_coverage(unsigned int coverage);
   double germline_mutation_rate();
   void set_germline_mutation_rate(double rate);
   double somatic_mutation_rate();
   void set_somatic_mutation_rate(double rate);
+  bool has_mutation();
+  void set_has_mutation(bool has_mutation);
 
  private:
-  // Simulation methods.
   int Mutate(int genotype_idx, bool is_germline=false,
              int parent_genotype_idx=-1);
   int GetChildGenotype(int mother_genotype, int father_genotype);
@@ -63,6 +65,7 @@ class SimulationModel {
   // Instance member variables.
   TrioModel params_;  // Default initialization.
   unsigned int coverage_;
+  bool has_mutation_;
   vector<bool> has_mutation_vec_;
   vector<bool> mutation_table_[42875];
   gsl_rng *r;

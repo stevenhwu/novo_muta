@@ -12,20 +12,18 @@
 /**
  * Default constructor.
  */
-ReadDependentData::ReadDependentData()
-    : has_mutation{false} {
+ReadDependentData::ReadDependentData() {
   sequencing_probability_mat = Matrix3_16d::Zero();
   child_somatic_probability = RowVector16d::Zero();
   mother_somatic_probability = RowVector16d::Zero();
   father_somatic_probability = RowVector16d::Zero();
-};
+}
 
 /**
  * Constructor takes in ReadDataVector.
  */
 ReadDependentData::ReadDependentData(const ReadDataVector &data_vec)
-    : has_mutation{false} {
-  read_data_vec = data_vec;
+    : read_data_vec{data_vec} {
   sequencing_probability_mat = Matrix3_16d::Zero();
   child_somatic_probability = RowVector16d::Zero();
   mother_somatic_probability = RowVector16d::Zero();

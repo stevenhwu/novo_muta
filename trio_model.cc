@@ -637,14 +637,6 @@ void TrioModel::set_nucleotide_frequencies(const RowVector4d &frequencies) {
   population_priors_ = TrioModel::PopulationPriors();
 }
 
-bool TrioModel::has_mutation() {
-  return read_dependent_data_.has_mutation;
-}
-
-void TrioModel::set_has_mutation(bool has_mutation) {
-  read_dependent_data_.has_mutation = has_mutation;
-}
-
 RowVector16d TrioModel::population_priors_single() {
   return population_priors_single_;
 }

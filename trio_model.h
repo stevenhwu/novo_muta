@@ -73,8 +73,6 @@ class TrioModel {
   void set_dirichlet_dispersion(double dispersion);
   RowVector4d nucleotide_frequencies();
   void set_nucleotide_frequencies(const RowVector4d &frequencies);
-  bool has_mutation();
-  void set_has_mutation(bool has_mutation);
   RowVector16d population_priors_single();
   RowVector256d population_priors();
   Matrix4_16d germline_probability_mat_single();
@@ -128,8 +126,7 @@ class TrioModel {
   Matrix16_16d somatic_probability_mat_;
   Matrix16_16d somatic_probability_mat_diag_;
 
-  // TODO: Update simulation files to use refactored trio model.
-  ReadDependentData read_dependent_data_;  // contains TreePeels
+  ReadDependentData read_dependent_data_;  // contains TreePeel class
 };
 
 #endif

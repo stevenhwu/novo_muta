@@ -12,7 +12,7 @@
  * 0.00709331      1
  *
  * To compile on Herschel, use the following command to include the GSL library:
- * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o simulation_driver utility.cc read_dependent_data.cc trio_model.cc simulation_driver.cc
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o simulation_driver utility.cc read_dependent_data.cc trio_model.cc simulation_model.cc simulation_driver.cc
  *
  * To run this file, provide the following command line inputs:
  * ./simulation_driver <output.txt> <#samples> <coverage> <germline mutation rate> <somatic mutation rate>
@@ -32,9 +32,10 @@ int main(int argc, const char *argv[]) {
   const double germline_mutation_rate = strtod(argv[4], NULL);
   const double somatic_mutation_rate = strtod(argv[5], NULL);
   
+  // Sets up simulation parameters and output results.
   SimulationModel sim(coverage, germline_mutation_rate, somatic_mutation_rate);
-  // sim.WriteProbability(file_name, experiment_count);
-  sim.PrintMutationCounts(experiment_count);
+  sim.WriteProbability(file_name, experiment_count);
+  // sim.PrintMutationCounts(experiment_count);
   sim.Free();
 
   return 0;

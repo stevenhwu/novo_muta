@@ -4,9 +4,7 @@
  *
  * The ReadDependentData class contains the members that are dependent on
  * ReadData/ReadDataVector including matrices and vectors that are calculated
- * from sequencing error and by the tree-peeling algorithm. 
- *
- * TODO: The simulation program needs to be refactored to use this class.
+ * from sequencing error and by the tree-peeling algorithm.
  */
 #ifndef READ_DEPENDENT_DATA_H
 #define READ_DEPENDENT_DATA_H
@@ -29,7 +27,8 @@ class ReadDependentData {
   RowVector16d child_somatic_probability;
   RowVector16d mother_somatic_probability;
   RowVector16d father_somatic_probability;
-  struct TreePeel {  // TODO: Change to TreePeel class.
+  class TreePeel {
+   public:
     RowVector16d child_zygotic_probability; // P(R|zygotic genotype)
     RowVector16d mother_zygotic_probability;
     RowVector16d father_zygotic_probability;
@@ -38,7 +37,6 @@ class ReadDependentData {
     RowVector256d root_mat; // P(R|mom and dad genotype) * P(mom and dad genotype)
     double sum; // P(R)
   } denominator, numerator;
-  bool has_mutation;  // Simulation only.
 };
 
 #endif
