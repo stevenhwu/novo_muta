@@ -7,12 +7,15 @@
  * values are used. Assume that all pileup files have the same number of sites
  * and thus can be aligned.
  * 
+ * To compile on Herschel and include GSL:
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o pileup_driver pileup_utility.cc pileup_driver.cc
+ *
  * To run this file, provide the following command line inputs:
  * ./pileup_driver <output.txt> <child.pileup> <mother.pileup> <father.pileup>
  *
- * See top of pileup_utilities.cc for additional information.
+ * See top of pileup_utility.h for additional information.
  */
-#include "pileup_utilities.cc"
+#include "pileup_utility.h"
 
 
 int main(int argc, const char *argv[]) {

@@ -3,11 +3,17 @@
  * @author Melissa Ip
  *
  * This file outputs the probabilities of all possible unique trio sets at 4x
- * coverage.
+ * coverage. The germline and somatic mutation rates are set to 1e-6.
+ *
+ * To compile on Herschel and include GSL:
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o simulation_trio utility.cc read_dependent_data.cc trio_model.cc simulation_trio.cc
+ *
+ * To run this file, provide the following command line inputs:
+ * ./simulation_trio <output.txt>
  */
 #include <fstream>
 
-#include "trio_model.cc"
+#include "trio_model.h"
 
 
 int main(int argc, const char *argv[]) {
@@ -23,7 +29,7 @@ int main(int argc, const char *argv[]) {
   TrioVector trio_vec = GetTrioVector(kNucleotideCount);
   vector<double> probabilities;
 
-  for (auto const &trio : trio_vec) {
+  for (const auto &trio : trio_vec) {
     probabilities.push_back(params.MutationProbability(trio));
   }
 

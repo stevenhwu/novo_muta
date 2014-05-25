@@ -11,9 +11,12 @@
 
 /**
  * Constructor to initialize SimulationModel object that contains necessary
- * parameters for the random generation of samples and probabilities.
+ * parameters for the random generation of samples and probabilities. Currently
+ * only coverage and germline and somatic mutation rates can be modified. All
+ * other parameters are set to default.
  *
- * has_mutation_ keeps track of whether each site contains a mutation.
+ * has_mutation_ keeps track of whether each site contains a mutation and is
+ * reused for all sites.
  *
  * @param  coverage               Coverage.
  * @param  germline_mutation_rate Germline mutation rate.
@@ -22,7 +25,7 @@
 SimulationModel::SimulationModel(unsigned int coverage,
                                  double germline_mutation_rate,
                                  double somatic_mutation_rate)
-    :  coverage_{coverage} {
+    :  coverage_{coverage}, has_mutation_{false} {
   params_.set_germline_mutation_rate(germline_mutation_rate);
   params_.set_somatic_mutation_rate(somatic_mutation_rate);
   SimulationModel::Seed();
@@ -48,23 +51,23 @@ void SimulationModel::Free() {
 }
 
 /**
-* Mutates a numeric genotype based on either germline or somatic transition
-* matrix in the TrioModel.
-*
-* is_germline is false by default to process somatic mutation. If this is set
-* to true, then this method will process germline mutation and assume
-* parent_genotype_idx is not -1.
-*
-* @param  genotype_idx        Index of genotype.
-* @param  is_germline         False by default. Set to true to process germline
-*                             mutation.
-* @param  parent_genotype_idx Index of parent genotype.
-* @return                     Index of mutated genotype.
-*/
+ * Mutates a numeric genotype based on either germline or somatic transition
+ * matrix in the TrioModel.
+ *
+ * is_germline is false by default to process somatic mutation. If this is set
+ * to true, then this method will process germline mutation and assume
+ * parent_genotype_idx is not -1.
+ *
+ * @param  genotype_idx        Index of genotype.
+ * @param  is_germline         False by default. Set to true to process germline
+ *                             mutation.
+ * @param  parent_genotype_idx Index of parent genotype.
+ * @return                     Index of mutated genotype.
+ */
 int SimulationModel::Mutate(int genotype_idx, bool is_germline,
                             int parent_genotype_idx) {
   // Sets probability matrices to use either germline or somatic probabilities.
-  RowVector16d mat;
+  RowVector16d mat = RowVector16d::Zero();
   if (!is_germline) {
     mat = params_.somatic_probability_mat().row(genotype_idx);
   } else {
@@ -77,7 +80,7 @@ int SimulationModel::Mutate(int genotype_idx, bool is_germline,
     mat
   );
   if (mutated_genotype_idx != genotype_idx) {
-    params_.set_has_mutation(true);
+    has_mutation_ = true;
   }
   return mutated_genotype_idx;
 }
@@ -94,8 +97,8 @@ int SimulationModel::GetChildGenotype(int mother_genotype, int father_genotype) 
   int child_allele1 = kGenotypeNumIndex(mother_genotype, rand() % 2);
   int child_allele2 = kGenotypeNumIndex(father_genotype, rand() % 2);
   for (int i = 0; i < kGenotypeCount; ++i) {
-    if (child_allele1 == kGenotypeNumIndex(i, 0) &&
-        child_allele2 == kGenotypeNumIndex(i, 1)) {
+    if (child_allele1 == i / kNucleotideCount &&
+        child_allele2 == i % kNucleotideCount) {
       return i;
     }
   }
@@ -142,7 +145,7 @@ ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
 vector<RowVectorXi> SimulationModel::GetGenotypesMatrix(int size) {
   // Generates experiment_count random samples using population priors as weights.
   RowVectorXi parent_genotypes = SimulationModel::RandomDiscreteChoice(
-    kGenotypeCount * kGenotypeCount,
+    kGenotypePairCount,
     params_.population_priors(),
     size
   );
@@ -151,9 +154,9 @@ vector<RowVectorXi> SimulationModel::GetGenotypesMatrix(int size) {
   RowVectorXi child_genotypes(size);
   RowVectorXi mother_genotypes(size);
   RowVectorXi father_genotypes(size);
-  father_genotypes = parent_genotypes / kGenotypeCount;
+  mother_genotypes = parent_genotypes / kGenotypeCount;
   for (int i = 0; i < size; ++i) {
-    mother_genotypes(i) = parent_genotypes(i) % kGenotypeCount;
+    father_genotypes(i) = parent_genotypes(i) % kGenotypeCount;
     child_genotypes(i) = SimulationModel::GetChildGenotype(mother_genotypes(i),
                                                            father_genotypes(i));
   }
@@ -203,10 +206,10 @@ TrioVector SimulationModel::GetRandomTrios(int size) {
     // Records has_mutation_ in order relevant vector.
     int trio_index = IndexOfReadDataVector(data_vec);
     if (trio_index != -1) {
-      mutation_table_[trio_index].push_back(params_.has_mutation());
+      mutation_table_[trio_index].push_back(has_mutation_);
     }
-    has_mutation_vec_.push_back(params_.has_mutation());
-    params_.set_has_mutation(false);  // Resets for the next simulation.
+    has_mutation_vec_.push_back(has_mutation_);
+    has_mutation_ = false;  // Resets for the next simulation.
   }
   return random_trios;
 }
@@ -217,8 +220,8 @@ TrioVector SimulationModel::GetRandomTrios(int size) {
  * (1=true, 0=false) to a text file. The file is tab deliminated and each site
  * is on a new line.
  *
- * @param  file_name  File name.
- * @param  size       Number of experiments or trios.
+ * @param  file_name File name.
+ * @param  size      Number of experiments or trios.
  */
 void SimulationModel::WriteProbability(const string &file_name, int size) {
   ofstream fout(file_name);
@@ -226,6 +229,32 @@ void SimulationModel::WriteProbability(const string &file_name, int size) {
   for (int i = 0; i < size; ++i) {
     double probability = params_.MutationProbability(random_trios[i]);
     fout << probability << "\t" << has_mutation_vec_[i] << "\n";
+  }
+  fout.close();
+}
+
+/**
+ * Writes to a text file the index of the key trio, how many random trios had a
+ * mutation, how many random trios had no mutation, tab deliminated, each trio
+ * is placed on a new line. Assumes 4x coverage.
+ *
+ * @param  file_name File name.
+ * @param  size      Number of random trios.
+ */
+void SimulationModel::WriteMutationCounts(const string &file_name, int size) {
+  ofstream fout(file_name);
+  TrioVector random_trios = SimulationModel::GetRandomTrios(size);
+  for (int i = 0; i < kTrioCount; ++i) {
+    vector<bool> mutations = mutation_table_[i];
+    int has_mutation_total = 0;
+    int has_no_mutation_total = 0;
+    if (mutations.size() > 0) {
+      has_mutation_total = count(mutations.begin(), mutations.end(), true);
+      has_no_mutation_total = mutations.size() - has_mutation_total;
+    }
+
+    fout << i << "\t" << has_mutation_total << "\t"
+         << has_no_mutation_total << "\n";
   }
   fout.close();
 }
@@ -323,4 +352,12 @@ double SimulationModel::somatic_mutation_rate() {
 
 void SimulationModel::set_somatic_mutation_rate(double rate) {
   params_.set_somatic_mutation_rate(rate);
+}
+
+bool SimulationModel::has_mutation() {
+  return has_mutation_;
+}
+
+void SimulationModel::set_has_mutation(bool has_mutation) {
+  has_mutation_ = has_mutation;
 }

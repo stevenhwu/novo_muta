@@ -1,24 +1,14 @@
 /**
- * @file pileup_utilities.cc
+ * @file pileup_utility.cc
  * @author Melissa Ip
  *
- * This file contains methods to parse and align the the sequences in .pileup
- * files. Pileup files must be in the format described here:
+ * This file contains the implementation of the functions needed to parse and
+ * manipulate pileup data.
  *
- * http://samtools.sourceforge.net/pileup.shtml
- *
- * This can create a TrioModel object using the parsed sequencing reads,
- * and write the probability of mutation to a text file.
+ * See top of pileup_utility.h for a complete description.
  */
-#include <fstream>
-#include <iterator>
-#include <sstream>
-
-#include "trio_model.cc"
-
-// Any greater probability than this number is printed.
-static const double kThreshold = 0.01;
-
+#include "pileup_utility.h"
+ 
 
 /**
  * Removes initial sequences that are not necessary, which contain a N

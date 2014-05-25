@@ -20,9 +20,9 @@
 #include <fstream>
 #include <sstream>
 
-#include "utilities.cc"
+#include "utility.h"
 
-static const int kNumBins = 10;  // 10 bins cover 0-100% with 10% intervals.
+const int kNumBins = 10;  // 10 bins cover 0-100% with 10% intervals.
 
 
 int main(int argc, const char *argv[]) {
