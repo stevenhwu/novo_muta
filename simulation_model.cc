@@ -51,19 +51,19 @@ void SimulationModel::Free() {
 }
 
 /**
-* Mutates a numeric genotype based on either germline or somatic transition
-* matrix in the TrioModel.
-*
-* is_germline is false by default to process somatic mutation. If this is set
-* to true, then this method will process germline mutation and assume
-* parent_genotype_idx is not -1.
-*
-* @param  genotype_idx        Index of genotype.
-* @param  is_germline         False by default. Set to true to process germline
-*                             mutation.
-* @param  parent_genotype_idx Index of parent genotype.
-* @return                     Index of mutated genotype.
-*/
+ * Mutates a numeric genotype based on either germline or somatic transition
+ * matrix in the TrioModel.
+ *
+ * is_germline is false by default to process somatic mutation. If this is set
+ * to true, then this method will process germline mutation and assume
+ * parent_genotype_idx is not -1.
+ *
+ * @param  genotype_idx        Index of genotype.
+ * @param  is_germline         False by default. Set to true to process germline
+ *                             mutation.
+ * @param  parent_genotype_idx Index of parent genotype.
+ * @return                     Index of mutated genotype.
+ */
 int SimulationModel::Mutate(int genotype_idx, bool is_germline,
                             int parent_genotype_idx) {
   // Sets probability matrices to use either germline or somatic probabilities.

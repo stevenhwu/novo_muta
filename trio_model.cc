@@ -12,7 +12,7 @@
 /**
  * Default constructor.
  * 
- * sequencing_probability_mat_ is created or updated if sequencing_error_rate_
+ * sequencing_probability_mat is created or updated if sequencing_error_rate_
  * or dirichlet_dispersion_ is changed when MutationProbability() or
  * SetReadDependentData() is called. dirichlet_dispersion_ is not used in the
  * infinite sites model version.
@@ -124,7 +124,7 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
  * @param   data_vec Read counts in order of child, mother and father.
  */
 void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
-  read_dependent_data_ = ReadDependentData(data_vec);  // first intialized
+  read_dependent_data_ = ReadDependentData(data_vec);  // First intialized.
 
   TrioModel::SequencingProbabilityMat();
   TrioModel::SomaticTransition();
@@ -139,6 +139,8 @@ void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
  * possible parent genotype combinations. For example:
  *
  * [P(AAAA), P(AAAC), P(AAAG), P(AAAT), P(AACA), P(AACC), P(AACG)...]
+ *
+ * Resizes the original 16 x 16 matrix to 1 x 256.
  *
  * @return  1 x 256 Eigen probability RowVector in log e space where the i
  *          element is a unique parent pair genotype.
@@ -630,11 +632,12 @@ RowVector4d TrioModel::nucleotide_frequencies() {
 }
 
 /**
- * Sets nucleotide_frequencies_ and population_priors_.
+ * Sets nucleotide_frequencies_, population_priors_ and population_priors_single_.
  */
 void TrioModel::set_nucleotide_frequencies(const RowVector4d &frequencies) {
   nucleotide_frequencies_ = frequencies;
   population_priors_ = TrioModel::PopulationPriors();
+  population_priors_single_ = TrioModel::PopulationPriorsSingle();
 }
 
 RowVector16d TrioModel::population_priors_single() {

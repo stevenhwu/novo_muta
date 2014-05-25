@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <gsl/gsl_randist.h>
+#include <gsl/gsl_randist.h>  // Already included in utility.h.
 #include <gsl/gsl_rng.h>
 
 #include "trio_model.h"

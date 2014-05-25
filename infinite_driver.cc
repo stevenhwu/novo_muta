@@ -13,7 +13,7 @@
 
 int main() {
   TrioModel params;
-  // params.set_germline_mutation_rate(0.0000000002);  // smaller germline mutation rate increases likelihood of somatic mutation
+  // params.set_germline_mutation_rate(0.0000000002);  // Smaller germline mutation rate increases likelihood of somatic mutation.
 
   ReadDataVector data = {
   	{20, 10, 0, 1},
@@ -21,7 +21,7 @@ int main() {
   	{40, 0, 0, 0}
   };
 
-  double probability = params.MutationProbability(data);  // must call this or SetReadDependentData first to set ReadDependentData
+  double probability = params.MutationProbability(data);  // Must call this or SetReadDependentData first to set ReadDependentData.
   double somatic = GetSomaticStatistic(params);
   double germline = GetGermlineStatistic(params);
   double sum = somatic + germline;

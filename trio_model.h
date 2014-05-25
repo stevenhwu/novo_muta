@@ -21,8 +21,8 @@
  *
  * Example usage:
  *
- *   TrioModel params;  // uses default parameters
- *   ReadDataVector data = {  // sequencing data in order: child, mother, father
+ *   TrioModel params;  // Uses default parameters.
+ *   ReadDataVector data = {  // Sequencing data in order: child, mother, father.
  *     {30, 0, 0, 0},
  *     {30, 0, 0, 0},
  *     {30, 0, 0, 0}
@@ -103,17 +103,17 @@ class TrioModel {
   double germline_mutation_rate_;
   double somatic_mutation_rate_;
   double sequencing_error_rate_;
-  double dirichlet_dispersion_;  // unused
+  double dirichlet_dispersion_;  // Unused.
   RowVector4d nucleotide_frequencies_;
   Matrix16_4d alphas_;
-  RowVector16d population_priors_single_;  // unused
+  RowVector16d population_priors_single_;  // Unused.
   RowVector256d population_priors_;
   Matrix4_16d germline_probability_mat_single_;
   Matrix16_256d germline_probability_mat_;
   Matrix16_256d germline_probability_mat_num_;
   Matrix16_16d somatic_probability_mat_;
   Matrix16_16d somatic_probability_mat_diag_;
-  ReadDependentData read_dependent_data_;  // contains TreePeel class
+  ReadDependentData read_dependent_data_;  // Contains TreePeel class.
 };
 
 #endif

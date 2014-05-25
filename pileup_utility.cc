@@ -5,7 +5,7 @@
  * This file contains the implementation of the functions needed to parse and
  * manipulate pileup data.
  *
- * See top of pileup_driver.h for a complete description.
+ * See top of pileup_utility.h for a complete description.
  */
 #include "pileup_utility.h"
  
