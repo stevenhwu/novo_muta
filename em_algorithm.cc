@@ -81,13 +81,13 @@ double GetGermlineStatistic(TrioModel params) {
 
   double child_term1 = 0.0;
   double child_term2 = 0.0;
-
-  // for each genotype x in population priors
+  
+  // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
+  // At top of branches.
+  // For each parent pair genotype x in population priors.
   for (int x = 0; x < kGenotypePairCount; ++x) {
-    // at top of branches
-    // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
-    for (int y = 0; y < kGenotypeCount; ++y) {
-      child_term1 = (germline_probability_mat(y, x) *  // germline genotype given parent pair=x
+    for (int y = 0; y < kGenotypeCount; ++y) {  // Child germline genotype.
+      child_term1 = (germline_probability_mat(y, x) *
                      data->denominator.child_zygotic_probability(y));
       child_term2 = /* 0 + */ germline_mutation_counts(y, x);
       s_germ(x) += child_term1 * child_term2;
@@ -103,41 +103,28 @@ double GetGermlineStatistic(TrioModel params) {
 
 /**
  * Generates a 16 x 256 Eigen matrix holding the number of expected germline
- * mutations (0's, 0.5's, 1's, 1.5's, 2's). For example:
- *
- *           Parent pair
- * Germline  AAAA ACAA AGAA ATAA CAAA CCAA CGAA CTAA GAAA GCAA GGAA GTAA ...
- * AA        0
- * AC        
- * ...
- *
- * Assumes that the first genotype in the parent pair comes from the mother and
- * the first nucleotide of the child genotype comes from the mother.
+ * mutations containing 0's, Het's, 1's, 1 + Het's, and 2's. The rows are child
+ * germline genotypes and the columns are parent pair genotypes. Assumes that
+ * the first genotype in the parent pair comes from the mother and the first
+ * nucleotide of the child genotype comes from the mother, the second from the
+ * father.
  *
  * @param  params TrioModel object containing parameters.
  * @return        16 x 256 Eigen matrix holding the number of germline mutations.
  */
 Matrix16_256d GermlineMutationCounts(TrioModel params) {
-  Matrix4_16d germline_mutation_counts = GermlineMutationCountsSingle(params);
-  Matrix4_16d germline_probability_mat_single = params.germline_probability_mat_single();
-  Matrix16_256d germline_probability_mat = params.germline_probability_mat();
   Matrix16_256d mat = Matrix16_256d::Zero();
+  Matrix4_16d germline_mutation_counts = GermlineMutationCountsSingle(params);
   
-  for (int i = 0; i < kGenotypeCount; ++i) {  // child genotype
-    for (int j = 0; j < kGenotypePairCount; ++j) {  // parent pair genotype
-      int child_allele1 = i / kNucleotideCount;  // inherited from mother
-      int child_allele2 = i % kNucleotideCount;  // inherited from father
-      int mother_genotype = j / kGenotypeCount;
-      int father_genotype = j % kGenotypeCount;
+  for (int y = 0; y < kGenotypeCount; ++y) {  // Child genotype.
+    for (int x = 0; x < kGenotypePairCount; ++x) {  // Parent pair genotype.
+      int child_allele1 = y / kNucleotideCount;  // Inherited from mother.
+      int child_allele2 = y % kNucleotideCount;  // Inherited from father.
+      int mother_genotype = x / kGenotypeCount;
+      int father_genotype = x % kGenotypeCount;
 
-      mat(i, j) = (germline_mutation_counts(child_allele1, mother_genotype) +
+      mat(y, x) = (germline_mutation_counts(child_allele1, mother_genotype) +
                    germline_mutation_counts(child_allele2, father_genotype));
-
-      // mat(i, j) = (germline_mutation_counts(child_allele1, mother_genotype) *
-      //              germline_probability_mat_single(child_allele1, mother_genotype) +
-      //              germline_mutation_counts(child_allele2, father_genotype) *
-      //              germline_probability_mat_single(child_allele2, father_genotype));
-      // mat(i, j) /= germline_probability_mat(i, j);
     }
   }
 
@@ -147,38 +134,39 @@ Matrix16_256d GermlineMutationCounts(TrioModel params) {
 /**
  * Generates a 4 x 16 Eigen matrix holding the number of expected germline
  * mutations or mismatches between the parent alleles and the zygote based on
- * a single parent.
- *
- * Assumes that the first genotype in the parent pair comes from the mother and
- * the first nucleotide of the child genotype comes from the mother.
+ * a single parent. Assumes that the first genotype in the parent pair comes
+ * from the mother and the first nucleotide of the child genotype comes from
+ * the mother. For example:
  *
  *        Parent
  * Child  AA AC  AG  AT  CA  CC CG  CT  GA  GC  GG GT  TA  TC  TG  TT
- * A      0  0.5 0.5 0.5 0.5 1  1   1   0.5 1   1  1   0.5 1   1   1
- * C      1  0.5 1   1   0.5 0  0.5 0.5 1   0.5 1  1   1   0.5 1   1
- * G      1  1   0.5 1   1   1  0.5 1   0.5 0.5 1  0.5 1   1   0.5 1
- * T      1  1   1   0.5 1   1  1   0.5 1   1   1  0.5 0.5 0.5 0.5 1
+ * A      0  Het Het Het Het 1  1   1   Het 1   1  1   Het 1   1   1
+ * C      1  Het 1   1   Het 0  Het Het 1   Het 1  1   1   Het 1   1
+ * G      1  1   Het 1   1   1  Het 1   Het Het 1  Het 1   1   Het 1
+ * T      1  1   1   Het 1   1  1   Het 1   1   1  Het Het Het Het 1
+ *
+ * Het = 0.5 * no match / heterozygous match.
  *
  * @param  params TrioModel object containing parameters.
  * @return        4 x 16 Eigen matrix holding the number of germline mutations.
  */
 Matrix4_16d GermlineMutationCountsSingle(TrioModel params) {
   Matrix4_16d mat = Matrix4_16d::Zero();
-  Matrix4_16d germline_probability_mat_single = params.germline_probability_mat_single();
 
-  for (int i = 0; i < kNucleotideCount; ++i) {  // child allele
-    for (int j = 0; j < kGenotypeCount; ++j) {  // single parent genotype
-      if (j % 5 == 0) {  // parent homozygous genotypes are divisible by 5
+  for (int i = 0; i < kNucleotideCount; ++i) {  // Child allele.
+    for (int j = 0; j < kGenotypeCount; ++j) {  // Single parent genotype.
+      if (j % 5 == 0) {  // Homozygous parent genotypes are divisible by 5.
         if (IsAlleleInParentGenotype(i, j)) {
-          mat(i, j) = 0.0;  // allele is inherited, ex: A in AA
+          mat(i, j) = 0.0;  // Allele is inherited, ex: A in AA.
         } else {
-          mat(i, j) = 1.0;  // allele is mutated, ex: C in AA
+          mat(i, j) = 1.0;  // Allele is mutated, ex: C in AA.
         }
-      } else {  // heterozygous parent genotypes
+      } else {  // Heterozygous parent genotype.
         if (IsAlleleInParentGenotype(i, j)) {
-          mat(i, j) = 0.5 * params.no_match() / params.heterozygous_match();  // ex: C in AC
+          // Allele is potentially mutated (Het), ex: C in AC.
+          mat(i, j) = 0.5 * params.no_match() / params.heterozygous_match();
         } else {
-          mat(i, j) = 1.0;  // ex: A in CG
+          mat(i, j) = 1.0;  // Allele is mutated, ex: A in CG.
         }
       }
     }
@@ -205,7 +193,7 @@ double GetSomaticStatistic(TrioModel params) {
   RowVector16d s_som_mother = RowVector16d::Zero();
   RowVector16d s_som_father = RowVector16d::Zero();
   RowVector16d s_som_child = RowVector16d::Zero();
-  RowVector256d s_som_child_x = RowVector256d::Zero();  // x refers to parent pair genotype
+  RowVector256d s_som_child_x = RowVector256d::Zero();  // Given x = parent pair genotype.
 
   double mother_term1 = 0.0;
   double father_term1 = 0.0;
@@ -216,11 +204,11 @@ double GetSomaticStatistic(TrioModel params) {
 
   // P(R|zygotic genotype)
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
-  for (int x = 0; x < kGenotypeCount; ++x) {  // zygotic genotypes
-    for (int y = 0; y < kGenotypeCount; ++y) {  // somatic genotypes
-      // somatic_probability_mat is 16 x 16 symmetrical across its major diagonal
-      // somatic_mutation_counts also shares this trait
-      // thus we assume x represents zygotic while y represents somatic
+  // somatic_probability_mat and somatic_mutation_counts are both 16 x 16
+  // matrices which are symmetrical across the major diagonal. Thus, this
+  // assumes x represents zygotic while y represents somatic.
+  for (int x = 0; x < kGenotypeCount; ++x) {  // Zygotic genotype.
+    for (int y = 0; y < kGenotypeCount; ++y) {  // Somatic genotype.
       child_term1 = somatic_probability_mat(x, y) * data->child_somatic_probability(y);
       mother_term1 = somatic_probability_mat(x, y) * data->mother_somatic_probability(y);
       father_term1 = somatic_probability_mat(x, y) * data->father_somatic_probability(y);
@@ -229,38 +217,40 @@ double GetSomaticStatistic(TrioModel params) {
       mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
       father_term2 = /* 0 + */ somatic_mutation_counts(x, y);
 
-      s_som_child(x) += child_term1 * child_term2;  // sum over y_j
+      s_som_child(x) += child_term1 * child_term2;  // Sums over y_j.
       s_som_mother(x) += mother_term1 * mother_term2;
       s_som_father(x) += father_term1 * father_term2;
     }
 
+    // Dividing out child_zygotic_probability occurs at the next node.
     // s_som_child(x) /= data->denominator.child_zygotic_probability(x);
     s_som_mother(x) /= data->denominator.mother_zygotic_probability(x);
     s_som_father(x) /= data->denominator.father_zygotic_probability(x);
   }
 
-  // for each genotype x in population priors
+  // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
+  // At top of branches where s_som_mother and s_som_father do not change,
+  // because no somatic mutation can occur in germline.
+  // For each parent pair genotype x in population priors.
   for (int x = 0; x < kGenotypePairCount; ++x) {
-    // at top of branches
-    // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
-    // where s_som_mother and s_som_father do not change
-    for (int y = 0; y < kGenotypeCount; ++y) {  // child genotype
-      child_term1 = germline_probability_mat(y, x);  // germline genotype given parent pair=x
+    for (int y = 0; y < kGenotypeCount; ++y) {  // Child germline genotype.
+      child_term1 = germline_probability_mat(y, x);
       child_term2 = s_som_child(y) /* + 0 */;
       s_som_child_x(x) += child_term1 * child_term2;
     }
 
-    s_som_child_x(x) /= data->denominator.child_germline_probability(x);
+    s_som_child_x(x) /= data->denominator.child_germline_probability(x);  // Includes child_zygotic_probability.
     
-    // merges j branches
+
     // S(R_mom,R_dad,R_child, parent_pair=x)
+    // Merges j branches.
     s_som(x) += (s_som_child_x(x) +
                  s_som_mother(x / kGenotypeCount) +
                  s_som_father(x % kGenotypeCount));
 
-    // at root of tree
     // S(R_mom,R_dad,R_child)
-    s_som(x) *= data->denominator.root_mat(x);  // root_mat includes population_priors
+    // At root of tree.
+    s_som(x) *= data->denominator.root_mat(x);  // Includes population_priors.
   }
 
   return s_som.sum() / data->denominator.sum;
@@ -283,17 +273,16 @@ Matrix16_16d SomaticMutationCounts() {
   Matrix16_16d mat = Matrix16_16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
-      if (i != j) {  // leaves diagonal as 0's
+      if (i != j) {  // Diagonal is filled with 0's for no mutation.
         int somatic_allele1 = i / kNucleotideCount;
         int somatic_allele2 = i % kNucleotideCount;
         int zygotic_allele1 = j / kNucleotideCount;
         int zygotic_allele2 = j % kNucleotideCount;
 
-        // 1 mutation count per allele site segregation
+        // 1 mutation count per allele site segregation.
         if (somatic_allele1 != zygotic_allele1) {
           mat(i, j)++;
         }
-
         if (somatic_allele2 != zygotic_allele2) {
           mat(i, j)++;
         }
