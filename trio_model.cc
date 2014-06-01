@@ -114,10 +114,9 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
 }
 
 /**
- * Initializes and updates read_dependent_data.sequencing_probability_mat,
- * read_dependent_data.child_vec, read_dependent_data.mother_vec, and
- * read_dependent_data.father_vec using sequencing_error_rate_.
- * dirichlet_dispersion_ is not used.
+ * Initializes and updates read_dependent_data_.sequencing_probability_mat and
+ * individual somatic probabilities using sequencing_error_rate_ as well as the
+ * other probabilities along the branch. dirichlet_dispersion_ is not used.
  *
  * Follows the model diagram in MutationProbability.
  *

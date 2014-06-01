@@ -11,41 +11,8 @@
 
 
 /**
- * Sums all nucleotide counts in ReadData and subtracts out the number of
- * nucleotides that match the genotype. It does not subtract twice for
- * homozygous genotypes. Returns 1 x 16 Eigen matrix holding number of
- * mismatches per genotype.
- *
- * @param  data ReadData.
- * @return      1 x 16 Eigen matrix containing number of mismatches per genotype.
- */
-RowVector16d GetMismatches(const ReadData &data) {
-  RowVector16d s_e = RowVector16d::Zero();
-  for (int i = 0; i < kGenotypeCount; ++i) {
-    int allele1 = i / kNucleotideCount;
-    int allele2 = i % kNucleotideCount;
-
-    s_e(i) += (data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3] -
-               data.reads[allele1]);  // homozygous
-    if (allele1 != allele2) {  // hetereogyzous
-      s_e(i) -= data.reads[allele2];
-    }
-  }
-
-  return s_e;
-}
-
-/**
  * Returns S_E the number of nucleotide mismatches between a somatic genotype
- * and its sequencing reads. For example:
- *
- * ReadData  A  C  G T
- *           20 10 0 1
- *
- *      AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
- * S_E  11 1  11 10 1  21 21 20 11 21 31 30 10 20 30 30
- *
- * Currently returns the sum of this 1 x 16 matrix for the child read.
+ * and its sequencing reads.
  *
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected sequencing errors.
@@ -57,9 +24,111 @@ double GetSequencingErrorStatistic(TrioModel params) {
   RowVector16d s_e_mother = GetMismatches(data_vec[1]);
   RowVector16d s_e_father = GetMismatches(data_vec[2]);
 
-  // TODO: Weigh over underlying genotypes at all branches.
+  double mother_term1 = 0.0;
+  double father_term1 = 0.0;
+  double child_term1 = 0.0;
+  double mother_term2 = 0.0;
+  double father_term2 = 0.0;
+  double child_term2 = 0.0;
 
-  return s_e_child.sum();
+  // S(R_mom, mom_somatic=x), S(R_dad, dad_somatic=x), S(R_child, child_somatic=x)
+  for (int x = 0; x < kGenotypeCount; ++x) {
+    for (int y = 0; y < kGenotypeCount; ++y) {
+      child_term1 = data->child_somatic_probability(y);
+      mother_term1 = data->mother_somatic_probability(y);
+      father_term1 = data->father_somatic_probability(y);
+
+      child_term2 = s_e_child(y);
+      mother_term2 = s_e_mother(y);
+      father_term2 = s_e_father(y);
+
+      s_som_child(x) += child_term1 * child_term2;  // Sums over y_j.
+      s_som_mother(x) += mother_term1 * mother_term2;
+      s_som_father(x) += father_term1 * father_term2;
+    }
+  }
+
+  return 0.0;
+}
+
+/**
+ * Sums all nucleotide counts in ReadData and subtracts out the number of
+ * nucleotides that match the genotype. It does not subtract twice for
+ * homozygous genotypes. Returns 1 x 16 Eigen matrix holding number of
+ * mismatches per genotype. For example:
+ *
+ * ReadData  A  C  G T
+ *           20 10 0 1
+ *
+ * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
+ * 11 1  11 10 1  21 21 20 11 21 31 30 10 20 30 30
+ *
+ * @param  data ReadData.
+ * @return      1 x 16 Eigen matrix containing number of mismatches per genotype.
+ */
+RowVector16d GetMismatches(const ReadData &data) {
+  RowVector16d s_e = RowVector16d::Zero();
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    int allele1 = i / kNucleotideCount;
+    int allele2 = i % kNucleotideCount;
+    s_e(i) += data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3];
+    s_e(i) -= data.reads[allele1];  // Homozygous.
+    if (allele1 != allele2) {
+      s_e(i) -= data.reads[allele2];  // Hetereogyzous.
+    }
+  }
+
+  return s_e;
+}
+
+/**
+ * Returns 1 x 16 Eigen matrix holding number of heterozygous matches per
+ * genotype. For example:
+ *
+ * ReadData  A  C  G T
+ *           20 10 0 1
+ *
+ * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
+ * 0  30 20 21 30 0  10 11 20 10 0  1  21 11 1  0 
+ *
+ * @param  data ReadData.
+ * @return      1 x 16 Eigen matrix containing number of heterozygous matches
+ *              per genotype.
+ */
+RowVector16d GetHomozygousMatches(const ReadData &data) {
+  RowVector16d s_hom = RowVector16d::Zero();
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    if (i % 5 == 0) {  // Homozygous genotypes are divisible by 5.
+      s_e(i) += data.reads[i / kNucleotideCount];
+    }
+  }
+
+  return s_e;
+}
+
+/**
+ * Returns 1 x 16 Eigen matrix holding number of homozygous matches per
+ * genotype. For example:
+ *
+ * ReadData  A  C  G T
+ *           20 10 0 1
+ *
+ * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
+ * 20 0  0  0  0  10 0  0  0  0  0  0  0  0  0  1 
+ *
+ * @param  data ReadData.
+ * @return      1 x 16 Eigen matrix containing number of homozygous matches per
+ *              genotype.
+ */
+RowVector16d GetHomozygousMatches(const ReadData &data) {
+  RowVector16d s_hom = RowVector16d::Zero();
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    if (i % 5 == 0) {  // Homozygous genotypes are divisible by 5.
+      s_e(i) += data.reads[i / kNucleotideCount];
+    }
+  }
+
+  return s_e;
 }
 
 /**
@@ -202,7 +271,6 @@ double GetSomaticStatistic(TrioModel params) {
   double father_term2 = 0.0;
   double child_term2 = 0.0;
 
-  // P(R|zygotic genotype)
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
   // somatic_probability_mat and somatic_mutation_counts are both 16 x 16
   // matrices which are symmetrical across the major diagonal. Thus, this

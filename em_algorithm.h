@@ -16,6 +16,8 @@
 
 
 // E-step methods.
+RowVector16d GetHomozygousMatches(const ReadData &data);
+RowVector16d GetHeterozygousMatches(const ReadData &data);
 RowVector16d GetMismatches(const ReadData &data);
 double GetSequencingErrorStatistic(TrioModel params);
 double GetGermlineStatistic(TrioModel params);
