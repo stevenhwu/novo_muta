@@ -17,7 +17,7 @@
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected sequencing errors.
  */
-double GetSequencingErrorStatistic(TrioModel params) {
+double GetSequencingErrorStatistic(const TrioModel& params) {
   ReadDependentData *data = params.read_dependent_data();
   const ReadDataVector &data_vec = data->read_data_vec;
   RowVector16d s_e_child = GetMismatches(data_vec[0]);
@@ -88,11 +88,11 @@ RowVector16d GetMismatches(const ReadData &data) {
  * @return      1 x 16 Eigen matrix containing number of heterozygous matches
  *              per genotype.
  */
-RowVector16d GetHomozygousMatches(const ReadData &data) {
-  RowVector16d s_hom = RowVector16d::Zero();
+RowVector16d GetHeterozygousMatches(const ReadData &data) {
+  RowVector16d s_het = RowVector16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
-    if (i % 5 == 0) {  // Homozygous genotypes are divisible by 5.
-      s_e(i) += data.reads[i / kNucleotideCount];
+    if (i % 5 != 0) {  // Homozygous genotypes are divisible by 5.
+      s_e(i) += data.reads[i / kNucleotideCount] + data.reads[i % kNucleotideCount];
     }
   }
 
@@ -134,7 +134,7 @@ RowVector16d GetHomozygousMatches(const ReadData &data) {
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected germline mutations.
  */
-double GetGermlineStatistic(TrioModel params) {
+double GetGermlineStatistic(const TrioModel& params) {
   ReadDependentData *data = params.read_dependent_data();
   Matrix16_256d germline_mutation_counts = GermlineMutationCounts(params);
   Matrix16_256d germline_probability_mat = params.germline_probability_mat();
@@ -174,7 +174,7 @@ double GetGermlineStatistic(TrioModel params) {
  * @param  params TrioModel object containing parameters.
  * @return        16 x 256 Eigen matrix holding the number of germline mutations.
  */
-Matrix16_256d GermlineMutationCounts(TrioModel params) {
+Matrix16_256d GermlineMutationCounts(const TrioModel& params) {
   Matrix16_256d mat = Matrix16_256d::Zero();
   Matrix4_16d germline_mutation_counts = GermlineMutationCountsSingle(params);
   
@@ -212,7 +212,7 @@ Matrix16_256d GermlineMutationCounts(TrioModel params) {
  * @param  params TrioModel object containing parameters.
  * @return        4 x 16 Eigen matrix holding the number of germline mutations.
  */
-Matrix4_16d GermlineMutationCountsSingle(TrioModel params) {
+Matrix4_16d GermlineMutationCountsSingle(const TrioModel& params) {
   Matrix4_16d mat = Matrix4_16d::Zero();
 
   for (int i = 0; i < kNucleotideCount; ++i) {  // Child allele.
@@ -245,7 +245,7 @@ Matrix4_16d GermlineMutationCountsSingle(TrioModel params) {
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected somatic mutations.
  */
-double GetSomaticStatistic(TrioModel params) {
+double GetSomaticStatistic(const TrioModel& params) {
   ReadDependentData *data = params.read_dependent_data();
   Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
   Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
