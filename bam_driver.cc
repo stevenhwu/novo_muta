@@ -5,13 +5,9 @@
  * This is a test driver for parsing a bam file.
  *
  * To compile on Herschel and include GSL and BamTools:
- * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc bam_driver.cc
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc bam_driver.cc
  */
-#include "api/BamReader.h"
-
-#include "utility.h"
-
-using namespace BamTools;
+#include "variant_visitor.h"
 
 
 int main(int argc, const char *argv[]) {
@@ -21,19 +17,27 @@ int main(int argc, const char *argv[]) {
 
   const string file_name = argv[1];
 
-  BamReader fin;
-  fin.Open(file_name);
+  BamReader reader;
+  reader.Open(file_name);
 
-  if (!fin.IsOpen()) {
+  if (!reader.IsOpen()) {
     Die("Input file could not be opened.");
   }
 
+  RefVector references = reader.GetReferenceData();
+  SamHeader header = reader.GetHeader();
+  PileupEngine pileup;
+  TrioModel params;
   BamAlignment al;
-  while (fin.GetNextAlignment(al)) {
-    cout << al.QueryBases << endl;
+  VariantVisitor *v = new VariantVisitor(references, header, params, al, 13, 13, 0.1);
+  pileup.AddVisitor(v);
+   
+  while (reader.GetNextAlignment(al)) {
+    pileup.AddAlignment(al);
   }
-
-  fin.Close();
+    
+  pileup.Flush();
+  reader.Close();
 
   return 0;
 }
