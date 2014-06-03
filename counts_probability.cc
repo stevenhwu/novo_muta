@@ -54,7 +54,11 @@ int main(int argc, const char *argv[]) {
     str >> has_mutation_total;
     str >> has_no_mutation_total;
     total_trios = has_mutation_total + has_no_mutation_total;
-    probability = (double) has_mutation_total / total_trios;
+    if (total_trios == 0) {
+      probability = 0.0;
+    } else {
+      probability = (double) has_mutation_total / total_trios;
+    }
     probabilities.push_back(probability);
   }
   f.close();
