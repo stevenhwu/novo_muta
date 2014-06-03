@@ -27,26 +27,19 @@ double GetSequencingErrorStatistic(TrioModel params) {
   double mother_term1 = 0.0;
   double father_term1 = 0.0;
   double child_term1 = 0.0;
-  double mother_term2 = 0.0;
-  double father_term2 = 0.0;
-  double child_term2 = 0.0;
 
   // S(R_mom, mom_somatic=x), S(R_dad, dad_somatic=x), S(R_child, child_somatic=x)
-  for (int x = 0; x < kGenotypeCount; ++x) {
-    for (int y = 0; y < kGenotypeCount; ++y) {
-      child_term1 = data->child_somatic_probability(y);
-      mother_term1 = data->mother_somatic_probability(y);
-      father_term1 = data->father_somatic_probability(y);
+  // for (int x = 0; x < kGenotypeCount; ++x) {
+  //   for (int y = 0; y < kGenotypeCount; ++y) {
+  //     child_term1 = data->child_somatic_probability(y);
+  //     mother_term1 = data->mother_somatic_probability(y);
+  //     father_term1 = data->father_somatic_probability(y);
 
-      child_term2 = s_e_child(y);
-      mother_term2 = s_e_mother(y);
-      father_term2 = s_e_father(y);
-
-      s_som_child(x) += child_term1 * child_term2;  // Sums over y_j.
-      s_som_mother(x) += mother_term1 * mother_term2;
-      s_som_father(x) += father_term1 * father_term2;
-    }
-  }
+  //     s_e_child(x) += child_term1;  // Sums over y_j.
+  //     s_e_mother(x) += mother_term1;
+  //     s_e_father(x) += father_term1;
+  //   }
+  // }
 
   return 0.0;
 }
