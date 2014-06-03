@@ -547,7 +547,7 @@ bool TrioModel::Equals(const TrioModel &other) {
   }
 }
 
-double TrioModel::population_mutation_rate() {
+double TrioModel::population_mutation_rate() const {
   return population_mutation_rate_;
 }
 
@@ -560,7 +560,7 @@ void TrioModel::set_population_mutation_rate(double rate) {
   population_priors_single_ = TrioModel::PopulationPriorsSingle();
 }
 
-double TrioModel::germline_mutation_rate() {
+double TrioModel::germline_mutation_rate() const {
   return germline_mutation_rate_;
 }
 
@@ -576,19 +576,19 @@ void TrioModel::set_germline_mutation_rate(double rate) {
   germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
 }
 
-double TrioModel::homozygous_match() {
+double TrioModel::homozygous_match() const {
   return homozygous_match_;
 }
 
-double TrioModel::heterozygous_match() {
+double TrioModel::heterozygous_match() const {
   return heterozygous_match_;
 }
 
-double TrioModel::no_match() {
+double TrioModel::no_match() const {
   return no_match_;
 }
 
-double TrioModel::somatic_mutation_rate() {
+double TrioModel::somatic_mutation_rate() const {
   return somatic_mutation_rate_;
 }
 
@@ -602,7 +602,7 @@ void TrioModel::set_somatic_mutation_rate(double rate) {
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMatDiag();
 }
 
-double TrioModel::sequencing_error_rate() {
+double TrioModel::sequencing_error_rate() const {
   return sequencing_error_rate_;
 }
 
@@ -614,7 +614,7 @@ void TrioModel::set_sequencing_error_rate(double rate) {
   alphas_ = TrioModel::Alphas();
 }
 
-double TrioModel::dirichlet_dispersion() {
+double TrioModel::dirichlet_dispersion() const {
   return dirichlet_dispersion_;
 }
 
@@ -626,7 +626,7 @@ void TrioModel::set_dirichlet_dispersion(double dispersion) {
   alphas_ = TrioModel::Alphas();
 }
 
-RowVector4d TrioModel::nucleotide_frequencies() {
+RowVector4d TrioModel::nucleotide_frequencies() const {
   return nucleotide_frequencies_;
 }
 
@@ -639,34 +639,34 @@ void TrioModel::set_nucleotide_frequencies(const RowVector4d &frequencies) {
   population_priors_single_ = TrioModel::PopulationPriorsSingle();
 }
 
-RowVector16d TrioModel::population_priors_single() {
+RowVector16d TrioModel::population_priors_single() const {
   return population_priors_single_;
 }
 
-RowVector256d TrioModel::population_priors() {
+RowVector256d TrioModel::population_priors() const {
   return population_priors_;
 }
 
-Matrix4_16d TrioModel::germline_probability_mat_single() {
+Matrix4_16d TrioModel::germline_probability_mat_single() const {
   return germline_probability_mat_single_;
 }
 
-Matrix16_256d TrioModel::germline_probability_mat() {
+Matrix16_256d TrioModel::germline_probability_mat() const {
   return germline_probability_mat_;
 }
 
-Matrix16_16d TrioModel::somatic_probability_mat() {
+Matrix16_16d TrioModel::somatic_probability_mat() const {
   return somatic_probability_mat_;
 }
 
-Matrix3_16d TrioModel::sequencing_probability_mat() {
+Matrix3_16d TrioModel::sequencing_probability_mat() const {
   return read_dependent_data_.sequencing_probability_mat;
 }
 
-Matrix16_4d TrioModel::alphas() {
+Matrix16_4d TrioModel::alphas() const {
   return alphas_;
 }
 
-ReadDependentData* TrioModel::read_dependent_data() {
-  return &read_dependent_data_;
+ReadDependentData TrioModel::read_dependent_data() const {
+  return read_dependent_data_;
 }

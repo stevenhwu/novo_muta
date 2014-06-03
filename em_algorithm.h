@@ -19,11 +19,11 @@
 RowVector16d GetHomozygousMatches(const ReadData &data);
 RowVector16d GetHeterozygousMatches(const ReadData &data);
 RowVector16d GetMismatches(const ReadData &data);
-double GetSequencingErrorStatistic(const TrioModel& params);
-double GetGermlineStatistic(const TrioModel& params);
-Matrix16_256d GermlineMutationCounts(const TrioModel& params);
-Matrix4_16d GermlineMutationCountsSingle(const TrioModel& params);
-double GetSomaticStatistic(const TrioModel& params);
+double GetSequencingErrorStatistic(const TrioModel &params);
+double GetGermlineStatistic(const TrioModel &params);
+Matrix16_256d GermlineMutationCounts(const TrioModel &params);
+Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params);
+double GetSomaticStatistic(const TrioModel &params);
 Matrix16_16d SomaticMutationCounts();
 
 #endif
