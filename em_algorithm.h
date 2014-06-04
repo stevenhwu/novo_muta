@@ -20,6 +20,8 @@ RowVector16d GetHomozygousMatches(const ReadData &data);
 RowVector16d GetHeterozygousMatches(const ReadData &data);
 RowVector16d GetMismatches(const ReadData &data);
 double GetMismatchStatistic(const TrioModel &params);
+double GetHomozygousStatistic(const TrioModel &params);
+double GetHeterozygousStatistic(const TrioModel &params);
 double GetGermlineStatistic(const TrioModel &params);
 Matrix16_256d GermlineMutationCounts(const TrioModel &params);
 Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params);

@@ -23,11 +23,17 @@ int main() {
   double somatic = GetSomaticStatistic(params);
   double germline = GetGermlineStatistic(params);
   double sum = somatic + germline;
+  double seq = GetMismatchStatistic(params);
+  double hom = GetHomozygousStatistic(params);
+  double het = GetHeterozygousStatistic(params);
 
   cout << probability << endl;
   cout << somatic << endl;
   cout << germline << endl;
   cout << sum << endl;
+  cout << seq << endl;
+  cout << hom << endl;
+  cout << het << endl;
 
   return 0;
 }
