@@ -20,30 +20,70 @@
 double GetMismatchStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
+  const Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
+  const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
+  Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
 
   // S(R_mom, mom_somatic=x), S(R_dad, dad_somatic=x), S(R_child, child_somatic=x)
+  RowVector256d s_e = RowVector256d::Zero();
   RowVector16d s_e_child = GetMismatches(data_vec[0]);
   RowVector16d s_e_mother = GetMismatches(data_vec[1]);
   RowVector16d s_e_father = GetMismatches(data_vec[2]);
+  RowVector256d s_e_child_x = RowVector256d::Zero();  // Given x = parent pair genotype.
 
   double mother_term1 = 0.0;
   double father_term1 = 0.0;
   double child_term1 = 0.0;
+  double mother_term2 = 0.0;
+  double father_term2 = 0.0;
+  double child_term2 = 0.0;
 
-  // sum y P(y|x) P(r|y) S(r,y) / p(r|x)
-  for (int x = 0; x < kGenotypeCount; ++x) {
-    for (int y = 0; y < kGenotypeCount; ++y) {
-      child_term1 = data.child_somatic_probability(y);
-      mother_term1 = data.mother_somatic_probability(y);
-      father_term1 = data.father_somatic_probability(y);
+  // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
+  for (int x = 0; x < kGenotypeCount; ++x) {  // Zygotic genotype.
+    for (int y = 0; y < kGenotypeCount; ++y) {  // Somatic genotype.
+      child_term1 = somatic_probability_mat(x, y) * data.child_somatic_probability(y);
+      mother_term1 = somatic_probability_mat(x, y) * data.mother_somatic_probability(y);
+      father_term1 = somatic_probability_mat(x, y) * data.father_somatic_probability(y);
 
-      s_e_child(x) += child_term1;  // Sums over y_j.
-      s_e_mother(x) += mother_term1;
-      s_e_father(x) += father_term1;
+      child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+      mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+      father_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+
+      s_e_child(x) += child_term1 * child_term2;  // Sums over y_j.
+      s_e_mother(x) += mother_term1 * mother_term2;
+      s_e_father(x) += father_term1 * father_term2;
     }
+
+    // Dividing out child_zygotic_probability occurs at the next node.
+    s_e_mother(x) /= data.denominator.mother_zygotic_probability(x);
+    s_e_father(x) /= data.denominator.father_zygotic_probability(x);
   }
 
-  return 0.0;
+  // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
+  // At top of branches where s_som_mother and s_som_father do not change,
+  // because no sequencing error can occur in germline.
+  // For each parent pair genotype x in population priors.
+  for (int x = 0; x < kGenotypePairCount; ++x) {
+    for (int y = 0; y < kGenotypeCount; ++y) {  // Child germline genotype.
+      child_term1 = germline_probability_mat(y, x);
+      child_term2 = s_e_child(y) /* + 0 */;
+      s_e_child_x(x) += child_term1 * child_term2;
+    }
+
+    s_e_child_x(x) /= data.denominator.child_germline_probability(x);  // Includes child_zygotic_probability.
+    
+    // S(R_mom,R_dad,R_child, parent_pair=x)
+    // Merges j branches.
+    s_e(x) += (s_e_child_x(x) +
+               s_e_mother(x / kGenotypeCount) +
+               s_e_father(x % kGenotypeCount));
+
+    // S(R_mom,R_dad,R_child)
+    // At root of tree.
+    s_e(x) *= data.denominator.root_mat(x);  // Includes population_priors.
+  }
+
+  return s_e.sum() / data.denominator.sum;
 }
 
 /**
@@ -250,8 +290,8 @@ Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params) {
 double GetSomaticStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
-  Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
+  Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
 
   RowVector256d s_som = RowVector256d::Zero();
   RowVector16d s_som_mother = RowVector16d::Zero();
@@ -286,7 +326,6 @@ double GetSomaticStatistic(const TrioModel &params) {
     }
 
     // Dividing out child_zygotic_probability occurs at the next node.
-    // s_som_child(x) /= data.denominator.child_zygotic_probability(x);
     s_som_mother(x) /= data.denominator.mother_zygotic_probability(x);
     s_som_father(x) /= data.denominator.father_zygotic_probability(x);
   }
