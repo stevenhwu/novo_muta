@@ -183,7 +183,7 @@ RowVector16d GetMismatches(const ReadData &data) {
 RowVector16d GetHeterozygousMatches(const ReadData &data) {
   RowVector16d s_het = RowVector16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
-    if (i % 5 != 0) {  // Homozygous genotypes are divisible by 5.
+    if (i % 5 != 0) {  // Heterozygous genotypes are not divisible by 5.
       s_het(i) += data.reads[i / kNucleotideCount] + data.reads[i % kNucleotideCount];
     }
   }
