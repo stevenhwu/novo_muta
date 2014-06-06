@@ -15,10 +15,14 @@
  * This is the implementation for an improved trio model with
  * Dirichlet-multinomial approximations.
  *
+ * If this is on the infinite_sites_model branch, this is the simplified trio
+ * model (infinite sites model) with simpler multinomial approximations for
+ * practicing implementing the expectation-maximization algorithm.
+ *
  * Example usage:
  *
- *   TrioModel params;  // uses default parameters
- *   ReadDataVector data = {  // sequencing data in order: child, mother, father
+ *   TrioModel params;  // Uses default parameters.
+ *   ReadDataVector data = {  // Sequencing data in order: child, mother, father.
  *     {30, 0, 0, 0},
  *     {30, 0, 0, 0},
  *     {30, 0, 0, 0}
@@ -47,35 +51,36 @@ class TrioModel {
   double MutationProbability(const ReadDataVector &data_vec);  // Calculates probability of mutation given input read data.
   void SetReadDependentData(const ReadDataVector &data_vec);
   bool Equals(const TrioModel &other);  // True if the two TrioModel objects are equal to each other.
-  double population_mutation_rate();  // Get and set functions.
+  double population_mutation_rate() const;  // Get and set functions.
   void set_population_mutation_rate(double rate);
-  double germline_mutation_rate();
+  double germline_mutation_rate() const;
   void set_germline_mutation_rate(double rate);
-  double homozygous_match();
-  double heterozygous_match();
-  double no_match();
-  double somatic_mutation_rate();
+  double homozygous_match() const;
+  double heterozygous_match() const;
+  double no_match() const;
+  double somatic_mutation_rate() const;
   void set_somatic_mutation_rate(double rate);
-  double sequencing_error_rate();
+  double sequencing_error_rate() const;
   void set_sequencing_error_rate(double rate);
-  double dirichlet_dispersion();
+  double dirichlet_dispersion() const;
   void set_dirichlet_dispersion(double dispersion);
-  RowVector4d nucleotide_frequencies();
+  RowVector4d nucleotide_frequencies() const;
   void set_nucleotide_frequencies(const RowVector4d &frequencies);
-  RowVector16d population_priors_single();
-  RowVector256d population_priors();
-  Matrix4_16d germline_probability_mat_single();
-  Matrix16_256d germline_probability_mat();
-  Matrix16_16d somatic_probability_mat();
-  Matrix3_16d sequencing_probability_mat();
-  Matrix16_4d alphas();
-  ReadDependentData* read_dependent_data();
+  RowVector16d population_priors_single() const;
+  RowVector256d population_priors() const;
+  Matrix4_16d germline_probability_mat_single() const;
+  Matrix16_256d germline_probability_mat() const;
+  Matrix16_16d somatic_probability_mat() const;
+  Matrix3_16d sequencing_probability_mat() const;
+  Matrix16_4d alphas() const;
+  ReadDependentData read_dependent_data() const;
 
  private:
   void GermlineTransition(bool is_numerator=false);  // Helper functions for MutationProbability.
   void SomaticTransition(bool is_numerator=false);
   RowVector256d GetRootMat(const RowVector256d &child_germline_probability,
                            const RowVector256d &parent_probability);
+  double SpectrumProbability(const RowVector4d &nucleotide_counts);  // Calculates probability of allele spectrum given read counts.
   RowVector256d PopulationPriors();  // Functions for setting up the model and relevant arrays.
   Matrix16_16d PopulationPriorsExpanded();
   RowVector16d PopulationPriorsSingle();
@@ -98,17 +103,17 @@ class TrioModel {
   double germline_mutation_rate_;
   double somatic_mutation_rate_;
   double sequencing_error_rate_;
-  double dirichlet_dispersion_;
+  double dirichlet_dispersion_;  // Unused.
   RowVector4d nucleotide_frequencies_;
   Matrix16_4d alphas_;
-  RowVector16d population_priors_single_;  // unused
+  RowVector16d population_priors_single_;  // Unused.
   RowVector256d population_priors_;
   Matrix4_16d germline_probability_mat_single_;
   Matrix16_256d germline_probability_mat_;
   Matrix16_256d germline_probability_mat_num_;
   Matrix16_16d somatic_probability_mat_;
   Matrix16_16d somatic_probability_mat_diag_;
-  ReadDependentData read_dependent_data_;  // contains TreePeel class
+  ReadDependentData read_dependent_data_;  // Contains TreePeel class.
 };
 
 #endif

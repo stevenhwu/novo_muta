@@ -14,7 +14,8 @@
  * 
  * sequencing_probability_mat is created or updated if sequencing_error_rate_
  * or dirichlet_dispersion_ is changed when MutationProbability() or
- * SetReadDependentData() is called.
+ * SetReadDependentData() is called. dirichlet_dispersion_ is not used in the
+ * infinite sites model version.
  */
 TrioModel::TrioModel()
     : population_mutation_rate_{1e-6/*0.001*/},
@@ -113,16 +114,16 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
 }
 
 /**
- * Initializes and updates read_dependent_data.sequencing_probability_mat,
- * read_dependent_data.child_vec, read_dependent_data.mother_vec, and
- * read_dependent_data.father_vec using sequencing_error_rate_.
+ * Initializes and updates read_dependent_data_.sequencing_probability_mat and
+ * individual somatic probabilities using sequencing_error_rate_ as well as the
+ * other probabilities along the branch. dirichlet_dispersion_ is not used.
  *
  * Follows the model diagram in MutationProbability.
  *
  * @param   data_vec Read counts in order of child, mother and father.
  */
 void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
-  read_dependent_data_ = ReadDependentData(data_vec);  // first initialized
+  read_dependent_data_ = ReadDependentData(data_vec);  // First intialized.
 
   TrioModel::SequencingProbabilityMat();
   TrioModel::SomaticTransition();
@@ -144,7 +145,7 @@ void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
  *          element is a unique parent pair genotype.
  */
 RowVector256d TrioModel::PopulationPriors() {
-  RowVector256d population_priors_flattened = RowVector256d::Zero();
+  RowVector256d population_priors_flattened;
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
       int idx = i * kGenotypeCount + j;
@@ -160,40 +161,20 @@ RowVector256d TrioModel::PopulationPriors() {
  * of the possible events in the sample space that covers all possible parent
  * genotype combinations.
  *
- * Creates nucleotide mutation frequencies {alpha_A, alpha_C, alpha_G, alpha_T}
- * based on the nucleotide frequencies and population mutation rate (theta).
- * These frequencies and nucleotide counts {n_A, n_C, n_G, n_T} are used in the
- * Dirichlet multinomial.
- *
- * For example, both parents have genotype AA, resulting in N = 4:
- *
- * population_mutation_rate_ = 0.00025;
- * nucleotide_frequencies_ << 0.25, 0.25, 0.25, 0.25;
- * nucleotide_counts = {4, 0, 0, 0};
+ * Calls SpectrumProbability assuming infinite sites model using all enumerated
+ * nucleotide counts at coverage 4x.
  *
  * @return  16 x 16 Eigen matrix in log e space where the (i, j) element is the
  *          probability that the mother has genotype i and the father has
  *          genotype j.
  */
 Matrix16_16d TrioModel::PopulationPriorsExpanded() {
-  // Calculates nucleotide mutation frequencies using given mutation rate.
-  RowVector4d nucleotide_mutation_frequencies = (nucleotide_frequencies_ *
-    population_mutation_rate_);
   Matrix16_16d population_priors = Matrix16_16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
-      // Convert nucleotide_counts to ReadData for DirichletMultinomialLog().
       RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
-      ReadData nucleotide_read;
-      for (int k = 0; k < kNucleotideCount; ++k) {
-        nucleotide_read.reads[k] = nucleotide_counts(k);
-      }
-      // Calculates probability using the Dirichlet multinomial in normal space.
-      double log_probability = DirichletMultinomialLog(
-        nucleotide_mutation_frequencies,
-        nucleotide_read
-      );
-      population_priors(i, j) = exp(log_probability);
+      double probability = TrioModel::SpectrumProbability(nucleotide_counts);
+      population_priors(i, j) = probability;
     }
   }
 
@@ -205,6 +186,30 @@ Matrix16_16d TrioModel::PopulationPriorsExpanded() {
  */
 RowVector16d TrioModel::PopulationPriorsSingle() {
   return TrioModel::PopulationPriorsExpanded().rowwise().sum();
+}
+
+/**
+ * Returns the probability of the drawn alleles having a 4-0, 3-1, or 2-2
+ * spectrum.
+ *
+ * @param  nucleotide_counts RowVector containing allele counts.
+ * @return                   Probability of allele spectrum.
+ */
+double TrioModel::SpectrumProbability(const RowVector4d &nucleotide_counts) {
+  double p2_2 = population_mutation_rate_ / 2.0;
+  double p3_1 = population_mutation_rate_ + population_mutation_rate_ / 3.0;
+  double p4_0 = 1.0 - p3_1 - p2_2;
+
+  if (IsInVector(nucleotide_counts, 4.0)) {
+    return p4_0 * 0.25;  // p(4 allele) * p(position)
+  } else if (IsInVector(nucleotide_counts, 3.0)) {
+    return p3_1 * 0.25 / 3.0 * 0.25;  // p(3 allele) * p(1 allele) * p(position)
+  } else if (IsInVector(nucleotide_counts, 2.0) &&
+      !IsInVector(nucleotide_counts, 1.0)) {
+    return p2_2 * 0.25 / 3.0 * 2.0 / 6.0;  // p(2 allele) * p(2 allele) * pair qualifier * p(position)
+  } else {
+    return 0.0;  // counts do not match 4-0, 3-0, or 2-2 allele spectrum
+  }
 }
 
 /**
@@ -356,16 +361,20 @@ Matrix16_16d TrioModel::SomaticProbabilityMatDiag() {
  * read_dependent_data_.max_elements before rescaling to normal space.
  */
 void TrioModel::SequencingProbabilityMat() {
-  Matrix3_16d sequencing_probability_mat = Matrix3_16d::Zero();
   for (int read = 0; read < 3; ++read) {
     for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
       auto alpha = alphas_.row(genotype_idx);
+      // converts alpha to double array
+      double p[kNucleotideCount] = {alpha(0), alpha(1), alpha(2), alpha(3)};
+      // converts read to unsigned int array
       const ReadData &data = read_dependent_data_.read_data_vec[read];
-      double log_probability = DirichletMultinomialLog(alpha, data);
+      unsigned int n[kNucleotideCount] = {data.reads[0], data.reads[1],
+                                          data.reads[2], data.reads[3]};
+      double log_probability = gsl_ran_multinomial_lnpdf(kNucleotideCount, p, n);
       read_dependent_data_.sequencing_probability_mat(read, genotype_idx) = log_probability;
     }
   }
-
+  
   // Rescales to normal space and records max element of all 3 reads together.
   double max_element = read_dependent_data_.sequencing_probability_mat.maxCoeff();
   read_dependent_data_.max_elements.push_back(max_element);
@@ -499,7 +508,7 @@ Matrix16_4d TrioModel::Alphas() {
             no_match,     no_match,     heterozygous, heterozygous,
             no_match,     no_match,     no_match,     homozygous;
 
-  return alphas * dirichlet_dispersion_;
+  return alphas;
 }
 
 /**
@@ -538,7 +547,7 @@ bool TrioModel::Equals(const TrioModel &other) {
   }
 }
 
-double TrioModel::population_mutation_rate() {
+double TrioModel::population_mutation_rate() const {
   return population_mutation_rate_;
 }
 
@@ -551,7 +560,7 @@ void TrioModel::set_population_mutation_rate(double rate) {
   population_priors_single_ = TrioModel::PopulationPriorsSingle();
 }
 
-double TrioModel::germline_mutation_rate() {
+double TrioModel::germline_mutation_rate() const {
   return germline_mutation_rate_;
 }
 
@@ -567,19 +576,19 @@ void TrioModel::set_germline_mutation_rate(double rate) {
   germline_probability_mat_num_ = TrioModel::GermlineProbabilityMat(true);
 }
 
-double TrioModel::homozygous_match() {
+double TrioModel::homozygous_match() const {
   return homozygous_match_;
 }
 
-double TrioModel::heterozygous_match() {
+double TrioModel::heterozygous_match() const {
   return heterozygous_match_;
 }
 
-double TrioModel::no_match() {
+double TrioModel::no_match() const {
   return no_match_;
 }
 
-double TrioModel::somatic_mutation_rate() {
+double TrioModel::somatic_mutation_rate() const {
   return somatic_mutation_rate_;
 }
 
@@ -593,7 +602,7 @@ void TrioModel::set_somatic_mutation_rate(double rate) {
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMatDiag();
 }
 
-double TrioModel::sequencing_error_rate() {
+double TrioModel::sequencing_error_rate() const {
   return sequencing_error_rate_;
 }
 
@@ -605,7 +614,7 @@ void TrioModel::set_sequencing_error_rate(double rate) {
   alphas_ = TrioModel::Alphas();
 }
 
-double TrioModel::dirichlet_dispersion() {
+double TrioModel::dirichlet_dispersion() const {
   return dirichlet_dispersion_;
 }
 
@@ -617,7 +626,7 @@ void TrioModel::set_dirichlet_dispersion(double dispersion) {
   alphas_ = TrioModel::Alphas();
 }
 
-RowVector4d TrioModel::nucleotide_frequencies() {
+RowVector4d TrioModel::nucleotide_frequencies() const {
   return nucleotide_frequencies_;
 }
 
@@ -626,38 +635,38 @@ RowVector4d TrioModel::nucleotide_frequencies() {
  */
 void TrioModel::set_nucleotide_frequencies(const RowVector4d &frequencies) {
   nucleotide_frequencies_ = frequencies;
-  population_priors_ = PopulationPriors();
+  population_priors_ = TrioModel::PopulationPriors();
   population_priors_single_ = TrioModel::PopulationPriorsSingle();
 }
 
-RowVector16d TrioModel::population_priors_single() {
+RowVector16d TrioModel::population_priors_single() const {
   return population_priors_single_;
 }
 
-RowVector256d TrioModel::population_priors() {
+RowVector256d TrioModel::population_priors() const {
   return population_priors_;
 }
 
-Matrix4_16d TrioModel::germline_probability_mat_single() {
+Matrix4_16d TrioModel::germline_probability_mat_single() const {
   return germline_probability_mat_single_;
 }
 
-Matrix16_256d TrioModel::germline_probability_mat() {
+Matrix16_256d TrioModel::germline_probability_mat() const {
   return germline_probability_mat_;
 }
 
-Matrix16_16d TrioModel::somatic_probability_mat() {
+Matrix16_16d TrioModel::somatic_probability_mat() const {
   return somatic_probability_mat_;
 }
 
-Matrix3_16d TrioModel::sequencing_probability_mat() {
+Matrix3_16d TrioModel::sequencing_probability_mat() const {
   return read_dependent_data_.sequencing_probability_mat;
 }
 
-Matrix16_4d TrioModel::alphas() {
+Matrix16_4d TrioModel::alphas() const {
   return alphas_;
 }
 
-ReadDependentData* TrioModel::read_dependent_data() {
-  return &read_dependent_data_;
+ReadDependentData TrioModel::read_dependent_data() const {
+  return read_dependent_data_;
 }
