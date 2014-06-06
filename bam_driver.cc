@@ -6,6 +6,10 @@
  *
  * To compile on Herschel and include GSL and BamTools:
  * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc bam_driver.cc
+ *
+ * Alteratively, go to the build directory and call:
+ * cmake ..
+ * make
  */
 #include "variant_visitor.h"
 
