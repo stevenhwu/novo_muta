@@ -12,30 +12,38 @@
 /**
  * Constructor calls base constructor PileupVisitor.
  */
-VariantVisitor::VariantVisitor(const RefVector& references,
-              								 const SamHeader& header,
-								               const TrioModel& params,
-								               BamAlignment& al,
+VariantVisitor::VariantVisitor(const RefVector &references,
+              								 const SamHeader &header,
+								               const TrioModel &params,
+								               BamAlignment &al,
+                               string output_name,
+                               string child_sm,
+                               string mother_sm,
+                               string father_sm,
 								               int qual_cut,
 								               int mapping_cut,
-								               double prob_cut) :
-    PileupVisitor(),
-    references_{references}, header_{header}, al_{al}, qual_cut_{qual_cut},
-    prob_cut_{prob_cut}, mapping_cut_{mapping_cut} {
+								               double probability_cut)
+    : PileupVisitor(),
+      references_{references}, header_{header}, al_{al},
+      output_name_{output_name}, child_sm_{child_sm}, mother_sm_{mother_sm},
+      father_sm_{father_sm}, qual_cut_{qual_cut}, mapping_cut_{mapping_cut},
+      probability_cut_{probability_cut} {
 }
 
 /**
  * Visits a bam alignment at a certain position and counts the number of
- * nucleotide bases. Creates a ReadDataVector and calculates the probability of
- * mutation.
+ * nucleotide bases from read groups (RG). Creates a ReadDataVector and
+ * calculates the probability of mutation, which is printed to a text file.
  *
  * @param  pileupData  Pileup data.
  */
-void VariantVisitor::Visit(const PileupPosition& pileupData) {
+void VariantVisitor::Visit(const PileupPosition &pileupData) {
+  ofstream fout(output_name_);
 	ReadDataVector data_vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
 	string chr = references_[pileupData.RefId].RefName;
   uint64_t pos = pileupData.Position;
   string tag_id;
+
   for (auto it = begin(pileupData.PileupAlignments);
   		it != end(pileupData.PileupAlignments); ++it) {
     if (it->Alignment.MapQuality >= mapping_cut_) {
@@ -44,21 +52,30 @@ void VariantVisitor::Visit(const PileupPosition& pileupData) {
       if (bqual >= qual_cut_) {
         it->Alignment.GetTag("RG", tag_id);
         string sm = header_.ReadGroups[tag_id].Sample;
-        cout << sm << endl;
+
+        int i = 0;
+        if (sm.compare(child_sm_) == 0) {
+          i = 0;  // Hard coded as implemented in TrioModel.
+        } else if (sm.compare(mother_sm_) == 0) {
+          i = 1;
+        } else if (sm.compare(father_sm_) == 0) {
+          i = 2;
+        }
 
         char base = it->Alignment.QueryBases[*pos];
-        uint16_t bindex = VariantVisitor::ToNucleotideIndex(base);
-        if (bindex < 4) {
-          //data_vec[/*compare sm to family member].reads[bindex]++;
+        uint16_t base_idx = VariantVisitor::ToNucleotideIndex(base);
+        if (base_idx >= 0 && base_idx < 4) {
+          data_vec[i].reads[base_idx]++;
         }
 	    }
     }
 	}
-
-  // double probability = params_.MutationProbability(data_vec);
-  // if (probability >= prob_cut_) {
-  //   cout << chr << '\t' << pos << '\t' << probability << endl;
-  // }
+  
+  double probability = params_.MutationProbability(data_vec);
+  if (probability >= probability_cut_) {
+    fout << chr << '\t' << pos << '\t' << probability << endl;
+  }
+  fout.close();
 }
 
 /**

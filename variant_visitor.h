@@ -25,25 +25,33 @@ using namespace BamTools;
  */
 class VariantVisitor : public PileupVisitor {
  public:
-  VariantVisitor(const RefVector& references,
-                 const SamHeader& header,
-                 const TrioModel& params,
-                 BamAlignment& al,
+  VariantVisitor(const RefVector &references,
+                 const SamHeader &header,
+                 const TrioModel &params,
+                 BamAlignment &al,
+                 string output_name,
+                 string child_sm,
+                 string mother_sm,
+                 string father_sm,
                  int qual_cut,
                  int mapping_cut,
-                 double prob_cut);
+                 double probability_cut);
   ~VariantVisitor() { }
-  void Visit(const PileupPosition& pileupData);
+  void Visit(const PileupPosition &pileupData);
   uint16_t ToNucleotideIndex(char b);
 
  private:
   RefVector references_;
   SamHeader header_;
-  BamAlignment& al_;
   TrioModel params_;
+  BamAlignment &al_;
+  string output_name_;
+  string child_sm_;
+  string mother_sm_;
+  string father_sm_;
   int qual_cut_;
   int mapping_cut_;
-  double prob_cut_;
+  double probability_cut_;
 };
 
 #endif

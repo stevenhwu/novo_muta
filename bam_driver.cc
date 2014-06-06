@@ -15,14 +15,30 @@
 
 
 int main(int argc, const char *argv[]) {
-  if (argc < 2) {
-    Die("USAGE: bam_driver <input>.bam");
+  if (argc < 6) {
+    Die("USAGE: bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>");
   }
 
-  const string file_name = argv[1];
+  const string output_name = argv[1];
+  const string input = argv[2];
+  const string child_sm = argv[3];
+  const string mother_sm = argv[4];
+  const string father_sm = argv[5];
+  const int qual_cut = 13;
+  const int mapping_cut = 13;
+  const double probability_cut = 0.0;  // 0.1
+
+  // samtools idxstats
+  // samtools view -H <name>.bam
+  // samtools view <name>.bam <chr:pos-pos2>
+  // samtools view -b <name>.bam <chr:pos-pos2> > <output>.bam
+  // make read group file for all bam1 to bamn tab deliminated
+  // samtools merge -rh <rg>.txt <output>.bam <bam1>.bam <bamn>.bam
+  // samtools sort <output>.bam <output_sorted>.bam
+  // samtools index <output_sorted>.bam <output>.index
 
   BamReader reader;
-  reader.Open(file_name);
+  reader.Open(input);
 
   if (!reader.IsOpen()) {
     Die("Input file could not be opened.");
@@ -33,7 +49,10 @@ int main(int argc, const char *argv[]) {
   PileupEngine pileup;
   TrioModel params;
   BamAlignment al;
-  VariantVisitor *v = new VariantVisitor(references, header, params, al, 13, 13, 0.1);
+  VariantVisitor *v = new VariantVisitor(references, header, params, al,
+                                         output_name, child_sm, mother_sm,
+                                         father_sm, qual_cut, mapping_cut,
+                                         probability_cut);
   pileup.AddVisitor(v);
    
   while (reader.GetNextAlignment(al)) {
