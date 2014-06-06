@@ -22,18 +22,19 @@ int main() {
   double probability = params.MutationProbability(data);
   double somatic = GetSomaticStatistic(params);
   double germline = GetGermlineStatistic(params);
-  double sum = somatic + germline;
-  double seq = GetMismatchStatistic(params);
-  double hom = GetHomozygousStatistic(params);
-  double het = GetHeterozygousStatistic(params);
+  SequencingErrorEstimates estimates;
+  estimates.s_e = GetMismatchStatistic(params);
+  estimates.s_hom = GetHomozygousStatistic(params);
+  estimates.s_het = GetHeterozygousStatistic(params);
+  double max = MaxSequencingErrorRate(estimates);
 
-  cout << probability << endl;
-  cout << somatic << endl;
-  cout << germline << endl;
-  cout << sum << endl;
-  cout << seq << endl;
-  cout << hom << endl;
-  cout << het << endl;
+  cout << "P(Mut):\t" << probability << endl;
+  cout << "S_Som:\t" << somatic << endl;
+  cout << "S_Germ:\t" << germline << endl;
+  cout << "S_E:\t" << estimates.s_e << endl;
+  cout << "S_Hom:\t" << estimates.s_hom << endl;
+  cout << "S_Het:\t" << estimates.s_het << endl;
+  cout << "^E:\t" << max << endl;
 
   return 0;
 }

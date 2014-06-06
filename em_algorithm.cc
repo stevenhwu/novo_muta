@@ -11,8 +11,47 @@
 
 
 /**
+ * Maximizes sequencing error rate. Calculated during the M-step of
+ * expectation-maximization algorithm.
+ *
+ * @param params  estimates Holds ~S_E, ~S_Hom, ~S_Het
+ * @return                  Maximized sequencing error rate.
+ */
+double MaxSequencingErrorRate(const SequencingErrorEstimates &estimates) {
+  double sum = estimates.s_e + estimates.s_hom + estimates.s_het;
+  double sqrt_term_a = 9.0 * pow(estimates.s_hom, 2.0);
+  double sqrt_term_b = pow(2.0*estimates.s_het - estimates.s_e, 2.0);
+  double sqrt_term_c = 6.0*estimates.s_hom * (2.0*estimates.s_het + estimates.s_e);
+  double sqrt_term = sqrt(sqrt_term_a + sqrt_term_b + sqrt_term_c);
+  double inner_term = 3.0*estimates.s_hom + 2.0*estimates.s_het + 5.0*estimates.s_e;
+  double subtract_term = (inner_term - sqrt_term) / sum / 3.0;
+  double bracket_term = 1 - subtract_term;
+  return -0.75 * log(bracket_term);
+}
+
+/**
+ * Returns S_Theta the expected population mutation rate. Not listed in the
+ * paper as a summary statistic. Calculated during the E-step of
+ * expectation-maximization algorithm.
+ *
+ * @param params TrioModel object containing parameters.
+ * @return       Expected theta.
+ */
+double GetPopulationMutationRateStatistic(const TrioModel &params) {
+  const ReadDependentData data = params.read_dependent_data();
+  const RowVector256d root_mat = data.denominator.root_mat;
+  const double sum = data.denominator.sum;
+  double AAAA = root_mat(0) / sum;
+  double CCCC = root_mat(64) / sum;
+  double GGGG = root_mat(128) / sum;
+  double TTTT = root_mat(192) / sum;
+  return AAAA + CCCC + GGGG + TTTT;
+}
+
+/**
  * Returns S_Het the number of nucleotide matches between a somatic heterozygous
- * genotype and its sequencing reads.
+ * genotype and its sequencing reads. Calculated during the E-step of
+ * expectation-maximization algorithm.
  *
  * @param params TrioModel object containing parameters.
  * @return       Number of expected heterozygous matches.
@@ -28,7 +67,8 @@ double GetHeterozygousStatistic(const TrioModel &params) {
 
 /**
  * Returns S_Hom the number of nucleotide matches between a somatic homozygous
- * genotype and its sequencing reads.
+ * genotype and its sequencing reads. Calculated during the E-step of
+ * expectation-maximization algorithm.
  *
  * @param params TrioModel object containing parameters.
  * @return       Number of expected homozygous matches.
@@ -44,7 +84,8 @@ double GetHomozygousStatistic(const TrioModel &params) {
 
 /**
  * Returns S_E the number of nucleotide mismatches between a somatic genotype
- * and its sequencing reads.
+ * and its sequencing reads. Calculated during the E-step of
+ * expectation-maximization algorithm.
  *
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected mismatches.
@@ -95,9 +136,9 @@ double GetSequencingErrorStatistic(const TrioModel &params,
       mother_term1 = somatic_probability_mat(x, y) * data.mother_somatic_probability(y);
       father_term1 = somatic_probability_mat(x, y) * data.father_somatic_probability(y);
 
-      child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
-      mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
-      father_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+      child_term2 = /* 0 + */ + somatic_mutation_counts(x, y);
+      mother_term2 = /* 0 + */ + somatic_mutation_counts(x, y);
+      father_term2 = /* 0 + */ + somatic_mutation_counts(x, y);
 
       s_e_child(x) += child_term1 * child_term2;  // Sums over y_j.
       s_e_mother(x) += mother_term1 * mother_term2;

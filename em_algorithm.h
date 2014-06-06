@@ -14,18 +14,27 @@
 
 #include "trio_model.h"
 
+struct SequencingErrorEstimates {
+	double s_e;
+	double s_hom;
+	double s_het;
+};
 
-// E-step methods.
-RowVector16d GetHomozygousMatches(const ReadData &data);
-RowVector16d GetHeterozygousMatches(const ReadData &data);
-RowVector16d GetMismatches(const ReadData &data);
+// M-step functions.
+double MaxSequencingErrorRate(const SequencingErrorEstimates &estimates);
+
+// E-step functions.
+double GetPopulationMutationRateStatistic(const TrioModel &params);
 double GetSequencingErrorStatistic(const TrioModel &params,
                                    const RowVector16d &child,
                                    const RowVector16d &mother,
                                    const RowVector16d &father);
-double GetMismatchStatistic(const TrioModel &params);
 double GetHomozygousStatistic(const TrioModel &params);
 double GetHeterozygousStatistic(const TrioModel &params);
+double GetMismatchStatistic(const TrioModel &params);
+RowVector16d GetHeterozygousMatches(const ReadData &data);
+RowVector16d GetHomozygousMatches(const ReadData &data);
+RowVector16d GetMismatches(const ReadData &data);
 double GetGermlineStatistic(const TrioModel &params);
 Matrix16_256d GermlineMutationCounts(const TrioModel &params);
 Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params);
