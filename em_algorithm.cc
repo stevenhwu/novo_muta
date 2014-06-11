@@ -14,18 +14,18 @@
  * Maximizes sequencing error rate. Calculated during the M-step of
  * expectation-maximization algorithm.
  *
- * @param params  estimates Holds ~S_E, ~S_Hom, ~S_Het
+ * @param params  estimates Struct holding ~S_E, ~S_Hom, ~S_Het.
  * @return                  Maximized sequencing error rate.
  */
 double MaxSequencingErrorRate(const SequencingErrorEstimates &estimates) {
-  double sum = estimates.s_e + estimates.s_hom + estimates.s_het;
+  double sum = estimates.s_hom + estimates.s_het + estimates.s_e;
   double sqrt_term_a = 9.0 * pow(estimates.s_hom, 2.0);
   double sqrt_term_b = pow(2.0*estimates.s_het - estimates.s_e, 2.0);
   double sqrt_term_c = 6.0*estimates.s_hom * (2.0*estimates.s_het + estimates.s_e);
   double sqrt_term = sqrt(sqrt_term_a + sqrt_term_b + sqrt_term_c);
   double inner_term = 3.0*estimates.s_hom + 2.0*estimates.s_het + 5.0*estimates.s_e;
   double subtract_term = (inner_term - sqrt_term) / sum / 3.0;
-  double bracket_term = 1 - subtract_term;
+  double bracket_term = 1.0 - subtract_term;
   return -0.75 * log(bracket_term);
 }
 
@@ -379,9 +379,9 @@ Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params) {
  * @return        Number of expected somatic mutations.
  */
 double GetSomaticStatistic(const TrioModel &params) {
+  RowVector16d child = RowVector16d::Zero();
   RowVector16d mother = RowVector16d::Zero();
   RowVector16d father = RowVector16d::Zero();
-  RowVector16d child = RowVector16d::Zero();
   return GetSequencingErrorStatistic(params, child, mother, father);
 }
 
