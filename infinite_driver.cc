@@ -14,27 +14,44 @@
 int main() {
   TrioModel params;
   ReadDataVector data = {
-  	{40, 0, 0, 0},
-  	{40, 0, 0, 0},
-  	{40, 0, 0, 0}
+    {0, 0, 40, 0},
+    {40, 0, 0, 0},
+    {40, 0, 0, 0}
   };
 
   double probability = params.MutationProbability(data);
-  double somatic = GetSomaticStatistic(params);
-  double germline = GetGermlineStatistic(params);
-  SequencingErrorEstimates estimates;
-  estimates.s_e = GetMismatchStatistic(params);
-  estimates.s_hom = GetHomozygousStatistic(params);
-  estimates.s_het = GetHeterozygousStatistic(params);
-  double max = MaxSequencingErrorRate(estimates);
-
   cout << "P(Mut):\t" << probability << endl;
-  cout << "S_Som:\t" << somatic << endl;
-  cout << "S_Germ:\t" << germline << endl;
-  cout << "S_E:\t" << estimates.s_e << endl;
-  cout << "S_Hom:\t" << estimates.s_hom << endl;
-  cout << "S_Het:\t" << estimates.s_het << endl;
-  cout << "^E:\t" << max << endl;
+
+  // E-Step.
+  ParamEstimates estimates;
+  estimates.som = GetSomaticStatistic(params);
+  estimates.germ = GetGermlineStatistic(params);
+  estimates.e = GetMismatchStatistic(params);
+  estimates.hom = GetHomozygousStatistic(params);
+  estimates.het = GetHeterozygousStatistic(params);
+  cout << "S_Som:\t"  << estimates.som  << endl
+       << "S_Germ:\t" << estimates.germ << endl
+       << "S_E:\t"    << estimates.e    << endl
+       << "S_Hom:\t"  << estimates.hom  << endl
+       << "S_Het:\t"  << estimates.het  << endl;
+  
+  // M-Step
+  double maximized = MaxSequencingErrorRate(estimates);
+  while (!Equal(params.sequencing_error_rate(), maximized)) {
+    params.set_sequencing_error_rate(maximized);
+
+    // Loops to E-Step.
+    estimates.som = GetSomaticStatistic(params);
+    estimates.germ = GetGermlineStatistic(params);
+    estimates.e = GetMismatchStatistic(params);
+    estimates.hom = GetHomozygousStatistic(params);
+    estimates.het = GetHeterozygousStatistic(params);
+
+    // Loops to M-Step. Quits if converges with sequencing error rate.
+    maximized = MaxSequencingErrorRate(estimates);
+  }
+
+  cout << "^E:\t" << params.sequencing_error_rate() << endl;
 
   return 0;
 }

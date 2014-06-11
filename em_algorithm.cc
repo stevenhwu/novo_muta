@@ -11,19 +11,43 @@
 
 
 /**
+ * Maximizes germline mutation rate. Calculated during the M-step of
+ * expectation-maximization algorithm.
+ *
+ * @param params  estimates Struct holding ~S_Germ, n_s.
+ * @return                  Maximized germline mutation rate.
+ */
+double MaxGermlineMutationRate(const ParamEstimates &estimates) {
+  double bracket_term = 1.0 - 4.0/3.0 * estimates.germ / estimates.n_s;
+  return -0.75 * log(bracket_term);
+}
+
+/**
+ * Maximizes somatic mutation rate. Calculated during the M-step of
+ * expectation-maximization algorithm.
+ *
+ * @param params  estimates Struct holding ~S_Som, n_s.
+ * @return                  Maximized somatic mutation rate.
+ */
+double MaxSomaticMutationRate(const ParamEstimates &estimates) {
+  double bracket_term = 1.0 - 4.0/3.0 * estimates.som / estimates.n_s;
+  return -0.75 * log(bracket_term);
+}
+
+/**
  * Maximizes sequencing error rate. Calculated during the M-step of
  * expectation-maximization algorithm.
  *
  * @param params  estimates Struct holding ~S_E, ~S_Hom, ~S_Het.
  * @return                  Maximized sequencing error rate.
  */
-double MaxSequencingErrorRate(const SequencingErrorEstimates &estimates) {
-  double sum = estimates.s_hom + estimates.s_het + estimates.s_e;
-  double sqrt_term_a = 9.0 * pow(estimates.s_hom, 2.0);
-  double sqrt_term_b = pow(2.0*estimates.s_het - estimates.s_e, 2.0);
-  double sqrt_term_c = 6.0*estimates.s_hom * (2.0*estimates.s_het + estimates.s_e);
+double MaxSequencingErrorRate(const ParamEstimates &estimates) {
+  double sum = estimates.hom + estimates.het + estimates.e;
+  double sqrt_term_a = 9.0 * pow(estimates.hom, 2.0);
+  double sqrt_term_b = pow(2.0*estimates.het - estimates.e, 2.0);
+  double sqrt_term_c = 6.0*estimates.hom * (2.0*estimates.het + estimates.e);
   double sqrt_term = sqrt(sqrt_term_a + sqrt_term_b + sqrt_term_c);
-  double inner_term = 3.0*estimates.s_hom + 2.0*estimates.s_het + 5.0*estimates.s_e;
+  double inner_term = 3.0*estimates.hom + 2.0*estimates.het + 5.0*estimates.e;
   double subtract_term = (inner_term - sqrt_term) / sum / 3.0;
   double bracket_term = 1.0 - subtract_term;
   return -0.75 * log(bracket_term);
@@ -136,9 +160,9 @@ double GetSequencingErrorStatistic(const TrioModel &params,
       mother_term1 = somatic_probability_mat(x, y) * data.mother_somatic_probability(y);
       father_term1 = somatic_probability_mat(x, y) * data.father_somatic_probability(y);
 
-      child_term2 = /* 0 + */ + somatic_mutation_counts(x, y);
-      mother_term2 = /* 0 + */ + somatic_mutation_counts(x, y);
-      father_term2 = /* 0 + */ + somatic_mutation_counts(x, y);
+      child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+      mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
+      father_term2 = /* 0 + */ somatic_mutation_counts(x, y);
 
       s_e_child(x) += child_term1 * child_term2;  // Sums over y_j.
       s_e_mother(x) += mother_term1 * mother_term2;
@@ -162,7 +186,7 @@ double GetSequencingErrorStatistic(const TrioModel &params,
     }
 
     s_e_child_x(x) /= data.denominator.child_germline_probability(x);  // Includes child_zygotic_probability.
-    
+
     // S(R_mom,R_dad,R_child, parent_pair=x)
     // Merges j branches.
     s_e(x) += (s_e_child_x(x) +
