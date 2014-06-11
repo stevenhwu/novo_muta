@@ -14,7 +14,7 @@
 int main() {
   TrioModel params;
   ReadDataVector data = {
-    {0, 0, 40, 0},
+    {40, 0, 0, 0},
     {40, 0, 0, 0},
     {40, 0, 0, 0}
   };
@@ -24,34 +24,21 @@ int main() {
 
   // E-Step.
   ParamEstimates estimates;
-  estimates.som = GetSomaticStatistic(params);
-  estimates.germ = GetGermlineStatistic(params);
-  estimates.e = GetMismatchStatistic(params);
-  estimates.hom = GetHomozygousStatistic(params);
-  estimates.het = GetHeterozygousStatistic(params);
-  cout << "S_Som:\t"  << estimates.som  << endl
-       << "S_Germ:\t" << estimates.germ << endl
-       << "S_E:\t"    << estimates.e    << endl
-       << "S_Hom:\t"  << estimates.hom  << endl
-       << "S_Het:\t"  << estimates.het  << endl;
-  
-  // M-Step
+  UpdateParamEstimates(estimates, params);
+  PrintParamEstimates(estimates);
+
+  // M-Step.
+  int count = 0;
   double maximized = MaxSequencingErrorRate(estimates);
-  while (!Equal(params.sequencing_error_rate(), maximized)) {
-    params.set_sequencing_error_rate(maximized);
-
-    // Loops to E-Step.
-    estimates.som = GetSomaticStatistic(params);
-    estimates.germ = GetGermlineStatistic(params);
-    estimates.e = GetMismatchStatistic(params);
-    estimates.hom = GetHomozygousStatistic(params);
-    estimates.het = GetHeterozygousStatistic(params);
-
-    // Loops to M-Step. Quits if converges with sequencing error rate.
-    maximized = MaxSequencingErrorRate(estimates);
+  while (!Equal(params.sequencing_error_rate(), maximized)) {  // Quits if converges.
+    params.set_sequencing_error_rate(maximized);  // Sets new estimate. 
+    UpdateParamEstimates(estimates, params);  // Loops to E-Step.
+    maximized = MaxSequencingErrorRate(estimates); // Loops to M-Step.
+    count++;
   }
-
+  
   cout << "^E:\t" << params.sequencing_error_rate() << endl;
+  cout << count << " iterations." << endl;
 
   return 0;
 }

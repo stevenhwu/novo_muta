@@ -23,6 +23,10 @@ struct ParamEstimates {  // S_<T>
 	double n_s;  // Number of sites.
 };
 
+void UpdateParamEstimates(ParamEstimates &estimates,
+                          const TrioModel &params);
+void PrintParamEstimates(const ParamEstimates &estimates);
+
 // M-step functions.
 double MaxGermlineMutationRate(const ParamEstimates &estimates);
 double MaxSomaticMutationRate(const ParamEstimates &estimates);

@@ -11,6 +11,34 @@
 
 
 /**
+ * Prints the contents of estimates.
+ *
+ * @param estimates  Struct to be printed.
+ */
+void PrintParamEstimates(const ParamEstimates &estimates) {
+  cout << "S_Som:\t"  << estimates.som  << endl
+       << "S_Germ:\t" << estimates.germ << endl
+       << "S_E:\t"    << estimates.e    << endl
+       << "S_Hom:\t"  << estimates.hom  << endl
+       << "S_Het:\t"  << estimates.het  << endl;
+}
+
+/**
+ * Calls the appropriate E-Step function for each summary statistic.
+ *
+ * @param estimates Struct holding summary statistics.
+ * @param params    TrioModel object containing parameters.
+ */
+void UpdateParamEstimates(ParamEstimates &estimates,
+                          const TrioModel &params) {
+  estimates.som = GetSomaticStatistic(params);
+  estimates.germ = GetGermlineStatistic(params);
+  estimates.e = GetMismatchStatistic(params);
+  estimates.hom = GetHomozygousStatistic(params);
+  estimates.het = GetHeterozygousStatistic(params);
+}
+
+/**
  * Maximizes germline mutation rate. Calculated during the M-step of
  * expectation-maximization algorithm.
  *
@@ -156,9 +184,9 @@ double GetSequencingErrorStatistic(const TrioModel &params,
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
   for (int x = 0; x < kGenotypeCount; ++x) {  // Zygotic genotype.
     for (int y = 0; y < kGenotypeCount; ++y) {  // Somatic genotype.
-      child_term1 = somatic_probability_mat(x, y) * data.child_somatic_probability(y);
-      mother_term1 = somatic_probability_mat(x, y) * data.mother_somatic_probability(y);
-      father_term1 = somatic_probability_mat(x, y) * data.father_somatic_probability(y);
+      child_term1 = somatic_probability_mat(y, x) * data.child_somatic_probability(y);
+      mother_term1 = somatic_probability_mat(y, x) * data.mother_somatic_probability(y);
+      father_term1 = somatic_probability_mat(y, x) * data.father_somatic_probability(y);
 
       child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
       mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
