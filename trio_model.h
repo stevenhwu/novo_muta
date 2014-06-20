@@ -14,7 +14,6 @@
  *
  * This is the implementation for an improved trio model with
  * Dirichlet-multinomial approximations.
- *
  * If this is on the infinite_sites_model branch, this is the simplified trio
  * model (infinite sites model) with simpler multinomial approximations for
  * practicing implementing the expectation-maximization algorithm.
