@@ -2,7 +2,20 @@
  * @file bam_driver.cc
  * @author Melissa Ip
  *
- * This is a test driver for parsing a bam file.
+ * This is a test driver for parsing a bam file. The input file must contain
+ * all reads for the trio and have the appriopriate tags.
+ * 
+ * Useful commands to view overview, header, and a certain section:
+ * samtools idxstats
+ * samtools view -H <name>.bam
+ * samtools view <name>.bam <chr:pos1-pos2>
+ *
+ * To splice a section out and merge it with other splices:
+ * samtools view -b <name>.bam <chr:pos1-pos2> <output>.bam
+ * Make read group file for bam1 to bamn, tab deliminated.
+ * samtools merge -rh <rg>.txt <output>.bam <bam1>.bam <bamn>.bam
+ * samtools sort <output>.bam <output_sorted>.bam
+ * samtools index <output_sorted>.bam <output>.index
  *
  * To compile on Herschel and include GSL and BamTools:
  * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc bam_driver.cc
@@ -27,15 +40,6 @@ int main(int argc, const char *argv[]) {
   const int qual_cut = 13;
   const int mapping_cut = 13;
   const double probability_cut = 0.0;  // 0.1
-
-  // samtools idxstats
-  // samtools view -H <name>.bam
-  // samtools view <name>.bam <chr:pos-pos2>
-  // samtools view -b <name>.bam <chr:pos-pos2> > <output>.bam
-  // make read group file for all bam1 to bamn tab deliminated
-  // samtools merge -rh <rg>.txt <output>.bam <bam1>.bam <bamn>.bam
-  // samtools sort <output>.bam <output_sorted>.bam
-  // samtools index <output_sorted>.bam <output>.index
 
   BamReader reader;
   reader.Open(input);
