@@ -2,8 +2,8 @@
  * @file bam_driver.cc
  * @author Melissa Ip
  *
- * This is a test driver for parsing a bam file. The input file must contain
- * all reads for the trio and have the appriopriate tags.
+ * This is the driver for parsing a bam file. The input file must contain
+ * all reads for the trio and have the appropriate tags.
  * 
  * Useful commands to view overview, header, and a certain section:
  * samtools idxstats
@@ -24,8 +24,8 @@
  * cmake ..
  * make
  */
+#include "sufficient_statistics.h" 
 #include "variant_visitor.h"
-
 
 int main(int argc, const char *argv[]) {
   if (argc < 6) {
@@ -37,7 +37,7 @@ int main(int argc, const char *argv[]) {
   const string child_sm = argv[3];
   const string mother_sm = argv[4];
   const string father_sm = argv[5];
-  const int qual_cut = 13;
+  const int qual_cut = 13;  // May decide to pass thresholds via command line.
   const int mapping_cut = 13;
   const double probability_cut = 0.0;  // 0.1
 
@@ -65,6 +65,24 @@ int main(int argc, const char *argv[]) {
     
   pileup.Flush();
   reader.Close();
+
+  // EM algorithm begins with initial E-Step.
+  const TrioVector sites = v->sites();
+  SufficientStatistics stats(sites.size());
+  stats.Update(params, sites);
+
+  // M-Step.
+  int count = 0;
+  double maximized = stats.MaxSequencingErrorRate();
+  while (!Equal(params.sequencing_error_rate(), maximized)) {  // Quits if converges.
+    params.set_sequencing_error_rate(maximized);  // Sets new estimate.
+    stats.Clear(); // Sets to 0. 
+    stats.Update(params, sites);  // Loops to E-Step.
+    maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
+    count++;
+  }
+  
+  cout << "^E:\t" << params.sequencing_error_rate() << endl;
 
   return 0;
 }

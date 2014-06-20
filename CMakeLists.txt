@@ -17,7 +17,7 @@ EXEC_PROGRAM(${GSL_CONFIG}
           ARGS --libs
           OUTPUT_VARIABLE GSL_LIBRARIES)
 
-add_executable(bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc bam_driver.cc)
+add_executable(bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc em_algorithm.cc sufficient_statistics.cc bam_driver.cc)
 add_executable(simulation_driver utility.cc read_dependent_data.cc trio_model.cc simulation_model.cc simulation_driver.cc)
 add_executable(simulation_trio utility.cc read_dependent_data.cc trio_model.cc simulation_trio.cc)
 add_executable(pileup_driver utility.cc read_dependent_data.cc trio_model.cc pileup_utility.cc pileup_driver.cc)

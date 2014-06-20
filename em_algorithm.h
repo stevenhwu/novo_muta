@@ -14,23 +14,6 @@
 
 #include "trio_model.h"
 
-struct ParamEstimates {  // S_<T>
-	double e;
-	double hom;
-	double het;
-	double som;
-	double germ;  // S_M + S_F.
-	double n_s;  // Number of sites.
-};
-
-void UpdateParamEstimates(ParamEstimates &estimates,
-                          const TrioModel &params);
-void PrintParamEstimates(const ParamEstimates &estimates);
-
-// M-step functions.
-double MaxGermlineMutationRate(const ParamEstimates &estimates);
-double MaxSomaticMutationRate(const ParamEstimates &estimates);
-double MaxSequencingErrorRate(const ParamEstimates &estimates);
 
 // E-step functions.
 double GetPopulationMutationRateStatistic(const TrioModel &params);

@@ -70,11 +70,8 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
 	    }
     }
 	}
-  
-  double probability = params_.MutationProbability(data_vec);
-  if (probability >= probability_cut_) {
-    fout << chr << '\t' << pos << '\t' << probability << endl;
-  }
+
+  sites_.push_back(data_vec);
   fout.close();
 }
 
@@ -104,4 +101,8 @@ uint16_t VariantVisitor::ToNucleotideIndex(char b) {
   default:  // Unknown base.
 	  return -1;
   }
+}
+
+TrioVector VariantVisitor::sites() const {
+  return sites_;
 }
