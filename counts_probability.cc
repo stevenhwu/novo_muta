@@ -27,10 +27,10 @@
 
 int main(int argc, const char *argv[]) {
   if (argc < 3) {
-    Die("USAGE: counts_probability <input.txt> <output.txt>");
+    Die("USAGE: counts_probability <input>.txt <output>.txt");
   }
 
-  const char *file_name = argv[1];
+  const string file_name = argv[1];
   ifstream f(file_name);
   if (!f.is_open() || 0 != f.fail()) {
     Die("Input file cannot be read.");
