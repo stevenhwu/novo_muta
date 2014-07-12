@@ -101,7 +101,7 @@ double GetProbability(TrioModel &params, const string &child_line,
 /**
  * Opens and parses all pileup files. All valid sequences are converted to
  * ReadData and used to calculate the probability at their sequence position.
- * The output file is tab deliminated and each sequence is on a new line.
+ * The output file is tab separated and each sequence is on a new line.
  * The first column represents the sequence position and the second column
  * represents the probability at that sequence.
  *

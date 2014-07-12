@@ -12,7 +12,7 @@
  *
  * To splice a section out and merge it with other splices:
  * samtools view -b <name>.bam <chr:pos1-pos2> <output>.bam
- * Make read group file for bam1 to bamn, tab deliminated.
+ * Make read group file for bam1 to bamn, tab separated.
  * samtools merge -rh <rg>.txt <output>.bam <bam1>.bam <bamn>.bam
  * samtools sort <output>.bam <output_sorted>.bam
  * samtools index <output_sorted>.bam <output>.index

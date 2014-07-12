@@ -7,6 +7,7 @@ project(pileup_driver)
 set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Modules")
 find_package(GSL REQUIRED)
+find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
 include_directories("${CMAKE_SOURCE_DIR}/Eigen/src")
 include_directories("${CMAKE_SOURCE_DIR}/bamtools/src")
@@ -22,6 +23,7 @@ add_executable(simulation_driver utility.cc read_dependent_data.cc trio_model.cc
 add_executable(simulation_trio utility.cc read_dependent_data.cc trio_model.cc simulation_trio.cc)
 add_executable(pileup_driver utility.cc read_dependent_data.cc trio_model.cc pileup_utility.cc pileup_driver.cc)
 
+target_link_libraries(bam_driver ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 target_link_libraries(bam_driver bamtools bamtools-utils ${GSL_LIBRARIES})
 target_link_libraries(simulation_driver ${GSL_LIBRARIES})
 target_link_libraries(simulation_trio ${GSL_LIBRARIES})
