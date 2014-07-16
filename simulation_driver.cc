@@ -5,7 +5,7 @@
  * This file runs simulations using command line inputs and the SimulationModel
  * class. The output file is formatted into two columns. Probability of mutation
  * is the first column and whether the site has a mutation is the second column.
- * Each entry is tab deliminated and each site is placed on a new line. For
+ * Each entry is tab separated and each site is placed on a new line. For
  * example:
  *
  * 1.6732e-10      0

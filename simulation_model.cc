@@ -217,7 +217,7 @@ TrioVector SimulationModel::GetRandomTrios(int size) {
 /**
  * Generates size random samples using population priors as weights and outputs
  * their probabilities and whether that site contains a mutation
- * (1=true, 0=false) to a text file. The file is tab deliminated and each site
+ * (1=true, 0=false) to a text file. The file is tab separated and each site
  * is on a new line.
  *
  * @param  file_name File name.
@@ -235,7 +235,7 @@ void SimulationModel::WriteProbability(const string &file_name, int size) {
 
 /**
  * Writes to a text file the index of the key trio, how many random trios had a
- * mutation, how many random trios had no mutation, tab deliminated, each trio
+ * mutation, how many random trios had no mutation, tab separated, each trio
  * is placed on a new line. Assumes 4x coverage.
  *
  * @param  file_name File name.
@@ -261,7 +261,7 @@ void SimulationModel::WriteMutationCounts(const string &file_name, int size) {
 
 /**
  * Writes to stdout the index of the key trio, how many random trios had a
- * mutation, how many random trios had no mutation, tab deliminated, each trio
+ * mutation, how many random trios had no mutation, tab separated, each trio
  * is placed on a new line. Assumes 4x coverage.
  *
  * @param  size Number of random trios.

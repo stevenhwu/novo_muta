@@ -94,6 +94,6 @@ const int kGenotypePairCount = 256;
 const int kTrioCount = 42875;
 const double kEpsilon = numeric_limits<double>::epsilon();
 const Matrix16_2i kGenotypeNumIndex = GenotypeNumIndex();
-const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
+// const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
 
 #endif

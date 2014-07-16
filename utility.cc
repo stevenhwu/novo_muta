@@ -149,7 +149,7 @@ void PrintReadData(const ReadData &data) {
 
 /**
  * Prints ReadDataVector with each ReadData on a new line, and each read
- * deliminated by spaces.
+ * separated by spaces.
  *
  * @param  data_vec ReadDataVector to be printed.
  */

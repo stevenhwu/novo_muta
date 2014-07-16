@@ -172,7 +172,7 @@ Matrix16_16d TrioModel::PopulationPriorsExpanded() {
   Matrix16_16d population_priors = Matrix16_16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
-      RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
+      RowVector4d nucleotide_counts = TwoParentCounts()(i, j); // kTwoParentCounts(i, j);
       double probability = TrioModel::SpectrumProbability(nucleotide_counts);
       population_priors(i, j) = probability;
     }
