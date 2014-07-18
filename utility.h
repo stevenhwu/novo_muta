@@ -55,7 +55,7 @@ void PrintReadDataVector(const ReadDataVector &data_vec);
 MatrixXi EnumerateNucleotideCounts(int coverage);
 ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat);
 TrioVector GetTrioVector(int coverage);
-int IndexOfReadDataVector(const ReadDataVector &data_vec);
+int IndexOfReadDataVector(const ReadDataVector &data_vec, const TrioVector trio_vec);
 bool IsInVector(const RowVector4d &vec, double elem);
 bool IsAlleleInParentGenotype(int child_nucleotide_idx, int parent_genotype_idx);
 double DirichletMultinomialLog(const RowVector4d &alpha, const ReadData &data);

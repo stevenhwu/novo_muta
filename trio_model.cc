@@ -146,10 +146,11 @@ void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
  */
 RowVector256d TrioModel::PopulationPriors() {
   RowVector256d population_priors_flattened;
+  Matrix16_16d population_priors_expanded = TrioModel::PopulationPriorsExpanded();
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
       int idx = i * kGenotypeCount + j;
-      population_priors_flattened(idx) = TrioModel::PopulationPriorsExpanded()(i, j);
+      population_priors_flattened(idx) = population_priors_expanded(i, j);
     }
   }
 
@@ -170,9 +171,10 @@ RowVector256d TrioModel::PopulationPriors() {
  */
 Matrix16_16d TrioModel::PopulationPriorsExpanded() {
   Matrix16_16d population_priors = Matrix16_16d::Zero();
+  const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
-      RowVector4d nucleotide_counts = TwoParentCounts()(i, j); // kTwoParentCounts(i, j);
+      RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
       double probability = TrioModel::SpectrumProbability(nucleotide_counts);
       population_priors(i, j) = probability;
     }

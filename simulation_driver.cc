@@ -31,7 +31,7 @@ int main(int argc, const char *argv[]) {
   const unsigned int coverage = strtoull(argv[3], NULL, 10);
   const double germline_mutation_rate = strtod(argv[4], NULL);
   const double somatic_mutation_rate = strtod(argv[5], NULL);
-  
+
   // Sets up simulation parameters and output results.
   SimulationModel sim(coverage, germline_mutation_rate, somatic_mutation_rate);
   //sim.WriteProbability(file_name, experiment_count);
