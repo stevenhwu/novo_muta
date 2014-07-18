@@ -179,6 +179,8 @@ vector<RowVectorXi> SimulationModel::GetGenotypesMatrix(int size) {
 TrioVector SimulationModel::GetRandomTrios(int size) {
   TrioVector random_trios;
   vector<RowVectorXi> genotypes_vec = SimulationModel::GetGenotypesMatrix(size);
+  const TrioVector trio_vec = GetTrioVector(kNucleotideCount);
+
   for (int i = 0; i < size; ++i) {
     int child_genotype = genotypes_vec[0](i);
     int mother_genotype = genotypes_vec[1](i);
@@ -204,7 +206,7 @@ TrioVector SimulationModel::GetRandomTrios(int size) {
     random_trios.push_back(data_vec);
 
     // Records has_mutation_ in order relevant vector.
-    int trio_index = IndexOfReadDataVector(data_vec);
+    int trio_index = IndexOfReadDataVector(data_vec, trio_vec);
     if (trio_index != -1) {
       mutation_table_[trio_index].push_back(has_mutation_);
     }

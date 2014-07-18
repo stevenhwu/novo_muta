@@ -241,9 +241,10 @@ TrioVector GetTrioVector(int coverage) {
  * coverage. Assumes the ReadDataVector has 4x coverage.
  *
  * @param  data_vec ReadDataVector.
+ * @param  trio_vec TrioVector to look through.
  * @return          Index of ReadDataVector in TrioVector list.    
  */
-int IndexOfReadDataVector(const ReadDataVector &data_vec) {
+int IndexOfReadDataVector(const ReadDataVector &data_vec, const TrioVector trio_vec) {
   TrioVector trio_vec = GetTrioVector(kNucleotideCount);
   for (int i = 0; i < kTrioCount; ++i) {
     if (EqualsReadDataVector(data_vec, trio_vec[i])) {
