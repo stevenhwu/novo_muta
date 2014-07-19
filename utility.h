@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include <gsl/gsl_randist.h>  // simulation and multinomial
+#include <gsl/gsl_randist.h>  // Simulation and multinomial.
 
 #include "Eigen/Core"
 #include "Eigen/Dense"
@@ -39,7 +39,7 @@ typedef Matrix<double, 16, 4, RowMajor> Matrix16_4d;
 typedef Matrix<double, 16, 16, RowMajor> Matrix16_16d;
 typedef Matrix<double, 16, 256, RowMajor> Matrix16_256d;
 typedef Matrix<RowVector4d, 16, 16, RowMajor> Matrix16_16_4d;
-typedef vector<ReadData> ReadDataVector; // should contain child, mother, and father sequencing reads
+typedef vector<ReadData> ReadDataVector;  // Contains child, mother, and father sequencing reads.
 typedef vector<ReadDataVector> TrioVector;
 
 // Forward declarations.

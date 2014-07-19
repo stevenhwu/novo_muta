@@ -15,10 +15,6 @@
  * This is the implementation for an improved trio model with
  * Dirichlet-multinomial approximations.
  *
- * If this is on the infinite_sites_model branch, this is the simplified trio
- * model (infinite sites model) with simpler multinomial approximations for
- * practicing implementing the expectation-maximization algorithm.
- *
  * Example usage:
  *
  *   TrioModel params;  // Uses default parameters.
@@ -80,7 +76,6 @@ class TrioModel {
   void SomaticTransition(bool is_numerator=false);
   RowVector256d GetRootMat(const RowVector256d &child_germline_probability,
                            const RowVector256d &parent_probability);
-  double SpectrumProbability(const RowVector4d &nucleotide_counts);  // Calculates probability of allele spectrum given read counts.
   RowVector256d PopulationPriors();  // Functions for setting up the model and relevant arrays.
   Matrix16_16d PopulationPriorsExpanded();
   RowVector16d PopulationPriorsSingle();
@@ -103,7 +98,7 @@ class TrioModel {
   double germline_mutation_rate_;
   double somatic_mutation_rate_;
   double sequencing_error_rate_;
-  double dirichlet_dispersion_;  // Unused.
+  double dirichlet_dispersion_;
   RowVector4d nucleotide_frequencies_;
   Matrix16_4d alphas_;
   RowVector16d population_priors_single_;  // Unused.

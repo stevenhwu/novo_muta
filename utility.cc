@@ -2,7 +2,7 @@
  * @file utility.cc
  * @author Melissa Ip
  *
- * This file contains the implementation of utilities.
+ * This file contains the implementation of utility.
  *
  * See top of utility.h for a complete description.
  */
@@ -241,6 +241,7 @@ TrioVector GetTrioVector(int coverage) {
  * coverage. Assumes the ReadDataVector has 4x coverage.
  *
  * @param  data_vec ReadDataVector.
+ * @param  trio_vec TrioVector to look through.
  * @return          Index of ReadDataVector in TrioVector list.    
  */
 int IndexOfReadDataVector(const ReadDataVector &data_vec, const TrioVector trio_vec) {

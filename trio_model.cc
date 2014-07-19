@@ -14,8 +14,7 @@
  * 
  * sequencing_probability_mat is created or updated if sequencing_error_rate_
  * or dirichlet_dispersion_ is changed when MutationProbability() or
- * SetReadDependentData() is called. dirichlet_dispersion_ is not used in the
- * infinite sites model version.
+ * SetReadDependentData() is called.
  */
 TrioModel::TrioModel()
     : population_mutation_rate_{1e-6/*0.001*/},
@@ -116,7 +115,7 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
 /**
  * Initializes and updates read_dependent_data_.sequencing_probability_mat and
  * individual somatic probabilities using sequencing_error_rate_ as well as the
- * other probabilities along the branch. dirichlet_dispersion_ is not used.
+ * other probabilities along the branch.
  *
  * Follows the model diagram in MutationProbability.
  *
@@ -162,21 +161,42 @@ RowVector256d TrioModel::PopulationPriors() {
  * of the possible events in the sample space that covers all possible parent
  * genotype combinations.
  *
- * Calls SpectrumProbability assuming infinite sites model using all enumerated
- * nucleotide counts at coverage 4x.
+ * Creates nucleotide mutation frequencies {alpha_A, alpha_C, alpha_G, alpha_T}
+ * based on the nucleotide frequencies and population mutation rate (theta).
+ * These frequencies and nucleotide counts {n_A, n_C, n_G, n_T} are used in the
+ * Dirichlet multinomial.
+ *
+ * For example, both parents have genotype AA, resulting in N = 4:
+ *
+ * population_mutation_rate_ = 0.00025;
+ * nucleotide_frequencies_ << 0.25, 0.25, 0.25, 0.25;
+ * nucleotide_counts = {4, 0, 0, 0};
  *
  * @return  16 x 16 Eigen matrix in log e space where the (i, j) element is the
  *          probability that the mother has genotype i and the father has
  *          genotype j.
  */
 Matrix16_16d TrioModel::PopulationPriorsExpanded() {
+  // Calculates nucleotide mutation frequencies using given mutation rate.
+  RowVector4d nucleotide_mutation_frequencies = (nucleotide_frequencies_ *
+    population_mutation_rate_);
   Matrix16_16d population_priors = Matrix16_16d::Zero();
   const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
+
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
+      // Convert nucleotide_counts to ReadData for DirichletMultinomialLog().
       RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
-      double probability = TrioModel::SpectrumProbability(nucleotide_counts);
-      population_priors(i, j) = probability;
+      ReadData nucleotide_read;
+      for (int k = 0; k < kNucleotideCount; ++k) {
+        nucleotide_read.reads[k] = nucleotide_counts(k);
+      }
+      // Calculates probability using the Dirichlet multinomial in normal space.
+      double log_probability = DirichletMultinomialLog(
+        nucleotide_mutation_frequencies,
+        nucleotide_read
+      );
+      population_priors(i, j) = exp(log_probability);
     }
   }
 
@@ -188,30 +208,6 @@ Matrix16_16d TrioModel::PopulationPriorsExpanded() {
  */
 RowVector16d TrioModel::PopulationPriorsSingle() {
   return TrioModel::PopulationPriorsExpanded().rowwise().sum();
-}
-
-/**
- * Returns the probability of the drawn alleles having a 4-0, 3-1, or 2-2
- * spectrum.
- *
- * @param  nucleotide_counts RowVector containing allele counts.
- * @return                   Probability of allele spectrum.
- */
-double TrioModel::SpectrumProbability(const RowVector4d &nucleotide_counts) {
-  double p2_2 = population_mutation_rate_ / 2.0;
-  double p3_1 = population_mutation_rate_ + population_mutation_rate_ / 3.0;
-  double p4_0 = 1.0 - p3_1 - p2_2;
-
-  if (IsInVector(nucleotide_counts, 4.0)) {
-    return p4_0 * 0.25;  // p(4 allele) * p(position)
-  } else if (IsInVector(nucleotide_counts, 3.0)) {
-    return p3_1 * 0.25 / 3.0 * 0.25;  // p(3 allele) * p(1 allele) * p(position)
-  } else if (IsInVector(nucleotide_counts, 2.0) &&
-      !IsInVector(nucleotide_counts, 1.0)) {
-    return p2_2 * 0.25 / 3.0 * 2.0 / 6.0;  // p(2 allele) * p(2 allele) * pair qualifier * p(position)
-  } else {
-    return 0.0;  // counts do not match 4-0, 3-0, or 2-2 allele spectrum
-  }
 }
 
 /**
@@ -366,13 +362,8 @@ void TrioModel::SequencingProbabilityMat() {
   for (int read = 0; read < 3; ++read) {
     for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
       auto alpha = alphas_.row(genotype_idx);
-      // converts alpha to double array
-      double p[kNucleotideCount] = {alpha(0), alpha(1), alpha(2), alpha(3)};
-      // converts read to unsigned int array
       const ReadData &data = read_dependent_data_.read_data_vec[read];
-      unsigned int n[kNucleotideCount] = {data.reads[0], data.reads[1],
-                                          data.reads[2], data.reads[3]};
-      double log_probability = gsl_ran_multinomial_lnpdf(kNucleotideCount, p, n);
+      double log_probability = DirichletMultinomialLog(alpha, data);
       read_dependent_data_.sequencing_probability_mat(read, genotype_idx) = log_probability;
     }
   }
@@ -510,7 +501,7 @@ Matrix16_4d TrioModel::Alphas() {
             no_match,     no_match,     heterozygous, heterozygous,
             no_match,     no_match,     no_match,     homozygous;
 
-  return alphas;
+  return alphas * dirichlet_dispersion_;
 }
 
 /**
