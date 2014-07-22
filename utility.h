@@ -38,7 +38,6 @@ typedef Matrix<double, 4, 16, RowMajor> Matrix4_16d;
 typedef Matrix<double, 16, 4, RowMajor> Matrix16_4d;
 typedef Matrix<double, 16, 16, RowMajor> Matrix16_16d;
 typedef Matrix<double, 16, 256, RowMajor> Matrix16_256d;
-typedef Matrix<RowVectorXi, 1, 3, RowMajor> MatrixX_3i;
 typedef Matrix<RowVector4d, 16, 16, RowMajor> Matrix16_16_4d;
 typedef vector<ReadData> ReadDataVector;  // Contains child, mother, and father sequencing reads.
 typedef vector<ReadDataVector> TrioVector;

@@ -141,7 +141,7 @@ ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
  * @param  size Number of genotypes to generate.
  * @return      3 x size Eigen matrix of genotypes.
  */
-MatrixX_3i SimulationModel::GetGenotypesMatrix(int size) {
+MatrixXi SimulationModel::GetGenotypesMatrix(int size) {
   // Generates random samples using population priors as weights.
   RowVectorXi parent_genotypes = SimulationModel::RandomDiscreteChoice(
     kGenotypePairCount,
@@ -150,22 +150,17 @@ MatrixX_3i SimulationModel::GetGenotypesMatrix(int size) {
   );
 
   // Extracts parent genotypes from samples and gets child genotypes.
-  RowVectorXi child_genotypes(size);
-  RowVectorXi mother_genotypes(size);
-  RowVectorXi father_genotypes(size);
-  mother_genotypes = parent_genotypes / kGenotypeCount;
+  MatrixXi genotypes_mat(3, size);
+  genotypes_mat.row(1) = parent_genotypes / kGenotypeCount;
   for (int i = 0; i < size; ++i) {
     int father_genotype = parent_genotypes(i) % kGenotypeCount;
-    father_genotypes(i) = father_genotype;
-    child_genotypes(i) = SimulationModel::GetChildGenotype(mother_genotypes(i),
-                                                           father_genotype);
+    genotypes_mat.row(2)(i) = father_genotype;
+    genotypes_mat.row(0)(i) = SimulationModel::GetChildGenotype(
+      genotypes_mat(1, i),  // Mother genotype.
+      father_genotype
+    );
   }
 
-  // Adds each vector to dynamic matrix.
-  MatrixX_3i genotypes_mat;
-  genotypes_mat(0) = child_genotypes;
-  genotypes_mat(1) = mother_genotypes;
-  genotypes_mat(2) = father_genotypes;
   return genotypes_mat;
 }
 
@@ -178,13 +173,13 @@ MatrixX_3i SimulationModel::GetGenotypesMatrix(int size) {
  */
 TrioVector SimulationModel::GetRandomTrios(int size) {
   TrioVector random_trios;
-  MatrixX_3i genotypes_mat = SimulationModel::GetGenotypesMatrix(size);
+  MatrixXi genotypes_mat = SimulationModel::GetGenotypesMatrix(size);
   TrioVector trio_vec = GetTrioVector(kNucleotideCount);
 
   for (int i = 0; i < size; ++i) {
-    int child_genotype = genotypes_mat(0)(i);
-    int mother_genotype = genotypes_mat(1)(i);
-    int father_genotype = genotypes_mat(2)(i);
+    int child_genotype = genotypes_mat(0, i);
+    int mother_genotype = genotypes_mat(1, i);
+    int father_genotype = genotypes_mat(2, i);
 
     // Processes germline mutation. Germline matrix requires no Kronecker.
     int child_germline_genotype = SimulationModel::Mutate(

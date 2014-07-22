@@ -49,7 +49,7 @@ class SimulationModel {
              int parent_genotype_idx=-1);
   int GetChildGenotype(int mother_genotype, int father_genotype);
   ReadData DirichletMultinomialSample(int genotype_idx);
-  MatrixX_3i GetGenotypesMatrix(int size);
+  MatrixXi GetGenotypesMatrix(int size);
   TrioVector GetRandomTrios(int size);
   int RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities);
   RowVectorXi RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities,
