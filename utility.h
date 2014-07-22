@@ -38,6 +38,7 @@ typedef Matrix<double, 4, 16, RowMajor> Matrix4_16d;
 typedef Matrix<double, 16, 4, RowMajor> Matrix16_4d;
 typedef Matrix<double, 16, 16, RowMajor> Matrix16_16d;
 typedef Matrix<double, 16, 256, RowMajor> Matrix16_256d;
+typedef Matrix<RowVectorXi, 1, 3, RowMajor> MatrixX_3i;
 typedef Matrix<RowVector4d, 16, 16, RowMajor> Matrix16_16_4d;
 typedef vector<ReadData> ReadDataVector;  // Contains child, mother, and father sequencing reads.
 typedef vector<ReadDataVector> TrioVector;
@@ -55,7 +56,7 @@ void PrintReadDataVector(const ReadDataVector &data_vec);
 MatrixXi EnumerateNucleotideCounts(int coverage);
 ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat);
 TrioVector GetTrioVector(int coverage);
-int IndexOfReadDataVector(const ReadDataVector &data_vec, const TrioVector trio_vec);
+int IndexOfReadDataVector(const ReadDataVector &data_vec, TrioVector trio_vec);
 bool IsInVector(const RowVector4d &vec, double elem);
 bool IsAlleleInParentGenotype(int child_nucleotide_idx, int parent_genotype_idx);
 double DirichletMultinomialLog(const RowVector4d &alpha, const ReadData &data);

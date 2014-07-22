@@ -30,7 +30,7 @@ class SimulationModel {
  public:
   SimulationModel(unsigned int coverage, double germline_mutation_rate,  // No default constructor, because all parameters are given through command line inputs.
                   double somatic_mutation_rate);
-  void Seed();  // Seeds random number generator during initialization.
+  void Seed();  // Seeds random number generator.
   void Free();
   void WriteProbability(const string &file_name, int size);  // Generates random samples and probabilities in text file.
   void WriteMutationCounts(const string &file_name, int size);
@@ -49,7 +49,7 @@ class SimulationModel {
              int parent_genotype_idx=-1);
   int GetChildGenotype(int mother_genotype, int father_genotype);
   ReadData DirichletMultinomialSample(int genotype_idx);
-  vector<RowVectorXi> GetGenotypesMatrix(int size);
+  MatrixX_3i GetGenotypesMatrix(int size);
   TrioVector GetRandomTrios(int size);
   int RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities);
   RowVectorXi RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities,
@@ -60,7 +60,7 @@ class SimulationModel {
   unsigned int coverage_;
   bool has_mutation_;
   vector<bool> has_mutation_vec_;
-  vector<bool> mutation_table_[42875];
+  vector<bool> mutation_table_[kTrioCount];
   gsl_rng *r;
 };
 
