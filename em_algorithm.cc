@@ -96,13 +96,6 @@ double GetSequencingErrorStatistic(const TrioModel &params,
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
   const Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
 
-  double mother_term1 = 0.0;
-  double father_term1 = 0.0;
-  double child_term1 = 0.0;
-  double mother_term2 = 0.0;
-  double father_term2 = 0.0;
-  double child_term2 = 0.0;
-
   // S(R_mom, mom_somatic=x), S(R_dad, dad_somatic=x), S(R_child, child_somatic=x)
   RowVector256d s_e = RowVector256d::Zero();
   RowVector16d s_e_child = child;
@@ -112,19 +105,14 @@ double GetSequencingErrorStatistic(const TrioModel &params,
 
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
   for (int x = 0; x < kGenotypeCount; ++x) {  // Zygotic genotype.
-    for (int y = 0; y < kGenotypeCount; ++y) {  // Somatic genotype.
-      child_term1 = somatic_probability_mat(y, x) * data.child_somatic_probability(y);
-      mother_term1 = somatic_probability_mat(y, x) * data.mother_somatic_probability(y);
-      father_term1 = somatic_probability_mat(y, x) * data.father_somatic_probability(y);
-
-      child_term2 = /* 0 + */ somatic_mutation_counts(x, y);
-      mother_term2 = /* 0 + */ somatic_mutation_counts(x, y);
-      father_term2 = /* 0 + */ somatic_mutation_counts(x, y);
-
-      s_e_child(x) += child_term1 * child_term2;  // Sums over y_j.
-      s_e_mother(x) += mother_term1 * mother_term2;
-      s_e_father(x) += father_term1 * father_term2;
-    }
+    auto splice = somatic_probability_mat.col(x).transpose();
+    auto child_term = splice.cwiseProduct(data.child_somatic_probability);
+    auto mother_term = splice.cwiseProduct(data.mother_somatic_probability);
+    auto father_term = splice.cwiseProduct(data.father_somatic_probability);
+    
+    s_e_child(x) += child_term.cwiseProduct(somatic_mutation_counts.row(x))(x);  // Sums over y_j.
+    s_e_mother(x) += mother_term.cwiseProduct(somatic_mutation_counts.row(x))(x);
+    s_e_father(x) += father_term.cwiseProduct(somatic_mutation_counts.row(x))(x);
 
     // Dividing out child_zygotic_probability occurs at the next node.
     s_e_mother(x) /= data.denominator.mother_zygotic_probability(x);
@@ -136,12 +124,8 @@ double GetSequencingErrorStatistic(const TrioModel &params,
   // because no somatic mutation or sequencing error can occur in germline.
   // For each parent pair genotype x in population priors.
   for (int x = 0; x < kGenotypePairCount; ++x) {
-    for (int y = 0; y < kGenotypeCount; ++y) {  // Child germline genotype.
-      child_term1 = germline_probability_mat(y, x);
-      child_term2 = s_e_child(y) /* + 0 */;
-      s_e_child_x(x) += child_term1 * child_term2;
-    }
-
+    auto splice = germline_probability_mat.col(x).transpose();  // Child germline genotype.
+    s_e_child_x(x) += splice.cwiseProduct(s_e_child).sum();
     s_e_child_x(x) /= data.denominator.child_germline_probability(x);  // Includes child_zygotic_probability.
 
     // S(R_mom,R_dad,R_child, parent_pair=x)
@@ -253,22 +237,16 @@ double GetGermlineStatistic(const TrioModel &params) {
   const Matrix16_256d germline_mutation_counts = GermlineMutationCounts(params);
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
   const RowVector256d population_priors = params.population_priors();
+  
   RowVector256d s_germ = RowVector256d::Zero();
 
-  double child_term1 = 0.0;
-  double child_term2 = 0.0;
-  
   // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
   // At top of branches.
   // For each parent pair genotype x in population priors.
   for (int x = 0; x < kGenotypePairCount; ++x) {
-    for (int y = 0; y < kGenotypeCount; ++y) {  // Child germline genotype.
-      child_term1 = (germline_probability_mat(y, x) *
-                     data.denominator.child_zygotic_probability(y));
-      child_term2 = /* 0 + */ germline_mutation_counts(y, x);
-      s_germ(x) += child_term1 * child_term2;
-    }
-
+    auto splice = germline_probability_mat.col(x).transpose();  // Child germline genotype.
+    auto child_term = splice.cwiseProduct(data.denominator.child_zygotic_probability);
+    s_germ(x) += child_term.cwiseProduct(germline_mutation_counts.col(x).transpose()).sum();
     s_germ(x) *= data.denominator.mother_zygotic_probability(x / kGenotypeCount);
     s_germ(x) *= data.denominator.father_zygotic_probability(x % kGenotypeCount);
     s_germ(x) *= population_priors(x);

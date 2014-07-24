@@ -27,6 +27,7 @@
 #include "sufficient_statistics.h" 
 #include "variant_visitor.h"
 
+
 int main(int argc, const char *argv[]) {
   if (argc < 6) {
     Die("USAGE: bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>");

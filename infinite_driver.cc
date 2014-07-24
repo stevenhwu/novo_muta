@@ -6,9 +6,9 @@
  * implementation applied to the trio model.
  *
  * To compile on Herschel and include GSL:
- * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o infinite_driver utility.cc read_dependent_data.cc trio_model.cc em_algorithm.cc infinite_driver.cc
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o infinite_driver utility.cc read_dependent_data.cc trio_model.cc em_algorithm.cc sufficient_statistics.cc infinite_driver.cc
  */
-#include "em_algorithm.h"
+#include "sufficient_statistics.h"
 
 
 int main() {
@@ -23,17 +23,19 @@ int main() {
   cout << "P(Mut):\t" << probability << endl;
 
   // E-Step.
-  ParamEstimates estimates;
-  UpdateParamEstimates(estimates, params);
-  PrintParamEstimates(estimates);
+  SufficientStatistics stats(1);
+  TrioVector sites;
+  sites.push_back(data);
+  stats.Update(params, sites);
 
   // M-Step.
   int count = 0;
-  double maximized = MaxSequencingErrorRate(estimates);
+  double maximized = stats.MaxSequencingErrorRate();
   while (!Equal(params.sequencing_error_rate(), maximized)) {  // Quits if converges.
-    params.set_sequencing_error_rate(maximized);  // Sets new estimate. 
-    UpdateParamEstimates(estimates, params);  // Loops to E-Step.
-    maximized = MaxSequencingErrorRate(estimates); // Loops to M-Step.
+    params.set_sequencing_error_rate(maximized);  // Sets new estimate.
+    stats.Clear(); // Sets to 0. 
+    stats.Update(params, sites);  // Loops to E-Step.
+    maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
     count++;
   }
   
