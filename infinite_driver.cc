@@ -14,7 +14,7 @@
 int main() {
   TrioModel params;
   ReadDataVector data = {
-    {40, 0, 0, 0},
+    {0, 0, 40, 0},
     {40, 0, 0, 0},
     {40, 0, 0, 0}
   };
@@ -23,18 +23,21 @@ int main() {
   cout << "P(Mut):\t" << probability << endl;
 
   // E-Step.
-  SufficientStatistics stats(1);
-  TrioVector sites;
-  sites.push_back(data);
+  SufficientStatistics stats(1.0);
+  TrioVector sites = {data};
   stats.Update(params, sites);
-  
+  stats.Print();
+
   // M-Step.
   int count = 0;
   double maximized = stats.MaxSequencingErrorRate();
-  while (!Equal(params.sequencing_error_rate(), maximized)) {  // Quits if converges.
+  while (!Equal(params.sequencing_error_rate(), maximized) && !stats.IsNan()) {  // Quits if converges.
+    cout << "~E:\t" << params.sequencing_error_rate() << endl;
+    cout << "~E':\t" << maximized << endl;
     params.set_sequencing_error_rate(maximized);  // Sets new estimate.
     stats.Clear(); // Sets to 0. 
     stats.Update(params, sites);  // Loops to E-Step.
+    stats.Print();
     maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
     count++;
   }

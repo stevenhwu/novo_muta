@@ -46,13 +46,21 @@ double SufficientStatistics::MaxSomaticMutationRate() {
  */
 double SufficientStatistics::MaxSequencingErrorRate() {
   double sum = hom_ + het_ + e_;
+  double double_het = 2.0 * het_;
   double sqrt_term_a = 9.0 * pow(hom_, 2.0);
-  double sqrt_term_b = pow(2.0 * het_ - e_, 2.0);
-  double sqrt_term_c = 6.0 * hom_ * (2.0 * het_ + e_);
+  double sqrt_term_b = pow(double_het - e_, 2.0);
+  double sqrt_term_c = 6.0 * hom_ * (double_het + e_);
   double sqrt_term = sqrt(sqrt_term_a + sqrt_term_b + sqrt_term_c);
-  double inner_term = 3.0 * hom_ + 2.0 * het_ + 5.0 * e_;
-  double subtract_term = (inner_term - sqrt_term) / sum / 3.0;
-  double bracket_term = 1.0 - subtract_term;
+  double inner_term = 3.0 * hom_ + double_het + 5.0 * e_;
+  double subtract_term = (inner_term - sqrt_term) / sum / -3.0;
+  double bracket_term = 1.0 + subtract_term;
+
+/*  cout << sum << endl;
+  cout << sqrt_term << endl;
+  cout << inner_term << endl;
+  cout << subtract_term << endl;
+  cout << bracket_term << endl;*/
+
   return -0.75 * log(bracket_term);
 }
 
@@ -82,6 +90,13 @@ void SufficientStatistics::Clear() {
   het_ = 0.0;
   som_ = 0.0;
   germ_ = 0.0;
+}
+
+/**
+ * Returns true if any of the statistics is NaN.
+ */
+bool SufficientStatistics::IsNan() {
+  return isnan(e_) || isnan(hom_) || isnan(het_) || isnan(som_) || isnan(germ_);
 }
 
 /**

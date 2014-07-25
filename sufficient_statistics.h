@@ -25,6 +25,7 @@ class SufficientStatistics {
   double MaxGermlineMutationRate();
   double MaxSomaticMutationRate();
   double MaxSequencingErrorRate();
+  bool IsNan();
 
  private:
   // Instance member variables.

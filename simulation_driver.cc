@@ -35,8 +35,8 @@ int main(int argc, const char *argv[]) {
   // Sets up simulation parameters and output results.
   SimulationModel sim(coverage, germline_mutation_rate, somatic_mutation_rate);
   sim.Seed();
-  sim.WriteProbability(file_name, experiment_count);
-  // sim.WriteMutationCounts(file_name, experiment_count);
+  // sim.WriteProbability(file_name, experiment_count);
+  sim.WriteMutationCounts(file_name, experiment_count);
   // sim.PrintMutationCounts(experiment_count);
   sim.Free();
 

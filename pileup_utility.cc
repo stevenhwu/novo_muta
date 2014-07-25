@@ -54,6 +54,7 @@ ReadData GetReadData(const string &line) {
   stringstream str(line);
   str >> sequence;
   str >> position;
+  // str.seekg(10, ios::beg);
   str >> ref_nucleotide;
   str >> num_aligned_reads;
   str >> bases;
