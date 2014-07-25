@@ -27,7 +27,7 @@ int main() {
   TrioVector sites;
   sites.push_back(data);
   stats.Update(params, sites);
-
+  
   // M-Step.
   int count = 0;
   double maximized = stats.MaxSequencingErrorRate();

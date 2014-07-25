@@ -225,11 +225,10 @@ TrioVector GetTrioVector(int coverage) {
   TrioVector trio_vec;
   MatrixXi mat = EnumerateNucleotideCounts(coverage);
   ReadDataVector data_vec = GetUniqueReadDataVector(mat);
-  for (auto data1 : data_vec) {
-    for (auto data2 : data_vec) {
-      for (auto data3 : data_vec) {
-        ReadDataVector enum_data_vec = {data1, data2, data3};
-        trio_vec.push_back(enum_data_vec);
+  for (ReadData data1 : data_vec) {
+    for (ReadData data2 : data_vec) {
+      for (ReadData data3 : data_vec) {
+        trio_vec.push_back({ data1, data2, data3 });
       }
     }
   }
