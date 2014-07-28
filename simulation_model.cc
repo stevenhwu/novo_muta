@@ -93,8 +93,10 @@ int SimulationModel::Mutate(int genotype_idx, bool is_germline,
  * @return                 Numeric child genotype.
  */
 int SimulationModel::GetChildGenotype(int mother_genotype, int father_genotype) {
-  int child_allele1 = kGenotypeNumIndex(mother_genotype, rand() % 2);
-  int child_allele2 = kGenotypeNumIndex(father_genotype, rand() % 2);
+  /*int child_allele1 = kGenotypeNumIndex(mother_genotype, rand() % 2);
+  int child_allele2 = kGenotypeNumIndex(father_genotype, rand() % 2);*/
+  int child_allele1 = SimulationModel::GetChildAllele(mother_genotype);
+  int child_allele2 = SimulationModel::GetChildAllele(father_genotype);
   for (int i = 0; i < kGenotypeCount; ++i) {
     if (child_allele1 == i / kNucleotideCount &&
         child_allele2 == i % kNucleotideCount) {
@@ -102,6 +104,24 @@ int SimulationModel::GetChildGenotype(int mother_genotype, int father_genotype) 
     }
   }
   return -1;  // ERROR: This should not happen.
+}
+
+/**
+ * Returns a random allele in the parent genotype. Used to create a child
+ * genotype from two parents.
+ *
+ * @param  parent_genotype Parent genotype.
+ * @return          Random allele in the parent genotype.
+ */
+int SimulationModel::GetChildAllele(int parent_genotype) {
+  int bin = rand() % 2;
+  int allele = 0;
+  if (bin == 0) {
+    allele = parent_genotype / kNucleotideCount;
+  } else if (bin == 1) {
+    allele = parent_genotype % kNucleotideCount;
+  }
+  return allele;
 }
 
 /**

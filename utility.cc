@@ -29,15 +29,15 @@
  *
  * @return  16 x 2 Eigen matrix.
  */
-Matrix16_2i GenotypeNumIndex() {
-  Matrix16_2i mat;
-  //        A|    C|    G|    T|
-  mat << 0, 0, 0, 1, 0, 2, 0, 3,  // A
-         1, 0, 1, 1, 1, 2, 1, 3,  // C
-         2, 0, 2, 1, 2, 2, 2, 3,  // G
-         3, 0, 3, 1, 3, 2, 3, 3;  // T
-  return mat;
-}
+// Matrix16_2i GenotypeNumIndex() {
+//   Matrix16_2i mat;
+//   //        A|    C|    G|    T|
+//   mat << 0, 0, 0, 1, 0, 2, 0, 3,  // A
+//          1, 0, 1, 1, 1, 2, 1, 3,  // C
+//          2, 0, 2, 1, 2, 2, 2, 3,  // G
+//          3, 0, 3, 1, 3, 2, 3, 3;  // T
+//   return mat;
+// }
 
 /**
  * Returns a 16 x 16 x 4 Eigen matrix filled with zeros. The third dimension is
@@ -48,7 +48,7 @@ Matrix16_2i GenotypeNumIndex() {
 Matrix16_16_4d ZeroMatrix16_16_4d() {
   Matrix16_16_4d mat;
   for (int i = 0; i < kGenotypeCount; ++i) {
-    for (int j = 0; i < kGenotypeCount; ++i) {
+    for (int j = 0; j < kGenotypeCount; ++j) {
       mat(i, j) = RowVector4d::Zero();
     }
   }
@@ -62,7 +62,7 @@ Matrix16_16_4d ZeroMatrix16_16_4d() {
  */
 void PrintMatrix16_16_4d(const Matrix16_16_4d &mat) {
   for (int i = 0; i < kGenotypeCount; ++i) {
-    for (int j = 0; i < kGenotypeCount; ++i) {
+    for (int j = 0; j < kGenotypeCount; ++j) {
       cout << mat(i, j) << endl;
     }
   }
@@ -71,7 +71,9 @@ void PrintMatrix16_16_4d(const Matrix16_16_4d &mat) {
 /**
  * Generates a 16 x 16 x 4 Eigen matrix. The first dimension represents the
  * mother genotype. The second dimension represents the father genotype. The
- * third dimension represents the nucleotide counts.
+ * third dimension represents the nucleotide counts. For example, the (0, 0)
+ * element represents AAAA, so its corresponding nucleotide counts would be
+ * [4, 0, 0, 0].
  *
  * Used for generating the constant kTwoParentCounts only, which is used in
  * creating the population priors.
@@ -81,28 +83,19 @@ void PrintMatrix16_16_4d(const Matrix16_16_4d &mat) {
  *          genotype j.
  */
 Matrix16_16_4d TwoParentCounts() {
-  Matrix16_16_4d genotype_count = ZeroMatrix16_16_4d();
-  // Loop through nucleotide and genotype indices.
-  for (int nucleotide_idx = 0; nucleotide_idx < kNucleotideCount;
-      ++nucleotide_idx) {
-    for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
-      // Compare nucleotide with each nucleotide in genotype.
-      for (int allele = 0; allele < 2; ++allele) {
-        if (kGenotypeNumIndex(genotype_idx, allele) == nucleotide_idx) {
-          // Increment nucleotide counts by 1 if match.
-          auto row_slice = genotype_count.row(genotype_idx);
-          for (int i = 0; i < row_slice.size(); ++i) {
-            row_slice(i)(nucleotide_idx)++;
-          }
-          auto col_slice = genotype_count.col(genotype_idx);
-          for (int i = 0; i < col_slice.size(); ++i) {
-            col_slice(i)(nucleotide_idx)++;
-          }
-        }
-      }
+  Matrix16_16_4d counts = ZeroMatrix16_16_4d();
+  RowVector4d vec = RowVector4d::Zero();
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      vec(i / kNucleotideCount)++;
+      vec(i % kNucleotideCount)++;
+      vec(j / kNucleotideCount)++;
+      vec(j % kNucleotideCount)++;
+      counts(i, j) = vec;
+      vec = RowVector4d::Zero();
     }
   }
-  return genotype_count;
+  return counts;
 }
 
 /**
@@ -161,27 +154,26 @@ void PrintReadDataVector(const ReadDataVector &data_vec) {
 
 /**
  * Enumerates all possible nucleotide counts for an individual sequenced at
- * given coverage.
+ * given coverage. Each combination is only given once. 4x coverage should give
+ * 624 combinations excluding {0, 0, 0, 0}. The 0 vector is omitted in
+ * simulations and further expansion.
  *
  * @param  coverage  Coverage or max nucleotide count.
- * @return           4^coverage x 4 Eigen matrix of nucleotide counts.
+ * @return           (coverage+1)^4 - 1 ReadDataVector of nucleotide counts.
  */
-MatrixXi EnumerateNucleotideCounts(int coverage) {
-  Matrix4i identity_mat = Matrix4i::Identity();
-  if (coverage == 1) {
-    return identity_mat;
-  } else {
-    int rows = (int) pow(kNucleotideCount, coverage);
-    MatrixXi counts(rows, kNucleotideCount);
-    MatrixXi recursive = EnumerateNucleotideCounts(coverage - 1);
-    for (int j = 0; j < recursive.rows(); ++j) {
-      for (int i = 0; i < kNucleotideCount; ++i) {
-        counts.row(i + j*kNucleotideCount) = (identity_mat.row(i) +
-          recursive.row(j));
-      }
-    }
-    return counts;
+ReadDataVector EnumerateNucleotideCounts(int coverage) {
+  ReadDataVector counts;
+  ReadData data;
+  int cov = coverage + 1;
+  int rows = pow(cov, kNucleotideCount);
+  for (int i = 1; i < rows; ++i) {
+    data.reads[0] = i / (cov*cov*cov) % cov;
+    data.reads[1] = i / (cov*cov) % cov;
+    data.reads[2] = i / cov % cov;
+    data.reads[3] = i % cov;
+    counts.push_back(data);
   }
+  return counts;
 }
 
 /**
@@ -192,7 +184,7 @@ MatrixXi EnumerateNucleotideCounts(int coverage) {
  * @return     ReadDataVector containing all unique nucleotide counts converted
  *             to ReadData.
  */
-ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat) {
+/*ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat) {
   ReadDataVector data_vec;
   for (int i = 0; i < mat.rows(); ++i) {
     bool is_in_vec = false;
@@ -213,27 +205,7 @@ ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat) {
   }
   return data_vec;
 }
-
-/**
- * Returns all possible and unique trio sets of sequencing counts for an
- * individual sequenced at given coverage.
- *
- * @param  coverage Coverage or max nucleotide count.
- * @return          Vector of ReadDataVector.
- */
-TrioVector GetTrioVector(int coverage) {
-  TrioVector trio_vec;
-  MatrixXi mat = EnumerateNucleotideCounts(coverage);
-  ReadDataVector data_vec = GetUniqueReadDataVector(mat);
-  for (ReadData data1 : data_vec) {
-    for (ReadData data2 : data_vec) {
-      for (ReadData data3 : data_vec) {
-        trio_vec.push_back({ data1, data2, data3 });
-      }
-    }
-  }
-  return trio_vec;
-}
+*/
 
 /**
  * Returns the index of a ReadDataVector in the TrioVector of all trios at 4x
@@ -244,12 +216,32 @@ TrioVector GetTrioVector(int coverage) {
  * @return          Index of ReadDataVector in TrioVector list.    
  */
 int IndexOfReadDataVector(const ReadDataVector &data_vec, TrioVector trio_vec) {
-  for (int i = 0; i < kTrioCount; ++i) {
+  for (int i = 0; i < trio_vec.size(); ++i) {
     if (EqualsReadDataVector(data_vec, trio_vec[i])) {
       return i;
     }
   }
   return -1;
+}
+
+/**
+ * Returns all possible and unique trio sets of sequencing counts for an
+ * individual sequenced at given coverage.
+ *
+ * @param  coverage Coverage or max nucleotide count.
+ * @return          Vector of ReadDataVector.
+ */
+TrioVector GetTrioVector(int coverage) {
+  TrioVector trio_vec;
+  ReadDataVector data_vec = EnumerateNucleotideCounts(coverage);
+  for (ReadData data1 : data_vec) {
+    for (ReadData data2 : data_vec) {
+      for (ReadData data3 : data_vec) {
+        trio_vec.push_back({ data1, data2, data3 });
+      }
+    }
+  }
+  return trio_vec;
 }
 
 /**

@@ -48,6 +48,7 @@ class SimulationModel {
   int Mutate(int genotype_idx, bool is_germline=false,
              int parent_genotype_idx=-1);
   int GetChildGenotype(int mother_genotype, int father_genotype);
+  int GetChildAllele(int parent_genotype);
   ReadData DirichletMultinomialSample(int genotype_idx);
   MatrixXi GetGenotypesMatrix(int size);
   TrioVector GetRandomTrios(int size);
