@@ -56,7 +56,7 @@ int main(int argc, const char *argv[]) {
       probability_count++;
     }
 
-    if (bin < 0) {  // Negative probability.
+    if (bin < 0) {  // ERROR: Negative probability.
       neg_bin++;
     } else {
       counts[bin]++;

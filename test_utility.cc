@@ -11,7 +11,6 @@
 #define BOOST_TEST_MODULE TestUtility
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
 
 #include "utility.h"
 
@@ -85,8 +84,20 @@ BOOST_AUTO_TEST_CASE(TestEqualsReadDataVector) {
 // BOOST_AUTO_TEST_CASE(TestPrintReadDataVector) {}
 
 BOOST_AUTO_TEST_CASE(TestEnumerateNucleotideCounts) {
-  ReadDataVector vec = EnumerateNucleotideCounts(kNucleotideCount);
-  BOOST_CHECK(vec.size() == 624);
+  MatrixXi mat = EnumerateNucleotideCounts(kNucleotideCount);
+  for (int i = 0; i < mat.rows(); ++i) {
+    BOOST_CHECK(mat.row(i).sum() == kNucleotideCount);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(TestFourNucleotideCounts) {
+  ReadDataVector vec = FourNucleotideCounts();
+  BOOST_REQUIRE(vec.size() == 35);
+  for (int i = 0; i < vec.size(); ++i) {
+    ReadData data = vec[i];
+    BOOST_CHECK(data.reads[0] + data.reads[1] +
+                data.reads[2] + data.reads[3] == 4);
+  }
 }
 
 BOOST_AUTO_TEST_CASE(TestGetTrioVector) {
@@ -94,6 +105,16 @@ BOOST_AUTO_TEST_CASE(TestGetTrioVector) {
   BOOST_CHECK(trio_vec.size() == kTrioCount);
   ReadDataVector vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
   BOOST_CHECK(IndexOfReadDataVector(vec, trio_vec) == -1);
+}
+
+BOOST_AUTO_TEST_CASE(TestGetUniqueReadDataVector) {
+  MatrixXi mat(4, 4);
+  mat << 0, 0, 0, 0,
+         1, 1, 1, 1,
+         0, 0, 0, 0,
+         0, 1, 0, 1;
+  ReadDataVector vec = GetUniqueReadDataVector(mat);
+  BOOST_CHECK(vec.size() == 3);
 }
 
 BOOST_AUTO_TEST_CASE(TestIndexOfReadDataVector) {
@@ -119,7 +140,18 @@ BOOST_AUTO_TEST_CASE(TestIsAlleleInParentGenotype) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestDirichletMultinomialLog) {}
+// TODO: Write a better test case for DirichletMultinomialLog.
+BOOST_AUTO_TEST_CASE(TestDirichletMultinomialLog) {
+  RowVector4d alpha;
+  alpha << 0.25, 0.25, 0.25, 0.25;
+  ReadDataVector data_vec = FourNucleotideCounts();
+  double probability = 0.0;
+  for (auto data : data_vec) {
+    probability = exp(DirichletMultinomialLog(alpha, data));
+    BOOST_CHECK(probability >= 0.0 && probability <= 1.0);
+  }
+
+}
 
 BOOST_AUTO_TEST_CASE(TestKroneckerProduct) {
   Matrix4_16d mat;
