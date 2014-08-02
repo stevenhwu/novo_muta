@@ -18,6 +18,12 @@
  * mutation (value in the second column is 1). The digit in the tenths place of
  * the probability represents the number of the bin it belongs to. A probability
  * of 1.00 (100%) will go in the highest bin possible, bin 9.
+ *
+ * To compile on Herschel:
+ * c++ -std=c++11 -L/usr/local/lib -I/usr/local/include -o count_bin utility.cc count_bin.cc
+ *
+ * To run this file, provide the following command line inputs:
+ * ./count_bin <input>.txt
  */
 #include <fstream>
 #include <sstream>

@@ -416,7 +416,7 @@ Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params) {
       } else {  // Heterozygous parent genotype.
         if (IsAlleleInParentGenotype(i, j)) {
           // Allele is potentially mutated (Het), ex: C in AC.
-          mat(i, j) = 0.5 * params.no_match() / params.heterozygous_match();
+          mat(i, j) = 0.5 * params.mismatch() / params.heterozygous_match();
         } else {
           mat(i, j) = 1.0;  // Allele is mutated, ex: A in CG.
         }

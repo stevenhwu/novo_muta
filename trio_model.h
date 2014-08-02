@@ -44,8 +44,10 @@
 class TrioModel {
  public:
   TrioModel();  // Default constructor and constructor to customize parameters.
-  TrioModel(double population_mutation_rate, double germline_mutation_rate,
-            double somatic_mutation_rate, double sequencing_error_rate,
+  TrioModel(double population_mutation_rate,
+            double germline_mutation_rate,
+            double somatic_mutation_rate,
+            double sequencing_error_rate,
             double dirichlet_dispersion,
             const RowVector4d &nucleotide_frequencies);
   double MutationProbability(const ReadDataVector &data_vec);  // Calculates probability of mutation given input read data.
@@ -57,7 +59,7 @@ class TrioModel {
   void set_germline_mutation_rate(double rate);
   double homozygous_match() const;
   double heterozygous_match() const;
-  double no_match() const;
+  double mismatch() const;
   double somatic_mutation_rate() const;
   void set_somatic_mutation_rate(double rate);
   double sequencing_error_rate() const;
@@ -70,7 +72,9 @@ class TrioModel {
   RowVector256d population_priors() const;
   Matrix4_16d germline_probability_mat_single() const;
   Matrix16_256d germline_probability_mat() const;
+  Matrix16_256d germline_probability_mat_num() const;
   Matrix16_16d somatic_probability_mat() const;
+  Matrix16_16d somatic_probability_mat_diag() const;
   Matrix3_16d sequencing_probability_mat() const;
   Matrix16_4d alphas() const;
   ReadDependentData read_dependent_data() const;
@@ -99,7 +103,7 @@ class TrioModel {
   double population_mutation_rate_;
   double homozygous_match_;
   double heterozygous_match_;
-  double no_match_;
+  double mismatch_;
   double germline_mutation_rate_;
   double somatic_mutation_rate_;
   double sequencing_error_rate_;

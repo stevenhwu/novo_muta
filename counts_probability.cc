@@ -18,6 +18,12 @@
  * The probabilities should match the probabilities from the result of
  * MutationProbability from simulation_trio.cc. This prints the probability
  * for each trio on a new line.
+ *
+ * To compile on Herschel:
+ * c++ -std=c++11 -L/usr/local/lib -I/usr/local/include -o counts_probability utility.cc counts_probability.cc
+ *
+ * To run this file, provide the following command line inputs:
+ * ./counts_probability <input>.txt <output>.txt
  */
 #include <fstream>
 #include <sstream>

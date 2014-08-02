@@ -19,6 +19,7 @@ class ReadDependentData {
  public:
   ReadDependentData();  // Default constructor leaves read_data_vec empty.
   ReadDependentData(const ReadDataVector &data_vec);  // Constructor that initializes read_data_vec.
+  bool Equals(const ReadDependentData &other);
 
   // Instance member variables.
   ReadDataVector read_data_vec;

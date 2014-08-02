@@ -156,6 +156,8 @@ void PrintReadDataVector(const ReadDataVector &data_vec) {
  * Enumerates all possible nucleotide counts for an individual sequenced at
  * given coverage.
  *
+ * The current implementation creates duplicate nucleotide counts.
+ *
  * @param  coverage  Coverage or max nucleotide count. Must be at least 1.
  * @return           4^coverage x 4 Eigen matrix of nucleotide counts.
  */
@@ -181,50 +183,58 @@ MatrixXi EnumerateNucleotideCounts(int coverage) {
  * Returns all possible unique nucleotide counts at 4x coverage. The sum of each
  * nucleotide counts is 4.
  *
- * This function is temporarily hardcoded until I can come up with an algorithm
- * that is better than the current implementation of EnumerateNucleotideCounts()
- * which has duplicate nucleotide counts and is thus inefficient.
+ * This function is an alternative to the current implementation of
+ * EnumerateNucleotideCounts(), which has duplicate nucleotide counts and is
+ * thus inefficient.
  *
  * @return  ReadDataVector containing unique ReadData counts at 4x coverage.
  */
 ReadDataVector FourNucleotideCounts() {
-  ReadDataVector vec = {
-    {4, 0, 0, 0},
-    {3, 1, 0, 0},
-    {3, 0, 1, 0},
-    {3, 0, 0, 1},
-    {2, 2, 0, 0},
-    {2, 1, 1, 0},
-    {2, 1, 0, 1},
-    {2, 0, 2, 0},
-    {2, 0, 1, 1},
-    {2, 0, 0, 2},
-    {1, 3, 0, 0},
-    {1, 2, 1, 0},
-    {1, 2, 0, 1},
-    {1, 1, 2, 0},
-    {1, 1, 1, 1},
-    {1, 1, 0, 2},
-    {1, 0, 3, 0},
-    {1, 0, 2, 1},
-    {1, 0, 1, 2},
-    {1, 0, 0, 3},
-    {0, 4, 0, 0},
-    {0, 3, 1, 0},
-    {0, 3, 0, 1},
-    {0, 2, 2, 0},
-    {0, 2, 1, 1},
-    {0, 2, 0, 2},
-    {0, 1, 3, 0},
-    {0, 1, 2, 1},
-    {0, 1, 1, 2},
-    {0, 1, 0, 3},
-    {0, 0, 4, 0},
-    {0, 0, 3, 1},
-    {0, 0, 2, 2},
-    {0, 0, 1, 3},
-    {0, 0, 0, 4}
-  };
+  int a4_0[] = {4, 0, 0, 0};
+  int a3_1[] = {3, 1, 0, 0};
+  int a2_2[] = {2, 2, 0, 0};
+  int a2_1_1[] = {2, 1, 1, 0};
+
+  ReadDataVector a4_0_counts = GetPermutation(a4_0);
+  ReadDataVector a3_1_counts = GetPermutation(a3_1);
+  ReadDataVector a2_2_counts = GetPermutation(a2_2);
+  ReadDataVector a2_1_1_counts = GetPermutation(a2_1_1);
+
+  ReadDataVector vec;
+  vec.reserve(a4_0_counts.size() + a3_1_counts.size() +
+              a2_2_counts.size() + a2_1_1_counts.size() + 1);
+  
+  vec.insert(vec.end(), a4_0_counts.begin(), a4_0_counts.end());
+  vec.insert(vec.end(), a3_1_counts.begin(), a3_1_counts.end());
+  vec.insert(vec.end(), a2_2_counts.begin(), a2_2_counts.end());
+  vec.insert(vec.end(), a2_1_1_counts.begin(), a2_1_1_counts.end());
+
+  ReadData a1_1_1_1 = {1, 1, 1, 1};  // Does not need to be sorted.
+  vec.push_back(a1_1_1_1);
+  
+  return vec;
+}
+
+/**
+ * Creates a ReadDataVector holding all unique combinations by rearranging a
+ * given array of 4 integers.
+ *
+ * @param  arr Integer array holding nucleotide counts.
+ * @return     ReadDataVector with all unique combinations of arr.
+ */
+ReadDataVector GetPermutation(int arr[]) {
+  ReadData data;
+  ReadDataVector vec;
+  sort(arr, arr + kNucleotideCount);
+
+  do {
+    data.reads[0] = arr[0];
+    data.reads[1] = arr[1];
+    data.reads[2] = arr[2];
+    data.reads[3] = arr[3];
+    vec.push_back(data);
+  } while (next_permutation(arr, arr + kNucleotideCount));
+
   return vec;
 }
 

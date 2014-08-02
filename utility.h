@@ -54,6 +54,7 @@ void PrintReadData(const ReadData &data);
 void PrintReadDataVector(const ReadDataVector &data_vec);
 MatrixXi EnumerateNucleotideCounts(int coverage);
 ReadDataVector FourNucleotideCounts();
+ReadDataVector GetPermutation(int arr[]);
 ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat);
 int IndexOfReadDataVector(const ReadDataVector &data_vec, TrioVector trio_vec);
 TrioVector GetTrioVector(int coverage);

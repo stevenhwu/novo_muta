@@ -8,7 +8,9 @@ An implementation of probabilistic methods for detecting de novo mutations from 
 See Cartwright et al.: Family-Based Method for Capturing De Novo Mutations:
 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3728889/
 
-This project uses C++11, Eigen library, and GNU Scientific Library. It compiles using Clang.
+This project uses C++11, Eigen library, and GNU Scientific Library. It compiles using Clang. Some files can be compiled with cmake. To do this, make a build directory and in this directory, type
+```cmake ..
+make```
 
 Download Eigen and put the source code in the same directory as the novo_muta repository.
 http://eigen.tuxfamily.org/

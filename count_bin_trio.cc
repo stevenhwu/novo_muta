@@ -17,6 +17,12 @@
  * the number of the bin it belongs to. A probability of 1.00 (100%) will go in
  * the highest bin possible, bin 9. Negative probabilities are all grouped in a
  * -1 bin.
+ *
+ * To compile on Herschel:
+ * c++ -std=c++11 -L/usr/local/lib -I/usr/local/include -o count_bin_trio utility.cc count_bin_trio.cc
+ *
+ * To run this file, provide the following command line inputs:
+ * ./count_bin_trio <input>.txt
  */
 #include <fstream>
 #include <sstream>
@@ -28,7 +34,7 @@ const int kNumBins = 10;  // 10 bins cover 0-100% with 10% intervals.
 
 int main(int argc, const char *argv[]) {
   if (argc < 2) {        
-    Die("USAGE: count_bin_trio <input.txt>");
+    Die("USAGE: count_bin_trio <input>.txt");
   }
 
   const string file_name = argv[1];

@@ -17,12 +17,15 @@
  * samtools sort <output>.bam <output_sorted>.bam
  * samtools index <output_sorted>.bam <output>.index
  *
- * To compile on Herschel and include GSL and BamTools:
+ * To compile on Herschel without using cmake and include GSL and BamTools:
  * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc bam_driver.cc
  *
- * Alteratively, go to the build directory and call:
- * cmake ..
- * make
+ * To run this file, provide the following command line inputs:
+ * ./bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>
+ *
+ * SM refers to the name of the sample that identifies it as belonging to the
+ * child, mother, or father. This will vary depending on the data and must be
+ * known in order to parse out the read data.
  */
 #include "sufficient_statistics.h" 
 #include "variant_visitor.h"

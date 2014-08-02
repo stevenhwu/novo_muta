@@ -18,9 +18,9 @@
  * infinite sites model version.
  */
 TrioModel::TrioModel()
-    : population_mutation_rate_{1e-6/*0.001*/},
-      germline_mutation_rate_{0.00000002},
-      somatic_mutation_rate_{0.00000002},
+    : population_mutation_rate_{0.001},
+      germline_mutation_rate_{2e-8},
+      somatic_mutation_rate_{2e-8},
       sequencing_error_rate_{0.005},
       dirichlet_dispersion_{1000.0},
       nucleotide_frequencies_{0.25, 0.25, 0.25, 0.25} {
@@ -210,7 +210,7 @@ double TrioModel::SpectrumProbability(const RowVector4d &nucleotide_counts) {
       !IsInVector(nucleotide_counts, 1.0)) {
     return p2_2 * 0.25 / 3.0 * 2.0 / 6.0;  // p(2 allele) * p(2 allele) * pair qualifier * p(position)
   } else {
-    return 0.0;  // counts do not match 4-0, 3-0, or 2-2 allele spectrum
+    return 0.0;  // Counts do not match 4-0, 3-0, or 2-2 allele spectrum.
   }
 }
 
@@ -223,7 +223,7 @@ void TrioModel::SetGermlineMutationProbabilities() {
   double exp_term = exp(-4.0/3.0 * germline_mutation_rate_);
   homozygous_match_ = 0.25 + 0.75 * exp_term;
   heterozygous_match_ = 0.25 + 0.25 * exp_term;
-  no_match_ = 0.25 - 0.25 * exp_term;
+  mismatch_ = 0.25 - 0.25 * exp_term;
 }
 
 /**
@@ -242,7 +242,7 @@ double TrioModel::GermlineMutation(int child_nucleotide_idx,
                                    bool no_mutation_flag) {
   // Determines if the comparison is homozygous, heterozygous or no match.
   if (IsAlleleInParentGenotype(child_nucleotide_idx, parent_genotype_idx)) {
-    if (parent_genotype_idx % 5 == 0) {  // homozygous genotypes are divisible by 5
+    if (parent_genotype_idx % 5 == 0) {  // Homozygous genotypes are divisible by 5.
       return homozygous_match_;
     } else {
       if (no_mutation_flag) {
@@ -255,7 +255,7 @@ double TrioModel::GermlineMutation(int child_nucleotide_idx,
     if (no_mutation_flag) {
       return 0.0;
     } else {
-      return no_match_;
+      return mismatch_;
     }
   }
 }
@@ -310,14 +310,13 @@ Matrix4_16d TrioModel::GermlineProbabilityMatSingle(bool no_mutation_flag) {
  */
 double TrioModel::SomaticMutation(int nucleotide_idx, int other_nucleotide_idx) {
   double exp_term = exp(-4.0/3.0 * somatic_mutation_rate_);
-  double term = 0.25 - 0.25 * exp_term;
-  double indicator_term = 0.0;
-
-  // Checks if indicator function is true for each chromosome.
-  if (nucleotide_idx == other_nucleotide_idx) {
-    indicator_term = exp_term;
+  double term = 0.25 * (1 - exp_term);
+  
+  if (nucleotide_idx == other_nucleotide_idx) {  // Indicator function.
+    return term + exp_term;
+  } else {
+    return term;
   }
-  return term + indicator_term;
 }
 
 /**
@@ -366,9 +365,9 @@ void TrioModel::SequencingProbabilityMat() {
   for (int read = 0; read < 3; ++read) {
     for (int genotype_idx = 0; genotype_idx < kGenotypeCount; ++genotype_idx) {
       auto alpha = alphas_.row(genotype_idx);
-      // converts alpha to double array
+      // Converts alpha to double array.
       double p[kNucleotideCount] = {alpha(0), alpha(1), alpha(2), alpha(3)};
-      // converts read to unsigned int array
+      // Converts read to unsigned int array.
       const ReadData &data = read_dependent_data_.read_data_vec[read];
       unsigned int n[kNucleotideCount] = {data.reads[0], data.reads[1],
                                           data.reads[2], data.reads[3]};
@@ -486,36 +485,32 @@ RowVector256d TrioModel::GetRootMat(const RowVector256d &child_germline_probabil
 Matrix16_4d TrioModel::Alphas() {
   Matrix16_4d alphas;
   double homozygous = 1.0 - sequencing_error_rate_;
-  double no_match = sequencing_error_rate_ / 3.0;
-  double heterozygous = 0.5 - no_match;
+  double mismatch = sequencing_error_rate_ / 3.0;
+  double heterozygous = 0.5 - mismatch;
 
-  //        A             C             G             T
-  alphas << homozygous,   no_match,     no_match,     no_match,
-            heterozygous, heterozygous, no_match,     no_match,
-            heterozygous, no_match,     heterozygous, no_match,
-            heterozygous, no_match,     no_match,     heterozygous,
-
-            heterozygous, heterozygous, no_match,     no_match,
-            no_match,     homozygous,   no_match,     no_match,
-            no_match,     heterozygous, heterozygous, no_match,
-            no_match,     heterozygous, no_match,     heterozygous,
-            
-            heterozygous, no_match,     heterozygous, no_match,
-            no_match,     heterozygous, heterozygous, no_match,
-            no_match,     no_match,     homozygous,   no_match,
-            no_match,     no_match,     heterozygous, heterozygous,
-
-            heterozygous, no_match,     no_match,     heterozygous,
-            no_match,     heterozygous, no_match,     heterozygous,
-            no_match,     no_match,     heterozygous, heterozygous,
-            no_match,     no_match,     no_match,     homozygous;
-
+  for (int i = 0; i < kGenotypeCount; ++i) {
+    for (int j = 0; j < kNucleotideCount; ++j) {
+      if (IsAlleleInParentGenotype(j, i)) {
+        if (i % 5 == 0) {  // Homozygous genotypes are divisible by 5.
+          alphas(i, j) = homozygous;
+        } else {
+          alphas(i, j) = heterozygous;
+        }
+      } else {
+        alphas(i, j) = mismatch;
+      }
+    }
+  }
+ 
   return alphas;
 }
 
 /**
  * Returns true if the two TrioModel objects are equal to each other within
  * epsilon precision.
+ *
+ * If the underflow/overflow bug is fixed, it would be more appropriate to
+ * remove the approximation comparison and check for direct equality.
  * 
  * @param  other TrioModel object to be compared.
  * @return       True if the two TrioModel objects are equal to each other.
@@ -558,7 +553,7 @@ double TrioModel::population_mutation_rate() const {
  */
 void TrioModel::set_population_mutation_rate(double rate) {
   population_mutation_rate_ = rate;
-  population_priors_ = PopulationPriors();
+  population_priors_ = TrioModel::PopulationPriors();
   population_priors_single_ = TrioModel::PopulationPriorsSingle();
 }
 
@@ -586,8 +581,8 @@ double TrioModel::heterozygous_match() const {
   return heterozygous_match_;
 }
 
-double TrioModel::no_match() const {
-  return no_match_;
+double TrioModel::mismatch() const {
+  return mismatch_;
 }
 
 double TrioModel::somatic_mutation_rate() const {
@@ -601,7 +596,7 @@ double TrioModel::somatic_mutation_rate() const {
 void TrioModel::set_somatic_mutation_rate(double rate) {
   somatic_mutation_rate_ = rate;
   somatic_probability_mat_ = TrioModel::SomaticProbabilityMat();
-  somatic_probability_mat_ = TrioModel::SomaticProbabilityMatDiag();
+  somatic_probability_mat_diag_ = TrioModel::SomaticProbabilityMatDiag();
 }
 
 double TrioModel::sequencing_error_rate() const {
@@ -657,8 +652,16 @@ Matrix16_256d TrioModel::germline_probability_mat() const {
   return germline_probability_mat_;
 }
 
+Matrix16_256d TrioModel::germline_probability_mat_num() const {
+  return germline_probability_mat_num_;
+}
+
 Matrix16_16d TrioModel::somatic_probability_mat() const {
   return somatic_probability_mat_;
+}
+
+Matrix16_16d TrioModel::somatic_probability_mat_diag() const {
+  return somatic_probability_mat_diag_;
 }
 
 Matrix3_16d TrioModel::sequencing_probability_mat() const {

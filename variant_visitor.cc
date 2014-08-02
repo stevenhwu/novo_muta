@@ -13,16 +13,16 @@
  * Constructor calls base constructor PileupVisitor.
  */
 VariantVisitor::VariantVisitor(const RefVector &references,
-              								 const SamHeader &header,
-								               const TrioModel &params,
-								               BamAlignment &al,
+                               const SamHeader &header,
+                               const TrioModel &params,
+                               BamAlignment &al,
                                string output_name,
                                string child_sm,
                                string mother_sm,
                                string father_sm,
-								               int qual_cut,
-								               int mapping_cut,
-								               double probability_cut)
+                               int qual_cut,
+                               int mapping_cut,
+                               double probability_cut)
     : PileupVisitor(),
       references_{references}, header_{header}, al_{al},
       output_name_{output_name}, child_sm_{child_sm}, mother_sm_{mother_sm},
@@ -39,13 +39,13 @@ VariantVisitor::VariantVisitor(const RefVector &references,
  */
 void VariantVisitor::Visit(const PileupPosition &pileupData) {
   ofstream fout(output_name_);
-	ReadDataVector data_vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
-	string chr = references_[pileupData.RefId].RefName;
+  ReadDataVector data_vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+  string chr = references_[pileupData.RefId].RefName;
   uint64_t pos = pileupData.Position;
   string tag_id;
 
   for (auto it = begin(pileupData.PileupAlignments);
-  		it != end(pileupData.PileupAlignments); ++it) {
+      it != end(pileupData.PileupAlignments); ++it) {
     if (it->Alignment.MapQuality >= mapping_cut_) {
       const int *pos = &it->PositionInAlignment;
       uint16_t bqual = static_cast<short>(it->Alignment.Qualities[*pos]) - 33;
@@ -67,9 +67,9 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
         if (base_idx >= 0 && base_idx < 4) {
           data_vec[i].reads[base_idx]++;
         }
-	    }
+      }
     }
-	}
+  }
 
   sites_.push_back(data_vec);
   fout.close();
@@ -99,7 +99,7 @@ uint16_t VariantVisitor::ToNucleotideIndex(char b) {
   case 'N':
     return -1 ;
   default:  // Unknown base.
-	  return -1;
+    return -1;
   }
 }
 

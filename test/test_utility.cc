@@ -31,14 +31,14 @@
 
 BOOST_AUTO_TEST_CASE(TestZeroMatrix16_16_4d) {
   Matrix16_16_4d mat = ZeroMatrix16_16_4d();
-  BOOST_CHECK(mat.rows() == kGenotypeCount);
-  BOOST_CHECK(mat.cols() == kGenotypeCount);
+  RowVector4d vec = RowVector4d::Zero();
+  BOOST_REQUIRE(mat.rows() == kGenotypeCount);
+  BOOST_REQUIRE(mat.cols() == kGenotypeCount);
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
-      BOOST_CHECK(mat(i, j).size() == kNucleotideCount);
-      for (int k = 0; k < kNucleotideCount; ++k) {
-        BOOST_CHECK(mat(i, j)(k) == 0.0);
-      }
+      RowVector4d nested = mat(i, j);
+      BOOST_CHECK(nested.size() == kNucleotideCount);
+      BOOST_CHECK(nested == vec);
     }
   }
 }
@@ -54,10 +54,8 @@ BOOST_AUTO_TEST_CASE(TestTwoParentCounts) {
       vec(i % kNucleotideCount)++;
       vec(j / kNucleotideCount)++;
       vec(j % kNucleotideCount)++;
-      for (int k = 0; k < kNucleotideCount; ++k) {
-        RowVector4d nucleotide_counts = mat(i, j);
-        BOOST_CHECK(nucleotide_counts(k) == vec(k));
-      }
+      RowVector4d nested = mat(i, j);
+      BOOST_CHECK(nested == vec);
       vec = RowVector4d::Zero();
     }
   }
@@ -72,9 +70,15 @@ BOOST_AUTO_TEST_CASE(TestEqualsReadData) {
 }
 
 BOOST_AUTO_TEST_CASE(TestEqualsReadDataVector) {
-  ReadDataVector a = {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}};
-  ReadDataVector b = {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}};
-  ReadDataVector c = {{2, 2, 2, 2}, {2, 2, 2, 2}, {2, 2, 2, 2}};
+  ReadDataVector a = {{1, 1, 1, 1},
+                      {1, 1, 1, 1},
+                      {1, 1, 1, 1}};
+  ReadDataVector b = {{1, 1, 1, 1},
+                      {1, 1, 1, 1},
+                      {1, 1, 1, 1}};
+  ReadDataVector c = {{2, 2, 2, 2},
+                      {2, 2, 2, 2},
+                      {2, 2, 2, 2}};
   BOOST_CHECK(EqualsReadDataVector(a, b));
   BOOST_CHECK(!EqualsReadDataVector(a, c));
 }
@@ -93,17 +97,18 @@ BOOST_AUTO_TEST_CASE(TestEnumerateNucleotideCounts) {
 BOOST_AUTO_TEST_CASE(TestFourNucleotideCounts) {
   ReadDataVector vec = FourNucleotideCounts();
   BOOST_REQUIRE(vec.size() == 35);
-  for (int i = 0; i < vec.size(); ++i) {
-    ReadData data = vec[i];
+  for (ReadData data : vec) {
     BOOST_CHECK(data.reads[0] + data.reads[1] +
-                data.reads[2] + data.reads[3] == 4);
+                data.reads[2] + data.reads[3] == kNucleotideCount);
   }
 }
 
 BOOST_AUTO_TEST_CASE(TestGetTrioVector) {
   TrioVector trio_vec = GetTrioVector(kNucleotideCount);
-  BOOST_CHECK(trio_vec.size() == kTrioCount);
-  ReadDataVector vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+  BOOST_REQUIRE(trio_vec.size() == kTrioCount);
+  ReadDataVector vec = {{0, 0, 0, 0},
+                        {0, 0, 0, 0},
+                        {0, 0, 0, 0}};
   BOOST_CHECK(IndexOfReadDataVector(vec, trio_vec) == -1);
 }
 
@@ -118,9 +123,15 @@ BOOST_AUTO_TEST_CASE(TestGetUniqueReadDataVector) {
 }
 
 BOOST_AUTO_TEST_CASE(TestIndexOfReadDataVector) {
-  ReadDataVector a = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
-  ReadDataVector b = {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}};
-  ReadDataVector c = {{2, 2, 2, 2}, {2, 2, 2, 2}, {2, 2, 2, 2}};
+  ReadDataVector a = {{0, 0, 0, 0},
+                      {0, 0, 0, 0},
+                      {0, 0, 0, 0}};
+  ReadDataVector b = {{1, 1, 1, 1},
+                      {1, 1, 1, 1},
+                      {1, 1, 1, 1}};
+  ReadDataVector c = {{2, 2, 2, 2},
+                      {2, 2, 2, 2},
+                      {2, 2, 2, 2}};
   TrioVector trio_vec = {a, b};
   BOOST_CHECK(IndexOfReadDataVector(b, trio_vec) == 1);
   BOOST_CHECK(IndexOfReadDataVector(c, trio_vec) == -1);
@@ -140,17 +151,15 @@ BOOST_AUTO_TEST_CASE(TestIsAlleleInParentGenotype) {
   }
 }
 
-// TODO: Write a better test case for DirichletMultinomialLog.
 BOOST_AUTO_TEST_CASE(TestDirichletMultinomialLog) {
   RowVector4d alpha;
   alpha << 0.25, 0.25, 0.25, 0.25;
-  ReadDataVector data_vec = FourNucleotideCounts();
+  ReadDataVector vec = FourNucleotideCounts();
   double probability = 0.0;
-  for (auto data : data_vec) {
+  for (ReadData data : vec) {
     probability = exp(DirichletMultinomialLog(alpha, data));
     BOOST_CHECK(probability >= 0.0 && probability <= 1.0);
   }
-
 }
 
 BOOST_AUTO_TEST_CASE(TestKroneckerProduct) {

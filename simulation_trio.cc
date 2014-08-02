@@ -10,7 +10,7 @@
  * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o simulation_trio utility.cc read_dependent_data.cc trio_model.cc simulation_trio.cc
  *
  * To run this file, provide the following command line inputs:
- * ./simulation_trio <output.txt>
+ * ./simulation_trio <output>.txt
  */
 #include <fstream>
 
@@ -19,7 +19,7 @@
 
 int main(int argc, const char *argv[]) {
   if (argc < 2) {
-    Die("USAGE: simulation_trio <output.txt>");
+    Die("USAGE: simulation_trio <output>.txt");
   }
 
   const string file_name = argv[1];
