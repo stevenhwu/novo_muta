@@ -41,9 +41,13 @@ if(Boost_FOUND)
 
   project(test_utility)
   add_executable(test_utility utility.cc test/test_utility.cc)
-  target_link_libraries(test_utility ${Boost_LIBRARIES})
+  target_link_libraries(test_utility ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 
   project(test_trio_model)
   add_executable(test_trio_model ${TRIO_MODEL} test/test_trio_model.cc)
   target_link_libraries(test_trio_model ${GSL_LIBRARIES} ${Boost_LIBRARIES})
+
+  project(test_simulation_model)
+  add_executable(test_simulation_model ${TRIO_MODEL} simulation_model.cc test/test_simulation_model.cc)
+  target_link_libraries(test_simulation_model ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 endif()

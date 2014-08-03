@@ -2,7 +2,7 @@
  * @file test_trio_model.cc
  * @author Melissa Ip
  *
- * This file tests the functions in trio_model.h except for get functions.
+ * This file tests the functions in trio_model.h.
  *
  * To compile on Herschel, go to the build directory and call:
  * cmake ..

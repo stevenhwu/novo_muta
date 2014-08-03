@@ -15,25 +15,30 @@
  * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o simulation_driver utility.cc read_dependent_data.cc trio_model.cc simulation_model.cc simulation_driver.cc
  *
  * To run this file, provide the following command line inputs:
- * ./simulation_driver <output>.txt <#samples> <coverage> <germline mutation rate> <somatic mutation rate>
+ * ./simulation_driver <output>.txt <#samples> <coverage> <population mutation rate> <germline mutation rate> <somatic mutation rate>
  */
 #include "simulation_model.h"
 
 
 int main(int argc, const char *argv[]) {
-  if (argc < 6) {
+  if (argc < 7) {
     Die("USAGE: simulation_driver <output>.txt <#samples> <coverage> "
-        "<germline mutation rate> <somatic mutation rate>");
+        "<population mutation rate> <germline mutation rate> "
+        "<somatic mutation rate>");
   }
 
   const string file_name = argv[1];
   const int experiment_count = atoi(argv[2]);
   const unsigned int coverage = strtoull(argv[3], NULL, 10);
-  const double germline_mutation_rate = strtod(argv[4], NULL);
-  const double somatic_mutation_rate = strtod(argv[5], NULL);
+  const double population_mutation_rate = strtod(argv[4], NULL);
+  const double germline_mutation_rate = strtod(argv[5], NULL);
+  const double somatic_mutation_rate = strtod(argv[6], NULL);
   
   // Sets up simulation parameters and output results.
-  SimulationModel sim(coverage, germline_mutation_rate, somatic_mutation_rate);
+  SimulationModel sim(coverage,
+                      population_mutation_rate,
+                      germline_mutation_rate,
+                      somatic_mutation_rate);
   sim.Seed();
   // sim.WriteProbability(file_name, experiment_count);
   sim.WriteMutationCounts(file_name, experiment_count);

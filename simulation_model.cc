@@ -23,9 +23,11 @@
  * @param  somatic_mutation_rate  Somatic mutation rate.
  */
 SimulationModel::SimulationModel(unsigned int coverage,
+                                 double population_mutation_rate,
                                  double germline_mutation_rate,
                                  double somatic_mutation_rate)
     :  coverage_{coverage}, has_mutation_{false} {
+  params_.set_population_mutation_rate(population_mutation_rate);
   params_.set_germline_mutation_rate(germline_mutation_rate);
   params_.set_somatic_mutation_rate(somatic_mutation_rate);
 }
@@ -36,17 +38,19 @@ SimulationModel::SimulationModel(unsigned int coverage,
 void SimulationModel::Seed() {
   srand(time(NULL));
   // Creates a generator chosen by the environment variable GSL_RNG_TYPE.
-  const gsl_rng_type *T;
+  const gsl_rng_type *type;
   gsl_rng_env_setup();
-  T = gsl_rng_default;
-  r = gsl_rng_alloc(T);
+  type = gsl_rng_default;
+  generator_ = gsl_rng_alloc(type);
 }
 
 /**
  * Frees GSL random number generator.
  */
 void SimulationModel::Free() {
-  gsl_rng_free(r);
+  gsl_rng_free(generator_);
+  delete generator_;  // Cleanup for one time use.
+  generator_ = NULL;
 }
 
 /**
@@ -140,11 +144,11 @@ ReadData SimulationModel::DirichletMultinomialSample(int genotype_idx) {
 
   // Sets alpha frequencies using dirichlet distribution in theta.
   double theta[kNucleotideCount] = {0.0};
-  gsl_ran_dirichlet(r, kNucleotideCount, alpha, theta);
+  gsl_ran_dirichlet(generator_, kNucleotideCount, alpha, theta);
 
   // Sets sequencing reads using multinomial distribution in reads.
   unsigned int reads[kNucleotideCount] = {0};
-  gsl_ran_multinomial(r, kNucleotideCount, coverage_, theta, reads);
+  gsl_ran_multinomial(generator_, kNucleotideCount, coverage_, theta, reads);
 
   // Converts reads to ReadData.
   ReadData data = {0};
@@ -320,7 +324,7 @@ int SimulationModel::RandomDiscreteChoice(size_t K,
 
   // Creates discrete random number generator.
   gsl_ran_discrete_t *g = gsl_ran_discrete_preproc(K, p);
-  size_t random = gsl_ran_discrete(r, g);
+  size_t random = gsl_ran_discrete(generator_, g);
   gsl_ran_discrete_free(g);
   
   return (int) random;
@@ -348,7 +352,7 @@ RowVectorXi SimulationModel::RandomDiscreteChoice(size_t K,
   return random_samples;
 }
 
-unsigned int SimulationModel::coverage() {
+unsigned int SimulationModel::coverage() const {
   return coverage_;
 }
 
@@ -356,7 +360,15 @@ void SimulationModel::set_coverage(unsigned int coverage) {
   coverage_ = coverage;
 }
 
-double SimulationModel::germline_mutation_rate() {
+double SimulationModel::population_mutation_rate() const {
+  return params_.population_mutation_rate();
+}
+
+void SimulationModel::set_population_mutation_rate(double rate) {
+   params_.set_population_mutation_rate(rate);
+}
+
+double SimulationModel::germline_mutation_rate() const {
   return params_.germline_mutation_rate();
 }
 
@@ -364,7 +376,7 @@ void SimulationModel::set_germline_mutation_rate(double rate) {
   params_.set_germline_mutation_rate(rate);
 }
 
-double SimulationModel::somatic_mutation_rate() {
+double SimulationModel::somatic_mutation_rate() const {
   return params_.somatic_mutation_rate();
 }
 
@@ -372,10 +384,14 @@ void SimulationModel::set_somatic_mutation_rate(double rate) {
   params_.set_somatic_mutation_rate(rate);
 }
 
-bool SimulationModel::has_mutation() {
+bool SimulationModel::has_mutation() const {
   return has_mutation_;
 }
 
 void SimulationModel::set_has_mutation(bool has_mutation) {
   has_mutation_ = has_mutation;
+}
+
+gsl_rng* SimulationModel::generator() const {
+  return generator_;
 }
