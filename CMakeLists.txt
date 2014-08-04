@@ -50,4 +50,8 @@ if(Boost_FOUND)
   project(test_simulation_model)
   add_executable(test_simulation_model ${TRIO_MODEL} simulation_model.cc test/test_simulation_model.cc)
   target_link_libraries(test_simulation_model ${GSL_LIBRARIES} ${Boost_LIBRARIES})
+
+  project(test_pileup_utility)
+  add_executable(test_pileup_utility ${TRIO_MODEL} pileup_utility.cc test/test_pileup_utility.cc)
+  target_link_libraries(test_pileup_utility ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 endif()
