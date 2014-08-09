@@ -11,30 +11,48 @@
  
 
 /**
- * Removes initial sequences that are not necessary, which contain a N
- * reference (a site that is not matched to any base). Assume that there are
- * additional sequences where the reference is not N. The ifstream parameter is
- * changed. Returns the first line where N is not the reference.
+ * Removes initial sequences from the ifstream that are not necessary, which
+ * contain a N reference (a site that is not matched to any base). Assumes that
+ * all three pileup files contain the same number of invalid sequences. Returns
+ * the first line where N is not the reference.
  *
  * @param  f Input stream.
  * @return   First line where N is not the reference.
  */
 string TrimHeader(ifstream &f) {
   string line;
-  int sequence = 0;
-  int position = 0;
-  char ref_nucleotide;
   while(getline(f, line)) {
-    line.erase(remove(line.begin(), line.end(), '\n'), line.end());
-    stringstream str(line);
-    str >> sequence;
-    str >> position;
-    str >> ref_nucleotide;
-    if (ref_nucleotide != 'N') {
+    line = GetSequence(line);  // Trims newline.
+    if (!line.empty()) {
       return line;
     }
   }
-  return "";  // ERROR: This should not happen.
+  return "";  // ERROR: There were only invalid N sequences.
+}
+
+/**
+ * Trims the newline fron the end of the line, and returns the line if it is a
+ * valid sequence that does not contain a N reference.
+ *
+ * @param  line Line from pileup file.
+ * @return      Line without newline and has valid nucleotide reference.
+ */
+string GetSequence(string &line) {
+  int sequence = 0;
+  int position = 0;
+  char ref_nucleotide;
+  
+  line.erase(remove(line.begin(), line.end(), '\n'), line.end());
+  stringstream str(line);
+  str >> sequence;
+  str >> position;
+  str >> ref_nucleotide;
+
+  if (ref_nucleotide != 'N') {
+    return line;
+  } else {
+    return "";
+  }
 }
 
 /**
@@ -54,6 +72,7 @@ ReadData GetReadData(const string &line) {
   stringstream str(line);
   str >> sequence;
   str >> position;
+  // str.seekg(10, ios::beg);
   str >> ref_nucleotide;
   str >> num_aligned_reads;
   str >> bases;
@@ -120,7 +139,6 @@ void ProcessPileup(const string &file_name, const string &child_pileup,
     Die("Input file cannot be read.");
   }
   
-  ofstream fout(file_name);
   TrioModel params;
   vector<double> probabilities;
 
@@ -156,11 +174,12 @@ void ProcessPileup(const string &file_name, const string &child_pileup,
     }
   }
 
-  ostream_iterator<double> output_iter(fout, "\n");
-  copy(probabilities.begin(), probabilities.end(), output_iter);
-
   child.close();
   mother.close();
   father.close();
+
+  ofstream fout(file_name);
+  ostream_iterator<double> output_iter(fout, "\n");
+  copy(probabilities.begin(), probabilities.end(), output_iter);
   fout.close();
 }

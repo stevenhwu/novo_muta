@@ -43,7 +43,7 @@ typedef vector<ReadData> ReadDataVector;  // Contains child, mother, and father 
 typedef vector<ReadDataVector> TrioVector;
 
 // Forward declarations.
-Matrix16_2i GenotypeNumIndex();
+// Matrix16_2i GenotypeNumIndex();
 Matrix16_16_4d ZeroMatrix16_16_4d();
 void PrintMatrix16_16_4d(const Matrix16_16_4d &mat);
 Matrix16_16_4d TwoParentCounts();
@@ -53,9 +53,11 @@ bool EqualsReadDataVector(const ReadDataVector &data_vec1,
 void PrintReadData(const ReadData &data);
 void PrintReadDataVector(const ReadDataVector &data_vec);
 MatrixXi EnumerateNucleotideCounts(int coverage);
-ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat);
+ReadDataVector FourNucleotideCounts();
+ReadDataVector GetPermutation(int arr[]);
 TrioVector GetTrioVector(int coverage);
-int IndexOfReadDataVector(const ReadDataVector &data_vec, const TrioVector trio_vec);
+ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat);
+int IndexOfReadDataVector(const ReadDataVector &data_vec, TrioVector trio_vec);
 bool IsInVector(const RowVector4d &vec, double elem);
 bool IsAlleleInParentGenotype(int child_nucleotide_idx, int parent_genotype_idx);
 double DirichletMultinomialLog(const RowVector4d &alpha, const ReadData &data);
@@ -93,7 +95,7 @@ const int kGenotypeCount = 16;
 const int kGenotypePairCount = 256;
 const int kTrioCount = 42875;
 const double kEpsilon = numeric_limits<double>::epsilon();
-const Matrix16_2i kGenotypeNumIndex = GenotypeNumIndex();
+// const Matrix16_2i kGenotypeNumIndex = GenotypeNumIndex();
 // const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
 
 #endif

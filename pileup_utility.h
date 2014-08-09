@@ -24,6 +24,7 @@
 const double kThreshold = 0.01;
 
 // Forward declarations.
+string GetSequence(string &line);
 string TrimHeader(ifstream &f);
 ReadData GetReadData(const string &line);
 double GetProbability(TrioModel &params, const string &child_line,

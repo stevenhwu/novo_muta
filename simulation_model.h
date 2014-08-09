@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <gsl/gsl_randist.h>  // already included in utility.h
+#include <gsl/gsl_randist.h>  // Already included in utility.h.
 #include <gsl/gsl_rng.h>
 
 #include "trio_model.h"
@@ -28,28 +28,35 @@
  */
 class SimulationModel {
  public:
-  SimulationModel(unsigned int coverage, double germline_mutation_rate,  // No default constructor, because all parameters are given through command line inputs.
+  // No default constructor, because all parameters are given through command line inputs.
+  SimulationModel(unsigned int coverage,
+                  double population_mutation_rate,
+                  double germline_mutation_rate,
                   double somatic_mutation_rate);
-  void Seed();  // Seeds random number generator during initialization.
+  void Seed();  // Seeds random number generator.
   void Free();
   void WriteProbability(const string &file_name, int size);  // Generates random samples and probabilities in text file.
   void WriteMutationCounts(const string &file_name, int size);
   void PrintMutationCounts(int size); // Simulates trios to stdout.
-  unsigned int coverage();  // Get and set functions.
+  unsigned int coverage() const;  // Get and set functions.
   void set_coverage(unsigned int coverage);
-  double germline_mutation_rate();
+  double population_mutation_rate() const;
+  void set_population_mutation_rate(double rate);
+  double germline_mutation_rate() const;
   void set_germline_mutation_rate(double rate);
-  double somatic_mutation_rate();
+  double somatic_mutation_rate() const;
   void set_somatic_mutation_rate(double rate);
-  bool has_mutation();
+  bool has_mutation() const;
   void set_has_mutation(bool has_mutation);
+  gsl_rng* generator() const;
 
  private:
   int Mutate(int genotype_idx, bool is_germline=false,
              int parent_genotype_idx=-1);
   int GetChildGenotype(int mother_genotype, int father_genotype);
+  int GetChildAllele(int parent_genotype);
   ReadData DirichletMultinomialSample(int genotype_idx);
-  vector<RowVectorXi> GetGenotypesMatrix(int size);
+  MatrixXi GetGenotypesMatrix(int size);
   TrioVector GetRandomTrios(int size);
   int RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities);
   RowVectorXi RandomDiscreteChoice(size_t K, const RowVectorXd &probabilities,
@@ -60,8 +67,8 @@ class SimulationModel {
   unsigned int coverage_;
   bool has_mutation_;
   vector<bool> has_mutation_vec_;
-  vector<bool> mutation_table_[42875];
-  gsl_rng *r;
+  vector<bool> mutation_table_[kTrioCount];
+  gsl_rng *generator_;
 };
 
 #endif
