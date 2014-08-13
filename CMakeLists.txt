@@ -54,4 +54,12 @@ if(Boost_FOUND)
   project(test_pileup_utility)
   add_executable(test_pileup_utility ${TRIO_MODEL} pileup_utility.cc test/test_pileup_utility.cc)
   target_link_libraries(test_pileup_utility ${GSL_LIBRARIES} ${Boost_LIBRARIES})
+
+  project(test_em_algorithm)
+  add_executable(test_em_algorithm ${TRIO_MODEL} ${EM} test/test_em_algorithm.cc)
+  target_link_libraries(test_em_algorithm ${GSL_LIBRARIES} ${Boost_LIBRARIES})
+
+  project(test_sufficient_statistics)
+  add_executable(test_sufficient_statistics ${TRIO_MODEL} ${EM} test/test_sufficient_statistics.cc)
+  target_link_libraries(test_sufficient_statistics ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 endif()

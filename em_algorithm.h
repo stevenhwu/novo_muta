@@ -2,12 +2,11 @@
  * @file em_algorithm.h
  * @author Melissa Ip
  *
- * This file contains the implementation of the expectation-maximization
- * algorithm applied to a simplified and modified version of the trio model
- * (infinite sites model), which will be updated as necessary in Fall 2014 and
- * Spring 2015 to more complex and biologically realistic models including the
- * custom model using Dirichlet-multinomial approximations instead of
- * multinomial approximations.
+ * This file contains the implementation of the E-Step in the
+ * expectation-maximization algorithm applied to the infinite sites model,
+ * which will be updated as necessary in Fall 2014 and Spring 2015 to more
+ * complex and biologically realistic models including the custom model using
+ * Dirichlet-multinomial approximations instead of multinomial approximations.
  */
 #ifndef EM_ALGORITHM_H
 #define EM_ALGORITHM_H
@@ -15,7 +14,6 @@
 #include "trio_model.h"
 
 
-// E-step functions.
 double GetPopulationMutationRateStatistic(const TrioModel &params);
 double GetSequencingErrorStatistic(const TrioModel &params,
                                    const RowVector16d &child,

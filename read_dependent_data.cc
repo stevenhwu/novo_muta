@@ -30,6 +30,12 @@ ReadDependentData::ReadDependentData(const ReadDataVector &data_vec)
   father_somatic_probability = RowVector16d::Zero();
 };
 
+/**
+ * Returns true if the two ReadDependentData objects are equal to each other.
+ *
+ * @param other ReadDependentData object to be compared.
+ * @return True if the two ReadDependentData objects are equal to each other.
+ */
 bool ReadDependentData::Equals(const ReadDependentData &other) {
   bool attr_table[20] = {
     EqualsReadDataVector(read_data_vec, other.read_data_vec),

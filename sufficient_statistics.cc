@@ -23,7 +23,7 @@ SufficientStatistics::SufficientStatistics(double sites_count)
  * @return                  Maximized germline mutation rate.
  */
 double SufficientStatistics::MaxGermlineMutationRate() {
-  double bracket_term = 1.0 - 4.0/3.0 * germ_ / n_s_;
+  double bracket_term = 1.0 - (4.0/3.0) * (germ_/n_s_);
   return -0.75 * log(bracket_term);
 }
 
@@ -34,7 +34,7 @@ double SufficientStatistics::MaxGermlineMutationRate() {
  * @return                  Maximized somatic mutation rate.
  */
 double SufficientStatistics::MaxSomaticMutationRate() {
-  double bracket_term = 1.0 - 4.0/3.0 * som_ / n_s_;
+  double bracket_term = 1.0 - (4.0/3.0) * (som_/n_s_);
   return -0.75 * log(bracket_term);
 }
 
@@ -54,12 +54,6 @@ double SufficientStatistics::MaxSequencingErrorRate() {
   double inner_term = 3.0 * hom_ + double_het + 5.0 * e_;
   double subtract_term = (inner_term - sqrt_term) / sum / -3.0;
   double bracket_term = 1.0 + subtract_term;
-
-/*  cout << sum << endl;
-  cout << sqrt_term << endl;
-  cout << inner_term << endl;
-  cout << subtract_term << endl;
-  cout << bracket_term << endl;*/
 
   return -0.75 * log(bracket_term);
 }
@@ -109,4 +103,52 @@ void SufficientStatistics::Print() {
        << "S_Hom:\t"  << hom_  << endl
        << "S_Het:\t"  << het_  << endl
        << "N_S:\t"    << n_s_  << endl;
+}
+
+double SufficientStatistics::e() const {
+  return e_;
+}
+
+double SufficientStatistics::hom() const {
+  return hom_;
+}
+
+double SufficientStatistics::het() const {
+  return het_;
+}
+
+double SufficientStatistics::som() const {
+  return som_;
+}
+
+double SufficientStatistics::germ() const {
+  return germ_;
+}
+
+double SufficientStatistics::n_s() const {
+  return n_s_;
+}
+
+void SufficientStatistics::set_e(double max) {
+  e_ = max;
+}
+
+void SufficientStatistics::set_hom(double max) {
+  hom_ = max;
+}
+
+void SufficientStatistics::set_het(double max) {
+  het_ = max;
+}
+
+void SufficientStatistics::set_som(double max) {
+  som_ = max;
+}
+
+void SufficientStatistics::set_germ(double max) {
+  germ_ = max;
+}
+
+void SufficientStatistics::set_n_s(double num) {
+  n_s_ = num;
 }

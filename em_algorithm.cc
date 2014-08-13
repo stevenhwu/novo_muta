@@ -367,15 +367,20 @@ double GetGermlineStatistic(const TrioModel &params) {
 Matrix16_256d GermlineMutationCounts(const TrioModel &params) {
   Matrix16_256d mat = Matrix16_256d::Zero();
   Matrix4_16d germline_mutation_counts = GermlineMutationCountsSingle(params);
+  int child_allele1 = 0;
+  int child_allele2 = 0;
+  int mother_genotype = 0;
+  int father_genotype = 0;
   
-  for (int y = 0; y < kGenotypeCount; ++y) {  // Child genotype.
-    for (int x = 0; x < kGenotypePairCount; ++x) {  // Parent pair genotype.
-      int child_allele1 = y / kNucleotideCount;  // Inherited from mother.
-      int child_allele2 = y % kNucleotideCount;  // Inherited from father.
-      int mother_genotype = x / kGenotypeCount;
-      int father_genotype = x % kGenotypeCount;
+  for (int x = 0; x < kGenotypeCount; ++x) {  // Child genotype.
+    child_allele1 = x / kNucleotideCount;  // Inherited from mother.
+    child_allele2 = x % kNucleotideCount;  // Inherited from father.
 
-      mat(y, x) = (germline_mutation_counts(child_allele1, mother_genotype) +
+    for (int y = 0; y < kGenotypePairCount; ++y) {  // Parent pair genotype.
+      mother_genotype = y / kGenotypeCount;
+      father_genotype = y % kGenotypeCount;
+
+      mat(x, y) = (germline_mutation_counts(child_allele1, mother_genotype) +
                    germline_mutation_counts(child_allele2, father_genotype));
     }
   }
@@ -394,8 +399,8 @@ Matrix16_256d GermlineMutationCounts(const TrioModel &params) {
  * Child  AA AC  AG  AT  CA  CC CG  CT  GA  GC  GG GT  TA  TC  TG  TT
  * A      0  Het Het Het Het 1  1   1   Het 1   1  1   Het 1   1   1
  * C      1  Het 1   1   Het 0  Het Het 1   Het 1  1   1   Het 1   1
- * G      1  1   Het 1   1   1  Het 1   Het Het 1  Het 1   1   Het 1
- * T      1  1   1   Het 1   1  1   Het 1   1   1  Het Het Het Het 1
+ * G      1  1   Het 1   1   1  Het 1   Het Het 0  Het 1   1   Het 1
+ * T      1  1   1   Het 1   1  1   Het 1   1   1  Het Het Het Het 0
  *
  * Het = 0.5 * no match / heterozygous match.
  *

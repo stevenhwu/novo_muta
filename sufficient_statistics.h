@@ -21,11 +21,23 @@ class SufficientStatistics {
   void Clear();
   void Print();
 
-  // M-step functions.
-  double MaxGermlineMutationRate();
+  double MaxGermlineMutationRate();  // M-step functions.
   double MaxSomaticMutationRate();
   double MaxSequencingErrorRate();
   bool IsNan();
+
+  double e() const;  // Get and set functions.
+  double hom() const;
+  double het() const;
+  double som() const;
+  double germ() const;
+  double n_s() const;
+  void set_e(double max);
+  void set_hom(double max);
+  void set_het(double max);
+  void set_som(double max);
+  void set_germ(double max);
+  void set_n_s(double num);
 
  private:
   // Instance member variables.
