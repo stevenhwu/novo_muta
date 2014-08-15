@@ -49,8 +49,6 @@ void SimulationModel::Seed() {
  */
 void SimulationModel::Free() {
   gsl_rng_free(generator_);
-  delete generator_;  // Cleanup for one time use.
-  generator_ = NULL;
 }
 
 /**
