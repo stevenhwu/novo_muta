@@ -40,6 +40,34 @@
 // }
 
 /**
+ * Returns numeric nucleotide index given a char. For use in VariantVisitor.
+ *
+ * @param  b Char.
+ * @return   Numeric nucleotide index.
+ */
+uint16_t ToNucleotideIndex(char base) {
+  switch (base) {        
+  case 'A':
+  case 'a':    
+    return 0;
+  case 'C':
+  case 'c':
+    return 1;
+  case 'G':
+  case 'g':
+    return 2;
+  case 'T':
+  case 't':
+    return 3;
+  case '-':
+  case 'N':
+    return -1 ;
+  default:  // Unknown base.
+    return -1;
+  }
+}
+
+/**
  * Returns a 16 x 16 x 4 Eigen matrix filled with zeros. The third dimension is
  * RowVector4d.
  *

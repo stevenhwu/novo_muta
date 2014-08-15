@@ -109,7 +109,7 @@ double GetSequencingErrorStatistic(const TrioModel &params,
   RowVector16d s_e_mother = mother;
   RowVector16d s_e_father = father;
   RowVector256d s_e_child_x = RowVector256d::Zero(); // Given x = parent pair genotype.
-
+  
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
   for (int x = 0; x < kGenotypeCount; ++x) { // Zygotic genotype.
     for (int y = 0; y < kGenotypeCount; ++y) { // Somatic genotype.

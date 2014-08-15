@@ -44,6 +44,7 @@ typedef vector<ReadDataVector> TrioVector;
 
 // Forward declarations.
 // Matrix16_2i GenotypeNumIndex();
+uint16_t ToNucleotideIndex(char base);
 Matrix16_16_4d ZeroMatrix16_16_4d();
 void PrintMatrix16_16_4d(const Matrix16_16_4d &mat);
 Matrix16_16_4d TwoParentCounts();

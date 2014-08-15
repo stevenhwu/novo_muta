@@ -33,7 +33,8 @@
 
 int main(int argc, const char *argv[]) {
   if (argc < 6) {
-    Die("USAGE: bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>");
+    Die("USAGE: bam_driver <output>.txt <input>.bam "
+        "<child SM> <mother SM> <father SM>");
   }
 
   const string output_name = argv[1];
@@ -47,22 +48,21 @@ int main(int argc, const char *argv[]) {
 
   BamReader reader;
   reader.Open(input);
-
   if (!reader.IsOpen()) {
     Die("Input file could not be opened.");
   }
 
-  RefVector references = reader.GetReferenceData();
-  SamHeader header = reader.GetHeader();
-  PileupEngine pileup;
-  TrioModel params;
   BamAlignment al;
+  TrioModel params;
+  PileupEngine pileup;
+  SamHeader header = reader.GetHeader();
+  RefVector references = reader.GetReferenceData();
   VariantVisitor *v = new VariantVisitor(references, header, params, al,
                                          output_name, child_sm, mother_sm,
                                          father_sm, qual_cut, mapping_cut,
                                          probability_cut);
+  
   pileup.AddVisitor(v);
-   
   while (reader.GetNextAlignment(al)) {
     pileup.AddAlignment(al);
   }
@@ -71,7 +71,7 @@ int main(int argc, const char *argv[]) {
   reader.Close();
 
   // EM algorithm begins with initial E-Step.
-  const TrioVector sites = v->sites();
+  TrioVector sites = v->sites();
   SufficientStatistics stats(sites.size());
   stats.Update(params, sites);
 

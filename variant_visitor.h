@@ -38,7 +38,6 @@ class VariantVisitor : public PileupVisitor {
                  double probability_cut);
   ~VariantVisitor() { }
   void Visit(const PileupPosition &pileupData);
-  uint16_t ToNucleotideIndex(char b);
   TrioVector sites() const;
 
  private:

@@ -43,6 +43,7 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
   string chr = references_[pileupData.RefId].RefName;
   uint64_t pos = pileupData.Position;
   string tag_id;
+  bool is_qual = false;
 
   for (auto it = begin(pileupData.PileupAlignments);
       it != end(pileupData.PileupAlignments); ++it) {
@@ -63,44 +64,19 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
         }
 
         char base = it->Alignment.QueryBases[*pos];
-        uint16_t base_idx = VariantVisitor::ToNucleotideIndex(base);
+        uint16_t base_idx = ToNucleotideIndex(base);
         if (base_idx >= 0 && base_idx < 4) {
+          is_qual = true;
           data_vec[i].reads[base_idx]++;
         }
       }
     }
   }
 
-  sites_.push_back(data_vec);
-  fout.close();
-}
-
-/**
- * Returns numeric nucleotide index given a char.
- *
- * @param  b Char.
- * @return   Numeric nucleotide index.
- */
-uint16_t VariantVisitor::ToNucleotideIndex(char b) {
-  switch(b) {        
-  case 'A':
-  case 'a':    
-    return 0;
-  case 'C':
-  case 'c':
-    return 1;
-  case 'G':
-  case 'g':
-    return 2;
-  case 'T':
-  case 't':
-    return 3;
-  case '-':
-  case 'N':
-    return -1 ;
-  default:  // Unknown base.
-    return -1;
+  if (is_qual) {
+    sites_.push_back(data_vec);
   }
+  fout.close();
 }
 
 TrioVector VariantVisitor::sites() const {
