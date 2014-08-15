@@ -26,8 +26,8 @@ int main(int argc, const char *argv[]) {
   ofstream fout(file_name);
   TrioModel params;
   params.set_population_mutation_rate(0.001);
-  params.set_germline_mutation_rate(1e-6);
-  params.set_somatic_mutation_rate(1e-6);
+  params.set_germline_mutation_rate(2e-8);
+  params.set_somatic_mutation_rate(2e-8);
   TrioVector trio_vec = GetTrioVector(kNucleotideCount);
   vector<double> probabilities;
 
