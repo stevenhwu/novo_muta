@@ -258,16 +258,14 @@ MatrixXi SimulationModel::GetGenotypesMatrix(int size) {
 
   // Extracts parent genotypes from samples and gets child genotypes.
   MatrixXi genotypes_mat(3, size);
-  genotypes_mat.row(1) = parent_genotypes / kGenotypeCount;
   for (int i = 0; i < size; ++i) {
+    int mother_genotype = parent_genotypes(i) / kGenotypeCount;
     int father_genotype = parent_genotypes(i) % kGenotypeCount;
-    genotypes_mat.row(2)(i) = father_genotype;
-    genotypes_mat.row(0)(i) = SimulationModel::GetChildGenotype(
-      genotypes_mat(1, i),  // Mother genotype.
-      father_genotype
-    );
+    genotypes_mat(1, i) = mother_genotype;
+    genotypes_mat(2, i) = father_genotype;
+    genotypes_mat(0, i) = SimulationModel::GetChildGenotype(mother_genotype,
+                                                            father_genotype);
   }
-
   return genotypes_mat;
 }
 
@@ -338,11 +336,12 @@ TrioVector SimulationModel::GetRandomTrios(int size) {
     random_trios.push_back(data_vec);
 
     // Records has_mutation_ in order relevant vector.
+    // Used only for MutationCounts at 4x coverage.
     int trio_index = IndexOfReadDataVector(data_vec, trio_vec);
     if (trio_index != -1) {
       mutation_table_[trio_index].push_back(has_mutation_);
-      has_mutation_vec_.push_back(has_mutation_);  // Must be valid trio for record.
     }
+    has_mutation_vec_.push_back(has_mutation_);
     has_mutation_ = false;  // Resets for the next simulation.
   }
   return random_trios;
