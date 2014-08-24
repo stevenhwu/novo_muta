@@ -9,6 +9,7 @@
  * samtools idxstats
  * samtools view -H <name>.bam
  * samtools view <name>.bam <chr:pos1-pos2>
+ * samtools tview <chr:pos1-pos2> <name>.bam
  *
  * To splice a section out and merge it with other splices:
  * samtools view -b <name>.bam <chr:pos1-pos2> <output>.bam
@@ -27,7 +28,7 @@
  * child, mother, or father. This will vary depending on the data and must be
  * known in order to parse out the read data.
  */
-#include "sufficient_statistics.h" 
+#include "sufficient_statistics.h"
 #include "variant_visitor.h"
 
 
