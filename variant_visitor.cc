@@ -32,13 +32,12 @@ VariantVisitor::VariantVisitor(const RefVector &references,
 
 /**
  * Visits a bam alignment at a certain position and counts the number of
- * nucleotide bases from read groups (RG). Creates a ReadDataVector and
- * calculates the probability of mutation, which is printed to a text file.
+ * nucleotide bases from read groups (RG). Creates a ReadDataVector.
  *
  * @param  pileupData  Pileup data.
  */
 void VariantVisitor::Visit(const PileupPosition &pileupData) {
-  ofstream fout(output_name_);
+  // ofstream fout(output_name_);
   ReadDataVector data_vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
   string chr = references_[pileupData.RefId].RefName;
   uint64_t pos = pileupData.Position;
@@ -51,18 +50,21 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
       const int *pos = &it->PositionInAlignment;
       uint16_t bqual = static_cast<short>(it->Alignment.Qualities[*pos]) - 33;
       if (bqual >= qual_cut_) {
-        it->Alignment.GetTag("RG", tag_id);
-        string sm = header_.ReadGroups[tag_id].Sample;
-
+        string sm;
         int i = 0;
-        if (sm.compare(child_sm_) == 0) {
-          i = 0;  // Hard coded as implemented in TrioModel.
-        } else if (sm.compare(mother_sm_) == 0) {
-          i = 1;
-        } else if (sm.compare(father_sm_) == 0) {
-          i = 2;
+        for (SamReadGroupConstIterator it = header_.ReadGroups.ConstBegin();
+            it != header_.ReadGroups.ConstEnd(); ++it) {
+          sm = it->Sample;
+          if (sm.compare(child_sm_) == 0) {
+            i = 0;  // Hard coded as implemented in TrioModel.
+          } else if (sm.compare(mother_sm_) == 0) {
+            i = 1;
+          } else if (sm.compare(father_sm_) == 0) {
+            i = 2;
+          } else {
+            cout << "ERROR: " << sm << " does not match." << endl;
+          }
         }
-
         char base = it->Alignment.QueryBases[*pos];
         uint16_t base_idx = ToNucleotideIndex(base);
         if (base_idx >= 0 && base_idx < 4) {
@@ -76,7 +78,7 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
   if (is_qual) {
     sites_.push_back(data_vec);
   }
-  fout.close();
+  // fout.close();
 }
 
 TrioVector VariantVisitor::sites() const {

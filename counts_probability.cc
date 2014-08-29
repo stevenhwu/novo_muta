@@ -37,12 +37,12 @@ int main(int argc, const char *argv[]) {
   }
 
   const string file_name = argv[1];
-  ifstream f(file_name);
-  if (!f.is_open() || 0 != f.fail()) {
+  ifstream fin(file_name);
+  if (!fin.is_open() || 0 != fin.fail()) {
     Die("Input file cannot be read.");
   }
 
-  const char *fout_name = argv[2];
+  const string fout_name = argv[2];
   ofstream fout(fout_name);
 
   double probability = 0.0;
@@ -53,7 +53,7 @@ int main(int argc, const char *argv[]) {
   int total_trios = 0;
   string line;
 
-  while (getline(f, line)) {
+  while (getline(fin, line)) {
     line.erase(remove(line.begin(), line.end(), '\n'), line.end());
     stringstream str(line);
     str >> index;
@@ -67,7 +67,7 @@ int main(int argc, const char *argv[]) {
     }
     probabilities.push_back(probability);
   }
-  f.close();
+  fin.close();
 
   ostream_iterator<double> output_iter(fout, "\n");
   copy(probabilities.begin(), probabilities.end(), output_iter);

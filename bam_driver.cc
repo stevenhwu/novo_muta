@@ -13,16 +13,16 @@
  * samtools idxstats <name>.bam
  * samtools view -H <name>.bam <chr>:<pos1>-<pos2>
  * samtools view <name>.bam <chr>:<pos1>-<pos2>
- * samtools tview <chr>:<pos1>-<pos2> <name>.bam
+ * samtools tview -p <chr>:<pos1>-<pos2> <name>.bam
  *
- * To splice a region out and merge it with other splices:
+ * To slice a region out and merge it with other slices:
  * samtools view -b <name>.bam <chr>:<pos1>-<pos2> > <output>.bam
  *
  * To output all header data that belong to a certain region:
  * samtools view -o /home/mip/<header>.txt -H <name>.bam <chr>:<pos1>-<pos2>
  *
  * Make read group file for bam1 to bamn, tab separated. <header>.txt can be
- * parsed by filtering out lines that begin with @RG.
+ * parsed by filtering out lines that begin with @RG with parse_bam_header.cc.
  *
  * Skip this step if there is only one bam file that contains the bam
  * alignments for child, mother, and father.
