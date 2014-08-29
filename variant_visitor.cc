@@ -37,7 +37,6 @@ VariantVisitor::VariantVisitor(const RefVector &references,
  * @param  pileupData  Pileup data.
  */
 void VariantVisitor::Visit(const PileupPosition &pileupData) {
-  // ofstream fout(output_name_);
   ReadDataVector data_vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
   string chr = references_[pileupData.RefId].RefName;
   uint64_t pos = pileupData.Position;
@@ -52,9 +51,9 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
       if (bqual >= qual_cut_) {
         string sm;
         int i = 0;
-        for (SamReadGroupConstIterator it = header_.ReadGroups.ConstBegin();
-            it != header_.ReadGroups.ConstEnd(); ++it) {
-          sm = it->Sample;
+        for (SamReadGroupConstIterator rg_it = header_.ReadGroups.ConstBegin();
+            rg_it != header_.ReadGroups.ConstEnd(); ++rg_it) {
+          sm = rg_it->Sample;
           if (sm.compare(child_sm_) == 0) {
             i = 0;  // Hard coded as implemented in TrioModel.
           } else if (sm.compare(mother_sm_) == 0) {
@@ -64,12 +63,13 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
           } else {
             cout << "ERROR: " << sm << " does not match." << endl;
           }
-        }
-        char base = it->Alignment.QueryBases[*pos];
-        uint16_t base_idx = ToNucleotideIndex(base);
-        if (base_idx >= 0 && base_idx < 4) {
-          is_qual = true;
-          data_vec[i].reads[base_idx]++;
+        
+          char base = it->Alignment.QueryBases[*pos];
+          uint16_t base_idx = ToNucleotideIndex(base);
+          if (base_idx >= 0 && base_idx < 4) {
+            is_qual = true;
+            data_vec[i].reads[base_idx]++;
+          }
         }
       }
     }
@@ -78,7 +78,6 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
   if (is_qual) {
     sites_.push_back(data_vec);
   }
-  // fout.close();
 }
 
 TrioVector VariantVisitor::sites() const {

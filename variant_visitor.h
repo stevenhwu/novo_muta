@@ -29,7 +29,7 @@ class VariantVisitor : public PileupVisitor {
                  const SamHeader &header,
                  const TrioModel &params,
                  BamAlignment &al,
-                 string output_name,
+                 string output_name,  // Unused.
                  string child_sm,
                  string mother_sm,
                  string father_sm,
