@@ -48,7 +48,7 @@
 
 
 int main(int argc, const char *argv[]) {
-  if (argc < 6) {
+/*  if (argc < 6) {
     Die("USAGE: bam_driver <output>.txt <input>.bam "
         "<child SM> <mother SM> <father SM>");
   }
@@ -84,25 +84,39 @@ int main(int argc, const char *argv[]) {
   }
     
   pileup.Flush();
-  reader.Close();
+  reader.Close();*/
 
   // EM algorithm begins with initial E-Step.
-  TrioVector sites = v->sites();
+  TrioVector sites;
+  ReadDataVector data = {{40, 1, 1, 1},
+                         {40, 0, 0, 0},
+                         {40, 0, 0, 0}};
+  sites.push_back(data);
+
+  // TrioVector sites = v->sites();
   SufficientStatistics stats(sites.size());
+  TrioModel params;
+  stats.Clear();
   stats.Update(params, sites);
+  stats.Print();
 
   // M-Step.
   int count = 0;
   double maximized = stats.MaxSequencingErrorRate();
-  while (!Equal(params.sequencing_error_rate(), maximized)) {  // Quits if converges.
+  while (//!Equal(params.sequencing_error_rate(), maximized) &&
+      count < 10) {  // Quits if converges.
+    cout << "E:\t" << params.sequencing_error_rate() << endl;
+    cout << "~E:\t" << maximized << endl;
     params.set_sequencing_error_rate(maximized);  // Sets new estimate.
-    stats.Clear(); // Sets to 0. 
+    stats.Clear(); // Sets to 0.
     stats.Update(params, sites);  // Loops to E-Step.
+    stats.Print();
     maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
     count++;
   }
   
-  cout << "^E:\t" << params.sequencing_error_rate() << endl;
+  cout << "^E:\t" << params.sequencing_error_rate()
+       << " after " << count << " iterations." << endl;
 
   return 0;
 }

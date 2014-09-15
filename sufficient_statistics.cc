@@ -23,7 +23,7 @@ SufficientStatistics::SufficientStatistics(double sites_count)
  * @return                  Maximized germline mutation rate.
  */
 double SufficientStatistics::MaxGermlineMutationRate() {
-  double bracket_term = 1.0 - (4.0/3.0) * (germ_/n_s_);
+  double bracket_term = 1.0 - (4.0/3.0) * ((2*germ_)/n_s_);
   return -0.75 * log(bracket_term);
 }
 
@@ -34,7 +34,7 @@ double SufficientStatistics::MaxGermlineMutationRate() {
  * @return                  Maximized somatic mutation rate.
  */
 double SufficientStatistics::MaxSomaticMutationRate() {
-  double bracket_term = 1.0 - (4.0/3.0) * (som_/n_s_);
+  double bracket_term = 1.0 - (4.0/3.0) * ((6*som_)/n_s_);
   return -0.75 * log(bracket_term);
 }
 
