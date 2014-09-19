@@ -38,7 +38,7 @@
  * <output_sorted>.bam is accepted as input for a specified region.
  * 
  * To compile on Herschel without using cmake and include GSL and BamTools:
- * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc bam_driver.cc
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc em_algorithm.cc sufficient_statistics.cc bam_driver.cc
  *
  * To run this file, provide the following command line inputs:
  * ./bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>
@@ -48,7 +48,7 @@
 
 
 int main(int argc, const char *argv[]) {
-/*  if (argc < 6) {
+  if (argc < 6) {
     Die("USAGE: bam_driver <output>.txt <input>.bam "
         "<child SM> <mother SM> <father SM>");
   }
@@ -84,33 +84,22 @@ int main(int argc, const char *argv[]) {
   }
     
   pileup.Flush();
-  reader.Close();*/
+  reader.Close();
 
   // EM algorithm begins with initial E-Step.
-  TrioVector sites;
-  ReadDataVector data = {{40, 1, 1, 1},
-                         {40, 0, 0, 0},
-                         {40, 0, 0, 0}};
-  sites.push_back(data);
-
-  // TrioVector sites = v->sites();
+  TrioVector sites = v->sites();
   SufficientStatistics stats(sites.size());
   TrioModel params;
-  stats.Clear();
   stats.Update(params, sites);
-  stats.Print();
 
   // M-Step.
   int count = 0;
   double maximized = stats.MaxSequencingErrorRate();
-  while (//!Equal(params.sequencing_error_rate(), maximized) &&
-      count < 10) {  // Quits if converges.
-    cout << "E:\t" << params.sequencing_error_rate() << endl;
-    cout << "~E:\t" << maximized << endl;
+  while (!Equal(params.sequencing_error_rate(), maximized) &&
+      count < 50) {  // Quits if converges.
     params.set_sequencing_error_rate(maximized);  // Sets new estimate.
     stats.Clear(); // Sets to 0.
     stats.Update(params, sites);  // Loops to E-Step.
-    stats.Print();
     maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
     count++;
   }

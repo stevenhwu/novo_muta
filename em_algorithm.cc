@@ -104,9 +104,9 @@ double GetSequencingErrorStatistic(const TrioModel &params,
 
   // S(R_mom, mom_somatic=x), S(R_dad, dad_somatic=x), S(R_child, child_somatic=x)
   RowVector256d s_e = RowVector256d::Zero();
-  RowVector16d s_e_child = child;
-  RowVector16d s_e_mother = mother;
-  RowVector16d s_e_father = father;
+  RowVector16d s_e_child = RowVector16d::Zero();
+  RowVector16d s_e_mother = RowVector16d::Zero();
+  RowVector16d s_e_father = RowVector16d::Zero();
   RowVector256d s_e_child_x = RowVector256d::Zero(); // Given x = parent pair genotype.
   
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
@@ -156,61 +156,6 @@ double GetSequencingErrorStatistic(const TrioModel &params,
 
   return s_e.sum() / data.denominator.sum;
 }
-
-/*double GetSequencingErrorStatistic(const TrioModel &params,
-                                   const RowVector16d &child,
-                                   const RowVector16d &mother,
-                                   const RowVector16d &father) {
-  const ReadDependentData data = params.read_dependent_data();
-  const Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
-  const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
-  const Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
-
-  // S(R_mom, mom_somatic=x), S(R_dad, dad_somatic=x), S(R_child, child_somatic=x)
-  RowVector256d s_e = RowVector256d::Zero();
-  RowVector16d s_e_child = child;
-  RowVector16d s_e_mother = mother;
-  RowVector16d s_e_father = father;
-  RowVector256d s_e_child_x = RowVector256d::Zero();  // Given x = parent pair genotype.
-
-  // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
-  for (int x = 0; x < kGenotypeCount; ++x) {  // Zygotic genotype.
-    auto splice = somatic_probability_mat.row(x); // .col(x).transpose();
-    auto child_term = splice.cwiseProduct(data.child_somatic_probability);
-    auto mother_term = splice.cwiseProduct(data.mother_somatic_probability);
-    auto father_term = splice.cwiseProduct(data.father_somatic_probability);
-    
-    s_e_child(x) += child_term.cwiseProduct(somatic_mutation_counts.row(x))(x);  // Sums over y_j.
-    s_e_mother(x) += mother_term.cwiseProduct(somatic_mutation_counts.row(x))(x);
-    s_e_father(x) += father_term.cwiseProduct(somatic_mutation_counts.row(x))(x);
-
-    // Dividing out child_zygotic_probability occurs at the next node.
-    s_e_mother(x) /= data.denominator.mother_zygotic_probability(x);
-    s_e_father(x) /= data.denominator.father_zygotic_probability(x);
-  }
-
-  // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
-  // At top of branches where s_som_mother and s_som_father do not change,
-  // because no somatic mutation or sequencing error can occur in germline.
-  // For each parent pair genotype x in population priors.
-  for (int x = 0; x < kGenotypePairCount; ++x) {
-    auto splice = germline_probability_mat.col(x).transpose();  // Child germline genotype.
-    s_e_child_x(x) += splice.cwiseProduct(s_e_child).sum();
-    s_e_child_x(x) /= data.denominator.child_germline_probability(x);  // Includes child_zygotic_probability.
-
-    // S(R_mom,R_dad,R_child, parent_pair=x)
-    // Merges j branches.
-    s_e(x) += (s_e_child_x(x) +
-               s_e_mother(x / kGenotypeCount) +
-               s_e_father(x % kGenotypeCount));
-
-    // S(R_mom,R_dad,R_child)
-    // At root of tree.
-    s_e(x) *= data.denominator.root_mat(x);  // Includes population_priors.
-  }
-
-  return s_e.sum() / data.denominator.sum;
-}*/
 
 /**
  * Sums all nucleotide counts in ReadData and subtracts out the number of
@@ -330,28 +275,6 @@ double GetGermlineStatistic(const TrioModel &params) {
 
   return s_germ.sum() / data.denominator.sum;
 }
-// double GetGermlineStatistic(const TrioModel &params) {
-//   const ReadDependentData data = params.read_dependent_data();
-//   const Matrix16_256d germline_mutation_counts = GermlineMutationCounts(params);
-//   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
-//   const RowVector256d population_priors = params.population_priors();
-  
-//   RowVector256d s_germ = RowVector256d::Zero();
-
-//   // S(R_mom, parent_pair=x), S(R_dad, parent_pair=x), S(R_child, parent_pair=x)
-//   // At top of branches.
-//   // For each parent pair genotype x in population priors.
-//   for (int x = 0; x < kGenotypePairCount; ++x) {
-//     auto splice = germline_probability_mat.col(x).transpose();  // Child germline genotype.
-//     auto child_term = splice.cwiseProduct(data.denominator.child_zygotic_probability);
-//     s_germ(x) += child_term.cwiseProduct(germline_mutation_counts.col(x).transpose()).sum();
-//     s_germ(x) *= data.denominator.mother_zygotic_probability(x / kGenotypeCount);
-//     s_germ(x) *= data.denominator.father_zygotic_probability(x % kGenotypeCount);
-//     s_germ(x) *= population_priors(x);
-//   }
-
-//   return s_germ.sum() / data.denominator.sum;
-// }
 
 /**
  * Generates a 16 x 256 Eigen matrix holding the number of expected germline
@@ -433,7 +356,7 @@ Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params) {
 }
 
 /**
- * Returns S_Som the number of nucleotide mismatches between all x and x′,
+ * Returns S_Som, the number of nucleotide mismatches between all x and x′,
  * or the expected number of somatic mutations. Calculated during the E-step of
  * expectation-maximization algorithm.
  *
