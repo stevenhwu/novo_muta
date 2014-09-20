@@ -48,7 +48,7 @@
 
 
 int main(int argc, const char *argv[]) {
-  if (argc < 6) {
+/*  if (argc < 6) {
     Die("USAGE: bam_driver <output>.txt <input>.bam "
         "<child SM> <mother SM> <father SM>");
   }
@@ -84,22 +84,30 @@ int main(int argc, const char *argv[]) {
   }
     
   pileup.Flush();
-  reader.Close();
+  reader.Close();*/
 
   // EM algorithm begins with initial E-Step.
-  TrioVector sites = v->sites();
-  SufficientStatistics stats(sites.size());
+  //TrioVector sites = v->sites();
+  TrioVector sites;
+  ReadDataVector data = {{10, 1, 0, 0}, {10, 10, 0, 0}, {40, 0, 0, 0}};
+  sites.push_back(data);
   TrioModel params;
+  SufficientStatistics stats(sites.size());
   stats.Update(params, sites);
 
   // M-Step.
   int count = 0;
+  double log_likelihood = stats.log_likelihood();
   double maximized = stats.MaxSequencingErrorRate();
   while (!Equal(params.sequencing_error_rate(), maximized) &&
-      count < 50) {  // Quits if converges.
+      count < 50) {  // Quits if converges or takes longer than 50 iteratons.
     params.set_sequencing_error_rate(maximized);  // Sets new estimate.
     stats.Clear(); // Sets to 0.
     stats.Update(params, sites);  // Loops to E-Step.
+    if (stats.log_likelihood() < log_likelihood) {  // Sum of likelihood should increase and converge.
+      cout << "Log likelihood is decreasing between iterations." << endl;
+    }
+    log_likelihood = stats.log_likelihood();
     maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
     count++;
   }

@@ -32,12 +32,14 @@ class SufficientStatistics {
   double som() const;
   double germ() const;
   double n_s() const;
+  double log_likelihood() const;
   void set_e(double max);
   void set_hom(double max);
   void set_het(double max);
   void set_som(double max);
   void set_germ(double max);
   void set_n_s(double num);
+  void set_log_likelihood(double num);
 
  private:
   // Instance member variables.
@@ -47,6 +49,7 @@ class SufficientStatistics {
   double som_;
   double germ_;  // S_M + S_F.
   double n_s_;  // Number of sites.
+  double log_likelihood_;  // Log of denominator sum.
 };
 
 #endif

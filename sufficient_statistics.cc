@@ -72,6 +72,8 @@ void SufficientStatistics::Update(TrioModel &params, const TrioVector &sites) {
     e_ += GetMismatchStatistic(params);
     hom_ += GetHomozygousStatistic(params);
     het_ += GetHeterozygousStatistic(params);
+    cout << params.read_dependent_data().denominator.sum << endl;
+    log_likelihood_ += log(params.read_dependent_data().denominator.sum);
   }
 }
 
@@ -129,6 +131,10 @@ double SufficientStatistics::n_s() const {
   return n_s_;
 }
 
+double SufficientStatistics::log_likelihood() const {
+  return log_likelihood_;
+}
+
 void SufficientStatistics::set_e(double max) {
   e_ = max;
 }
@@ -151,4 +157,8 @@ void SufficientStatistics::set_germ(double max) {
 
 void SufficientStatistics::set_n_s(double num) {
   n_s_ = num;
+}
+
+void SufficientStatistics::set_log_likelihood(double num) {
+  log_likelihood_ = num;
 }
