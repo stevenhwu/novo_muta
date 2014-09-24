@@ -3,8 +3,8 @@
  * @author Melissa Ip
  *
  * The VariantVisitor class inherits the PileupVisitor class in BamTools.
- * It is used to parse bam files and retrieve sequencing reads, which are
- * accepted by the trio model.
+ * It is used to parse BAM files and get sequencing reads as ReadDataVector
+ * objects, which are accepted as input by the trio model.
  *
  * This class is referenced from:
  * https://github.com/dwinter/accuMUlate
@@ -29,14 +29,13 @@ class VariantVisitor : public PileupVisitor {
                  const SamHeader &header,
                  const TrioModel &params,
                  BamAlignment &al,
-                 string output_name,  // Unused.
                  string child_sm,
                  string mother_sm,
                  string father_sm,
                  int qual_cut,
                  int mapping_cut,
                  double probability_cut);
-  ~VariantVisitor() { }
+  ~VariantVisitor() {}
   void Visit(const PileupPosition &pileupData);
   TrioVector sites() const;
 
@@ -45,7 +44,6 @@ class VariantVisitor : public PileupVisitor {
   SamHeader header_;
   TrioModel params_;
   BamAlignment &al_;
-  string output_name_;
   string child_sm_;
   string mother_sm_;
   string father_sm_;

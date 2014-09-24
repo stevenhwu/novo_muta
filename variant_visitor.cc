@@ -11,12 +11,22 @@
 
 /**
  * Constructor calls base constructor PileupVisitor.
+ *
+ * @param  references      Reference data from BAM file.
+ * @param  header          SAM header data from BAM file.
+ * @param  params          TrioModel object containing parameters.
+ * @param  al              Certain alignment from BAM file.
+ * @param  child_sm        Sample name of the child.
+ * @param  mother_sm       Sample name of the mother.
+ * @param  father_sm       Sample name of the father.
+ * @param  qual_cut        Value to cut off alignments for base quality.
+ * @param  mapping_cut     Value to cut off alignments for mapping quality.
+ * @param  probability_cut Value to cut off alignments with low probabilities.
  */
 VariantVisitor::VariantVisitor(const RefVector &references,
                                const SamHeader &header,
                                const TrioModel &params,
                                BamAlignment &al,
-                               string output_name,
                                string child_sm,
                                string mother_sm,
                                string father_sm,
@@ -25,14 +35,17 @@ VariantVisitor::VariantVisitor(const RefVector &references,
                                double probability_cut)
     : PileupVisitor(),
       references_{references}, header_{header}, al_{al},
-      output_name_{output_name}, child_sm_{child_sm}, mother_sm_{mother_sm},
-      father_sm_{father_sm}, qual_cut_{qual_cut}, mapping_cut_{mapping_cut},
+      child_sm_{child_sm}, mother_sm_{mother_sm}, father_sm_{father_sm},
+      qual_cut_{qual_cut}, mapping_cut_{mapping_cut},
       probability_cut_{probability_cut} {
 }
 
 /**
- * Visits a bam alignment at a certain position and counts the number of
- * nucleotide bases from read groups (RG). Creates a ReadDataVector.
+ * Visits a BAM alignment at a certain position and counts the number of
+ * nucleotide bases from read groups (RG) if it passes all cut values. The
+ * sample name given through the command line is used here to identify which
+ * sample it belongs to (child, mother, or father). Creates a ReadDataVector of
+ * sequencing data and adds it to sites_.
  *
  * @param  pileupData  Pileup data.
  */

@@ -11,19 +11,28 @@
 
 /**
  * Default constructor.
+ *
+ * @param  e              Expected statistic for sequencing error rate.
+ * @param  hom            Expected statistic for homozygous matches.
+ * @param  het            Expected statistic for heterozygous matches.
+ * @param  som            Expected statistic for somatic mutation.
+ * @param  germ           Expected statistic for germline mutation.
+ * @param  log_likelihood Log likelihood of P(R,H)
+ * @param  n_s            Number of sites.
  */
 SufficientStatistics::SufficientStatistics(double sites_count)
-    : e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0}, n_s_{sites_count} {
+    : e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0}, log_likelihood_{0.0},
+      n_s_{sites_count} {
 }
 
 /**
  * Maximizes germline mutation rate. Calculated during the M-step of
  * expectation-maximization algorithm.
  *
- * @return                  Maximized germline mutation rate.
+ * @return  Maximized germline mutation rate.
  */
 double SufficientStatistics::MaxGermlineMutationRate() {
-  double bracket_term = 1.0 - (4.0/3.0) * ((2*germ_)/n_s_);
+  double bracket_term = 1.0 - (4.0/3.0) * ((2*germ_) / n_s_);
   return -0.75 * log(bracket_term);
 }
 
@@ -31,10 +40,10 @@ double SufficientStatistics::MaxGermlineMutationRate() {
  * Maximizes somatic mutation rate. Calculated during the M-step of
  * expectation-maximization algorithm.
  *
- * @return                  Maximized somatic mutation rate.
+ * @return  Maximized somatic mutation rate.
  */
 double SufficientStatistics::MaxSomaticMutationRate() {
-  double bracket_term = 1.0 - (4.0/3.0) * ((6*som_)/n_s_);
+  double bracket_term = 1.0 - (4.0/3.0) * ((6*som_) / n_s_);
   return -0.75 * log(bracket_term);
 }
 
@@ -42,7 +51,7 @@ double SufficientStatistics::MaxSomaticMutationRate() {
  * Maximizes sequencing error rate. Calculated during the M-step of
  * expectation-maximization algorithm.
  *
- * @return                  Maximized sequencing error rate.
+ * @return  Maximized sequencing error rate.
  */
 double SufficientStatistics::MaxSequencingErrorRate() {
   double sum = hom_ + het_ + e_;
@@ -72,13 +81,12 @@ void SufficientStatistics::Update(TrioModel &params, const TrioVector &sites) {
     e_ += GetMismatchStatistic(params);
     hom_ += GetHomozygousStatistic(params);
     het_ += GetHeterozygousStatistic(params);
-    cout << params.read_dependent_data().denominator.sum << endl;
     log_likelihood_ += log(params.read_dependent_data().denominator.sum);
   }
 }
 
 /**
- * Sets all statistics to 0 but keeps n_s_.
+ * Sets all statistics to 0 except n_s_.
  */
 void SufficientStatistics::Clear() {
   e_ = 0.0;
@@ -86,6 +94,7 @@ void SufficientStatistics::Clear() {
   het_ = 0.0;
   som_ = 0.0;
   germ_ = 0.0;
+  log_likelihood_ = 0.0;
 }
 
 /**
@@ -96,15 +105,16 @@ bool SufficientStatistics::IsNan() {
 }
 
 /**
- * Print content.
+ * Prints content.
  */
 void SufficientStatistics::Print() {
-  cout << "S_Som:\t"  << som_  << endl
-       << "S_Germ:\t" << germ_ << endl
-       << "S_E:\t"    << e_    << endl
-       << "S_Hom:\t"  << hom_  << endl
-       << "S_Het:\t"  << het_  << endl
-       << "N_S:\t"    << n_s_  << endl;
+  cout << "S_Som:\t"      << som_            << endl
+       << "S_Germ:\t"     << germ_           << endl
+       << "S_E:\t"        << e_              << endl
+       << "S_Hom:\t"      << hom_            << endl
+       << "S_Het:\t"      << het_            << endl
+       << "Likelihood:\t" << log_likelihood_ << endl
+       << "N_S:\t"        << n_s_            << endl;
 }
 
 double SufficientStatistics::e() const {

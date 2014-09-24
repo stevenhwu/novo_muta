@@ -2,8 +2,8 @@
  * @file bam_driver.cc
  * @author Melissa Ip
  *
- * This is the driver for parsing a bam file. The input file must contain
- * all reads for the trio and have the appropriate tags.
+ * This is the driver for parsing a BAM file. The input file must contain
+ * all reads for the trio (child, mother, father) and have the appropriate tags.
  *
  * SM refers to the name of the sample that identifies it as belonging to the
  * child, mother, or father. This will vary depending on the data and must be
@@ -48,19 +48,17 @@
 
 
 int main(int argc, const char *argv[]) {
-/*  if (argc < 6) {
-    Die("USAGE: bam_driver <output>.txt <input>.bam "
-        "<child SM> <mother SM> <father SM>");
+  if (argc < 5) {
+    Die("USAGE: bam_driver <input>.bam <child SM> <mother SM> <father SM>");
   }
 
-  const string output_name = argv[1];
-  const string input = argv[2];
-  const string child_sm = argv[3];
-  const string mother_sm = argv[4];
-  const string father_sm = argv[5];
-  const int qual_cut = 13;  // May decide to pass thresholds via command line.
+  const string input = argv[1];
+  const string child_sm = argv[2];
+  const string mother_sm = argv[3];
+  const string father_sm = argv[4];
+  const int qual_cut = 13;  // May decide to pass cut values via command line.
   const int mapping_cut = 13;
-  const double probability_cut = 0.0;  // 0.1
+  const double probability_cut = 0.0;  // Examines all probabilities, otherwise 0.1
 
   BamReader reader;
   reader.Open(input);
@@ -74,9 +72,8 @@ int main(int argc, const char *argv[]) {
   SamHeader header = reader.GetHeader();
   RefVector references = reader.GetReferenceData();
   VariantVisitor *v = new VariantVisitor(references, header, params, al,
-                                         output_name, child_sm, mother_sm,
-                                         father_sm, qual_cut, mapping_cut,
-                                         probability_cut);
+                                         child_sm, mother_sm, father_sm,
+                                         qual_cut, mapping_cut, probability_cut);
   
   pileup.AddVisitor(v);
   while (reader.GetNextAlignment(al)) {
@@ -84,36 +81,37 @@ int main(int argc, const char *argv[]) {
   }
     
   pileup.Flush();
-  reader.Close();*/
+  reader.Close();
 
   // EM algorithm begins with initial E-Step.
-  //TrioVector sites = v->sites();
-  TrioVector sites;
-  ReadDataVector data = {{10, 1, 0, 0}, {10, 10, 0, 0}, {40, 0, 0, 0}};
-  sites.push_back(data);
-  TrioModel params;
-  SufficientStatistics stats(sites.size());
+  TrioVector sites = v->sites();
+  int sites_count = sites.size();
+  SufficientStatistics stats(sites_count);
   stats.Update(params, sites);
 
   // M-Step.
   int count = 0;
-  double log_likelihood = stats.log_likelihood();
   double maximized = stats.MaxSequencingErrorRate();
+  double log_likelihood = stats.log_likelihood();
   while (!Equal(params.sequencing_error_rate(), maximized) &&
-      count < 50) {  // Quits if converges or takes longer than 50 iteratons.
+      count < 50) {  // Exits if converges or takes longer than 50 iteratons.
     params.set_sequencing_error_rate(maximized);  // Sets new estimate.
-    stats.Clear(); // Sets to 0.
+    stats.Clear();  // Sets all statistics except number of sites to 0.
     stats.Update(params, sites);  // Loops to E-Step.
-    if (stats.log_likelihood() < log_likelihood) {  // Sum of likelihood should increase and converge.
-      cout << "Log likelihood is decreasing between iterations." << endl;
+
+    // Sum of likelihood should increase and converge.
+    if (stats.log_likelihood() < log_likelihood) {
+      cout << "ERROR: Log likelihood is decreasing between iterations." << endl;
     }
-    log_likelihood = stats.log_likelihood();
+
     maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
+    log_likelihood = stats.log_likelihood();
     count++;
   }
   
-  cout << "^E:\t" << params.sequencing_error_rate()
-       << " after " << count << " iterations." << endl;
+  cout << "After " << count << " iterations of "
+       << sites_count << " sites:" << endl
+       << "^E:\t" << params.sequencing_error_rate() << endl;
 
   return 0;
 }

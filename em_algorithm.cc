@@ -40,10 +40,8 @@ double GetPopulationMutationRateStatistic(const TrioModel &params) {
 double GetHeterozygousStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
-  RowVector16d child = GetHeterozygousMatches(data_vec[0]);
-  RowVector16d mother = GetHeterozygousMatches(data_vec[1]);
-  RowVector16d father = GetHeterozygousMatches(data_vec[2]);
-  return GetSequencingErrorStatistic(params, child, mother, father);
+  Matrix3_16d het_matches = GetHeterozygousMatches(data_vec);
+  return GetSequencingErrorStatistic(params, het_matches);
 }
 
 /**
@@ -57,10 +55,8 @@ double GetHeterozygousStatistic(const TrioModel &params) {
 double GetHomozygousStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
-  RowVector16d child = GetHomozygousMatches(data_vec[0]);
-  RowVector16d mother = GetHomozygousMatches(data_vec[1]);
-  RowVector16d father = GetHomozygousMatches(data_vec[2]);
-  return GetSequencingErrorStatistic(params, child, mother, father);
+  Matrix3_16d hom_matches = GetHomozygousMatches(data_vec);
+  return GetSequencingErrorStatistic(params, hom_matches);
 }
 
 /**
@@ -74,26 +70,22 @@ double GetHomozygousStatistic(const TrioModel &params) {
 double GetMismatchStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
-  RowVector16d child = GetMismatches(data_vec[0]);
-  RowVector16d mother = GetMismatches(data_vec[1]);
-  RowVector16d father = GetMismatches(data_vec[2]);
-  return GetSequencingErrorStatistic(params, child, mother, father);
+  Matrix3_16d mismatches = GetMismatches(data_vec);
+  return GetSequencingErrorStatistic(params, mismatches);
 }
 
 /**
  * Returns S_E, S_Hom, or S_Het based on parameters passed in.
  *
- * @param  params TrioModel object containing parameters.
- * @return        Number of expected sequencing error statistic.
+ * @param  params  TrioModel object containing parameters.
+ * @para   matches Mismatches, homozygous, or heterzygous matches.
+ * @return         Number of expected sequencing error statistic.
  */
 double GetSequencingErrorStatistic(const TrioModel &params,
-                                   const RowVector16d &child,
-                                   const RowVector16d &mother,
-                                   const RowVector16d &father) {
+                                   const Matrix3_16d &matches) {
   const ReadDependentData data = params.read_dependent_data();
   const Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
-  const Matrix16_16d somatic_mutation_counts = SomaticMutationCounts();
 
   double mother_term1 = 0.0;
   double father_term1 = 0.0;
@@ -116,9 +108,9 @@ double GetSequencingErrorStatistic(const TrioModel &params,
       mother_term1 = somatic_probability_mat(y, x) * data.mother_somatic_probability(y);
       father_term1 = somatic_probability_mat(y, x) * data.father_somatic_probability(y);
 
-      child_term2 = child(y);
-      mother_term2 = mother(y);
-      father_term2 = father(y);
+      child_term2 = matches(0, y);
+      mother_term2 = matches(1, y);
+      father_term2 = matches(2, y);
 
       s_e_child(x) += child_term1 * child_term2; // Sums over y_j.
       s_e_mother(x) += mother_term1 * mother_term2;
@@ -188,6 +180,32 @@ RowVector16d GetMismatches(const ReadData &data) {
 }
 
 /**
+ * See GetMismatches(ReadData).
+ *
+ * @param  data_vec ReadDataVector.
+ * @return          3 x 16 Eigen matrix containing number of mismatches per
+ *                  genotype for each read data.
+ */
+Matrix3_16d GetMismatches(const ReadDataVector &data_vec) {
+  Matrix3_16d s_e = Matrix3_16d::Zero();
+  for (int i = 0; i < 3; ++i) {
+    ReadData data = data_vec[i];
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      int allele1 = j / kNucleotideCount;
+      int allele2 = j % kNucleotideCount;
+
+      s_e(i, j) += data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3];
+      s_e(i, j) -= data.reads[allele1];  // Homozygous.
+      if (allele1 != allele2) {
+        s_e(i, j) -= data.reads[allele2];  // Hetereogyzous.
+      }
+    }
+  }
+
+  return s_e;
+}
+
+/**
  * Returns 1 x 16 Eigen matrix holding number of heterozygous matches per
  * genotype. For example:
  *
@@ -205,7 +223,32 @@ RowVector16d GetHeterozygousMatches(const ReadData &data) {
   RowVector16d s_het = RowVector16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
     if (i % 5 != 0) {  // Heterozygous genotypes are not divisible by 5.
-      s_het(i) += data.reads[i / kNucleotideCount] + data.reads[i % kNucleotideCount];
+      int allele1 = i / kNucleotideCount;
+      int allele2 = i % kNucleotideCount;
+      s_het(i) += data.reads[allele1] + data.reads[allele2];
+    }
+  }
+
+  return s_het;
+}
+
+/**
+ * See GetHeterozygousMatches(ReadData).
+ *
+ * @param  data_vec ReadDataVector.
+ * @return          3 x 16 Eigen matrix containing number of heterozygous
+ *                  matches per genotype for each read data.
+ */
+Matrix3_16d GetHeterozygousMatches(const ReadDataVector &data_vec) {
+  Matrix3_16d s_het = Matrix3_16d::Zero();
+  for (int i = 0; i < 3; ++i) {
+    ReadData data = data_vec[i];
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      if (j % 5 != 0) {  // Heterozygous genotypes are not divisible by 5.
+        int allele1 = j / kNucleotideCount;
+        int allele2 = j % kNucleotideCount;
+        s_het(i, j) += data.reads[allele1] + data.reads[allele2];
+      }
     }
   }
 
@@ -231,6 +274,27 @@ RowVector16d GetHomozygousMatches(const ReadData &data) {
   for (int i = 0; i < kGenotypeCount; ++i) {
     if (i % 5 == 0) {  // Homozygous genotypes are divisible by 5.
       s_hom(i) += data.reads[i / kNucleotideCount];
+    }
+  }
+
+  return s_hom;
+}
+
+/**
+ * See GetHomozygousMatches(ReadData).
+ *
+ * @param  data_vec ReadDataVector.
+ * @return          3 x 16 Eigen matrix containing number of homozygous
+ *                  matches per genotype for each read data.
+ */
+Matrix3_16d GetHomozygousMatches(const ReadDataVector &data_vec) {
+  Matrix3_16d s_hom = Matrix3_16d::Zero();
+  for (int i = 0; i < 3; ++i) {
+    ReadData data = data_vec[i];
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      if (j % 5 == 0) {  // Homozygous genotypes are divisible by 5.
+        s_hom(i, j) += data.reads[j / kNucleotideCount];
+      }
     }
   }
 
