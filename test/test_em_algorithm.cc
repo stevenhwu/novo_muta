@@ -18,8 +18,8 @@
 BOOST_AUTO_TEST_CASE(TestGetPopulationMutationRateStatistic) {
   TrioModel params;
   ReadDataVector data = {{20, 0, 20, 0},
-                         {40, 0, 0, 0},
-                         {40, 0, 0, 0}};
+                         {40, 0, 0,  0},
+                         {40, 0, 0,  0}};
   params.SetReadDependentData(data);
   double s_theta = GetPopulationMutationRateStatistic(params);
   BOOST_CHECK(s_theta >= 0.0);
@@ -30,8 +30,8 @@ BOOST_AUTO_TEST_CASE(TestGetPopulationMutationRateStatistic) {
 BOOST_AUTO_TEST_CASE(TestGetHomozygousStatistic) {
   TrioModel params;
   ReadDataVector data = {{20, 0, 20, 0},
-                         {40, 0, 0, 0},
-                         {40, 0, 0, 0}};
+                         {40, 0, 0,  0},
+                         {40, 0, 0,  0}};
   params.SetReadDependentData(data);
   double s_hom = GetHomozygousStatistic(params);
   BOOST_CHECK(s_hom >= 0.0);
@@ -40,8 +40,8 @@ BOOST_AUTO_TEST_CASE(TestGetHomozygousStatistic) {
 BOOST_AUTO_TEST_CASE(TestGetHeterozygousStatistic) {
   TrioModel params;
   ReadDataVector data = {{20, 0, 20, 0},
-                         {40, 0, 0, 0},
-                         {40, 0, 0, 0}};
+                         {40, 0, 0,  0},
+                         {40, 0, 0,  0}};
   params.SetReadDependentData(data);
   double s_het = GetHeterozygousStatistic(params);
   BOOST_CHECK(s_het >= 0.0);
@@ -50,8 +50,8 @@ BOOST_AUTO_TEST_CASE(TestGetHeterozygousStatistic) {
 BOOST_AUTO_TEST_CASE(TestGetMismatchStatistic) {
   TrioModel params;
   ReadDataVector data = {{20, 0, 20, 0},
-                         {40, 0, 0, 0},
-                         {40, 0, 0, 0}};
+                         {40, 0, 0,  0},
+                         {40, 0, 0,  0}};
   params.SetReadDependentData(data);
   double s_e = GetMismatchStatistic(params);
   BOOST_CHECK(s_e >= 0.0);
@@ -60,23 +60,67 @@ BOOST_AUTO_TEST_CASE(TestGetMismatchStatistic) {
 BOOST_AUTO_TEST_CASE(TestGetMismatches) {
   ReadData data = {20, 10, 0, 1};
   RowVector16d test_matches;
-  test_matches << 11.0, 1.0, 11.0, 10.0,
-                  1.0, 21.0, 21.0, 20.0,
+  test_matches << 11.0, 1.0,  11.0, 10.0,
+                  1.0,  21.0, 21.0, 20.0,
                   11.0, 21.0, 31.0, 30.0,
                   10.0, 20.0, 30.0, 30.0;
   RowVector16d matches = GetMismatches(data);
   BOOST_CHECK(matches == test_matches);
+
+  ReadDataVector data_vec = {{20, 10, 0, 1},
+                             {40, 0,  0, 0},
+                             {10, 1,  1, 1}};
+  Matrix3_16d test_matches2;
+  test_matches2 << 11.0, 1.0,  11.0, 10.0,
+                   1.0,  21.0, 21.0, 20.0,
+                   11.0, 21.0, 31.0, 30.0,
+                   10.0, 20.0, 30.0, 30.0,
+
+                   0.0,  0.0,  0.0,  0.0,
+                   0.0,  40.0, 40.0, 40.0,
+                   0.0,  40.0, 40.0, 40.0,
+                   0.0,  40.0, 40.0, 40.0,
+
+                   3.0,  2.0,  2.0,  2.0,
+                   2.0,  12.0, 11.0, 11.0,
+                   2.0,  11.0, 12.0, 11.0,
+                   2.0,  11.0, 11.0, 12.0;
+
+  Matrix3_16d matches2 = GetMismatches(data_vec);
+  BOOST_CHECK(matches2 == test_matches2);
 }
 
 BOOST_AUTO_TEST_CASE(TestGetHeterozygousMatches) {
   ReadData data = {20, 10, 0, 1};
   RowVector16d test_matches;
-  test_matches << 0.0, 30.0, 20.0, 21.0,
-                  30.0, 0.0, 10.0, 11.0,
-                  20.0, 10.0, 0.0, 1.0,
-                  21.0, 11.0, 1.0, 0.0;
+  test_matches << 0.0,  30.0, 20.0, 21.0,
+                  30.0, 0.0,  10.0, 11.0,
+                  20.0, 10.0, 0.0,  1.0,
+                  21.0, 11.0, 1.0,  0.0;
   RowVector16d matches = GetHeterozygousMatches(data);
   BOOST_CHECK(matches == test_matches);
+
+  ReadDataVector data_vec = {{20, 10, 0, 1},
+                             {40, 0,  0, 0},
+                             {10, 1,  1, 1}};
+  Matrix3_16d test_matches2;
+  test_matches2 << 0.0,  30.0, 20.0, 21.0,
+                   30.0, 0.0,  10.0, 11.0,
+                   20.0, 10.0, 0.0,  1.0,
+                   21.0, 11.0, 1.0,  0.0,
+
+                   0.0,  40.0, 40.0, 40.0,
+                   40.0, 0.0,  0.0,  0.0,
+                   40.0, 0.0,  0.0,  0.0,
+                   40.0,  0.0,  0.0,  0.0,
+
+                   0.0,  11.0, 11.0, 11.0,
+                   11.0, 0.0,  2.0,  2.0,
+                   11.0, 2.0,  0.0,  2.0,
+                   11.0, 2.0,  2.0,  0.0;
+
+  Matrix3_16d matches2 = GetHeterozygousMatches(data_vec);
+  BOOST_CHECK(matches2 == test_matches2);
 }
 
 BOOST_AUTO_TEST_CASE(TestGetHomozygousMatches) {
@@ -87,13 +131,35 @@ BOOST_AUTO_TEST_CASE(TestGetHomozygousMatches) {
   test_matches(15) = 1.0;
   RowVector16d matches = GetHomozygousMatches(data);
   BOOST_CHECK(matches == test_matches);
+
+  ReadDataVector data_vec = {{20, 10, 0, 1},
+                             {40, 0,  0, 0},
+                             {10, 1,  1, 1}};
+  Matrix3_16d test_matches2;
+  test_matches2 << 20.0, 0.0,  0.0, 0.0,
+                   0.0,  10.0, 0.0, 0.0,
+                   0.0,  0.0,  0.0, 0.0,
+                   0.0,  0.0,  0.0, 1.0,
+
+                   40.0, 0.0,  0.0, 0.0,
+                   0.0,  0.0,  0.0, 0.0,
+                   0.0,  0.0,  0.0, 0.0,
+                   0.0,  0.0,  0.0, 0.0,
+
+                   10.0, 0.0,  0.0, 0.0,
+                   0.0,  1.0,  0.0, 0.0,
+                   0.0,  0.0,  1.0, 0.0,
+                   0.0,  0.0,  0.0, 1.0;
+
+  Matrix3_16d matches2 = GetHomozygousMatches(data_vec);
+  BOOST_CHECK(matches2 == test_matches2);
 }
 
 BOOST_AUTO_TEST_CASE(TestGetGermlineStatistic) {
   TrioModel params;
   ReadDataVector data = {{20, 0, 20, 0},
-                         {40, 0, 0, 0},
-                         {40, 0, 0, 0}};
+                         {40, 0, 0,  0},
+                         {40, 0, 0,  0}};
   params.SetReadDependentData(data);
   double s_germ = GetGermlineStatistic(params);
   BOOST_CHECK(s_germ >= 0.0);
@@ -150,8 +216,8 @@ BOOST_AUTO_TEST_CASE(TestGermlineMutationCountsSingle) {
 BOOST_AUTO_TEST_CASE(TestGetSomaticStatistic) {
   TrioModel params;
   ReadDataVector data = {{20, 0, 20, 0},
-                         {40, 0, 0, 0},
-                         {40, 0, 0, 0}};
+                         {40, 0, 0,  0},
+                         {40, 0, 0,  0}};
   params.SetReadDependentData(data);
   double s_som = GetSomaticStatistic(params);
   BOOST_CHECK(s_som >= 0.0);

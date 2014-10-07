@@ -99,6 +99,10 @@ int main(int argc, const char *argv[]) {
     stats.Clear();  // Sets all statistics except number of sites to 0.
     stats.Update(params, sites);  // Loops to E-Step.
 
+    cout.precision(16);
+    cout << "~E:\t" << params.sequencing_error_rate() << endl;
+    stats.Print();
+
     // Sum of likelihood should increase and converge.
     if (stats.log_likelihood() < log_likelihood) {
       cout << "ERROR: Log likelihood is decreasing between iterations." << endl;

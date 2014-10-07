@@ -108,12 +108,13 @@ bool SufficientStatistics::IsNan() {
  * Prints content.
  */
 void SufficientStatistics::Print() {
+  cout.precision(16);
   cout << "S_Som:\t"      << som_            << endl
        << "S_Germ:\t"     << germ_           << endl
        << "S_E:\t"        << e_              << endl
        << "S_Hom:\t"      << hom_            << endl
        << "S_Het:\t"      << het_            << endl
-       << "Likelihood:\t" << log_likelihood_ << endl
+       << "Q_Log:\t"      << log_likelihood_ << endl
        << "N_S:\t"        << n_s_            << endl;
 }
 
