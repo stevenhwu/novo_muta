@@ -14,18 +14,26 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Modules")
 set(EM em_algorithm.cc sufficient_statistics.cc)
 set(TRIO_MODEL utility.cc read_dependent_data.cc trio_model.cc)
 
-include_directories("${CMAKE_SOURCE_DIR}/bamtools/src")
-include_directories("${CMAKE_SOURCE_DIR}/Eigen/src")
-include_directories("/test")
 include_directories("./")
+include_directories("/test")
+include_directories("${CMAKE_SOURCE_DIR}/Eigen/src")
+
+# Comment out if usr/local/include/bamtools/utils exists.
+include_directories("${CMAKE_SOURCE_DIR}/bamtools/src")
 
 find_package(GSL REQUIRED)
-include_directories(${GSL_INCLUDE_DIR})
+include_directories(${GSL_INCLUDE_DIRS})
 exec_program(${GSL_CONFIG} ARGS --libs OUTPUT_VARIABLE GSL_LIBRARIES)
 
-add_executable(bam_driver ${TRIO_MODEL}
-               bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc
-               ${EM} bam_driver.cc)
+find_package(BamTools REQUIRED)
+if(BamTools_FOUND)
+  include_directories(${BamTools_INCLUDE_DIRS})
+
+  add_executable(bam_driver ${TRIO_MODEL}
+                 ${BamTools_LIBRARIES} variant_visitor.cc
+                 ${EM} bam_driver.cc)
+endif()
+
 add_executable(count_bin utility.cc count_bin.cc)
 add_executable(count_bin_trio utility.cc count_bin_trio.cc)
 add_executable(counts_probability utility.cc counts_probability.cc)
