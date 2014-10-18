@@ -337,6 +337,22 @@ TrioVector GetTrioVector(int coverage) {
 }
 
 /**
+ * Returns true if ReadDataVector contains a zero vector.
+ *
+ * @param  data_vec ReadDataVector
+ * @return          True if ReadDataVector contains a zero vector.
+ */
+bool HasZeroReadDataVector(const ReadDataVector &data_vec) {
+  ReadData zero_data = {0, 0, 0, 0};
+  for (auto data : data_vec) {
+    if (EqualsReadData(data, zero_data)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Returns true if the element is in the RowVector.
  *
  * @param  vec  Eigen RowVector. 

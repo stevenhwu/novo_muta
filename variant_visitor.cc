@@ -52,8 +52,6 @@ VariantVisitor::VariantVisitor(const RefVector &references,
 void VariantVisitor::Visit(const PileupPosition &pileupData) {
   ReadDataVector data_vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
   string chr = references_[pileupData.RefId].RefName;
-  uint64_t pos = pileupData.Position;
-  string tag_id;
   bool is_qual = false;
 
   for (auto it = begin(pileupData.PileupAlignments);
@@ -62,33 +60,34 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
       const int *pos = &it->PositionInAlignment;
       uint16_t bqual = static_cast<short>(it->Alignment.Qualities[*pos]) - 33;
       if (bqual >= qual_cut_) {
+        // Match individual identifier tag as child, mother, or father.
         string sm;
+        it->Alignment.GetTag("RG", sm);
         int i = 0;
-        for (SamReadGroupConstIterator rg_it = header_.ReadGroups.ConstBegin();
-            rg_it != header_.ReadGroups.ConstEnd(); ++rg_it) {
-          sm = rg_it->Sample;
-          if (sm.compare(child_sm_) == 0) {
-            i = 0;  // Hard coded as implemented in TrioModel.
-          } else if (sm.compare(mother_sm_) == 0) {
-            i = 1;
-          } else if (sm.compare(father_sm_) == 0) {
-            i = 2;
-          } else {
-            cout << "ERROR: " << sm << " does not match." << endl;
-          }
+
+        if (sm.compare(child_sm_) == 0) {
+          i = 0;  // Hard coded as implemented in TrioModel.
+        } else if (sm.compare(mother_sm_) == 0) {
+          i = 1;
+        } else if (sm.compare(father_sm_) == 0) {
+          i = 2;
+        } else {
+          cout << "ERROR: " << sm << " does not match." << endl;
+          continue;
+        }
         
-          char base = it->Alignment.QueryBases[*pos];
-          uint16_t base_idx = ToNucleotideIndex(base);
-          if (base_idx >= 0 && base_idx < 4) {
-            is_qual = true;
-            data_vec[i].reads[base_idx]++;
-          }
+        // Match nucleotide to individual at current position.
+        char base = it->Alignment.QueryBases[*pos];
+        uint16_t base_idx = ToNucleotideIndex(base);
+        if (base_idx < 4) {
+          is_qual = true;
+          data_vec[i].reads[base_idx]++;
         }
       }
     }
   }
 
-  if (is_qual) {
+  if (is_qual && !HasZeroReadDataVector(data_vec)) {
     sites_.push_back(data_vec);
   }
 }

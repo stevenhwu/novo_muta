@@ -86,36 +86,38 @@ int main(int argc, const char *argv[]) {
   // EM algorithm begins with initial E-Step.
   TrioVector sites = v->sites();
   int sites_count = sites.size();
-  SufficientStatistics stats(sites_count);
-  stats.Update(params, sites);
+  if (sites_count > 0) {
+    SufficientStatistics stats(sites_count);
+    stats.Update(params, sites);
 
-  // M-Step.
-  int count = 0;
-  double maximized = stats.MaxSequencingErrorRate();
-  double log_likelihood = stats.log_likelihood();
-  while (!Equal(params.sequencing_error_rate(), maximized) &&
-      count < 50) {  // Exits if converges or takes longer than 50 iteratons.
-    params.set_sequencing_error_rate(maximized);  // Sets new estimate.
-    stats.Clear();  // Sets all statistics except number of sites to 0.
-    stats.Update(params, sites);  // Loops to E-Step.
-
+    // M-Step.
+    int count = 0;
+    double maximized = stats.MaxSequencingErrorRate();
+    double log_likelihood = stats.log_likelihood();
     cout.precision(16);
-    cout << "~E:\t" << params.sequencing_error_rate() << endl;
-    stats.Print();
+    while (!Equal(params.sequencing_error_rate(), maximized) &&
+        count < 50) {  // Exits if converges or takes longer than 50 iteratons.
+      params.set_sequencing_error_rate(maximized);  // Sets new estimate.
+      stats.Clear();  // Sets all statistics except number of sites to 0.
+      stats.Update(params, sites);  // Loops to E-Step.
 
-    // Sum of likelihood should increase and converge.
-    if (stats.log_likelihood() < log_likelihood) {
-      cout << "ERROR: Log likelihood is decreasing between iterations." << endl;
+      cout << "~E:\t" << params.sequencing_error_rate() << endl;
+      stats.Print();
+
+      // Sum of likelihood should increase and converge.
+      if (stats.log_likelihood() < log_likelihood) {
+        cout << "ERROR: Log likelihood is decreasing between iterations." << endl;
+      }
+
+      maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
+      log_likelihood = stats.log_likelihood();
+      count++;
     }
-
-    maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
-    log_likelihood = stats.log_likelihood();
-    count++;
+    
+    cout << "After " << count << " iterations of "
+         << sites_count << " sites:" << endl
+         << "^E:\t" << params.sequencing_error_rate() << endl;
   }
   
-  cout << "After " << count << " iterations of "
-       << sites_count << " sites:" << endl
-       << "^E:\t" << params.sequencing_error_rate() << endl;
-
   return 0;
 }

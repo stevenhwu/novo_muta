@@ -59,6 +59,7 @@ ReadDataVector GetPermutation(int arr[]);
 ReadDataVector GetUniqueReadDataVector(const MatrixXi &mat);
 int IndexOfReadDataVector(const ReadDataVector &data_vec, TrioVector trio_vec);
 TrioVector GetTrioVector(int coverage);
+bool HasZeroReadDataVector(const ReadDataVector &data_vec);
 bool IsInVector(const RowVector4d &vec, double elem);
 bool IsAlleleInParentGenotype(int child_nucleotide_idx, int parent_genotype_idx);
 double DirichletMultinomialLog(const RowVector4d &alpha, const ReadData &data);
