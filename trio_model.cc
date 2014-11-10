@@ -372,10 +372,18 @@ void TrioModel::SequencingProbabilityMat() {
       unsigned int n[kNucleotideCount] = {data.reads[0], data.reads[1],
                                           data.reads[2], data.reads[3]};
       double log_probability = gsl_ran_multinomial_lnpdf(kNucleotideCount, p, n);
+
+      double alpha_sum = p[0] + p[1] + p[2] + p[3];
+/*      if (isnan(log_probability)) {
+        cout << endl << "alphas" << endl;
+        cout << "sum: " << alpha_sum << endl;
+        cout << p[0] << "\t" << p[1] << "\t" << p[2] << "\t" << p[3] << endl << endl;
+      }*/
+
       read_dependent_data_.sequencing_probability_mat(read, genotype_idx) = log_probability;
     }
   }
-  
+
   // Rescales to normal space and records max element of all 3 reads together.
   double max_element = read_dependent_data_.sequencing_probability_mat.maxCoeff();
   read_dependent_data_.max_elements.push_back(max_element);

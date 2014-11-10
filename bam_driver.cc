@@ -48,7 +48,7 @@
 
 
 int main(int argc, const char *argv[]) {
-  if (argc < 5) {
+/*  if (argc < 5) {
     Die("USAGE: bam_driver <input>.bam <child SM> <mother SM> <father SM>");
   }
 
@@ -79,12 +79,78 @@ int main(int argc, const char *argv[]) {
   while (reader.GetNextAlignment(al)) {
     pileup.AddAlignment(al);
   }
-    
+  
   pileup.Flush();
   reader.Close();
-
+*/
   // EM algorithm begins with initial E-Step.
-  TrioVector sites = v->sites();
+  // Runs EM on a section created by a trio repeated 10x for every trio.
+  //ReadDataVector data_vec = {{0, 0, 0, 4}, {0, 0, 4, 0}, {0, 1, 0, 3}};
+  TrioVector trio_vec = GetTrioVector(kNucleotideCount);
+  int nan_count = 0;
+  int one_count = 0;
+  for (auto data_vec : trio_vec) {
+    TrioModel params;
+    TrioVector sites;
+    for (int i = 0; i < 10; ++i) {
+      sites.push_back(data_vec);
+    }
+
+    int sites_count = sites.size();  // 10
+    SufficientStatistics stats(sites_count);
+    stats.Update(params, sites);
+
+    // M-Step.
+    int count = 0;
+    double maximized = stats.MaxSequencingErrorRate();
+    double log_likelihood = stats.log_likelihood();
+    cout.precision(16);
+
+    //cout << "Performing the EM algorithm..." << endl;
+    while (!Equal(params.sequencing_error_rate(), maximized) &&
+        count < 50 && !stats.IsNan()) {  // Exits if converges or takes longer than 50 iteratons.
+      // Sets new estimate.
+      //cout << count << " ITERATION" << endl;
+      params.set_sequencing_error_rate(maximized);
+      stats.Clear();  // Sets all statistics except number of sites to 0.
+      stats.Update(params, sites);  // Loops to E-Step.
+      //stats.Print();
+
+      // Sum of likelihood should increase and converge.
+      if (stats.log_likelihood() < log_likelihood) {
+        cout << "ERROR: Log likelihood is decreasing between iterations." << endl;
+        PrintReadDataVector(params.read_dependent_data().read_data_vec);
+        stats.Print();
+      }
+
+      if (stats.IsNan()) {
+        nan_count++;
+        cout << "ERROR: This site is nan." << endl;
+        stats.Print();
+      }
+
+      maximized = stats.MaxSequencingErrorRate(); // Loops to M-Step.
+      if (maximized == 1.0) {
+        one_count++;
+      }
+      //cout << "~E:\t" << maximized << endl;
+      log_likelihood = stats.log_likelihood();
+      count++;
+    }
+
+    if (stats.IsNan()) {
+      PrintReadDataVector(params.read_dependent_data().read_data_vec);
+    }
+    /*cout << "After " << count << " iterations of "
+         << sites_count << " sites:" << endl
+         << "^E:\t" << params.sequencing_error_rate() << endl << endl;*/
+  
+    stats.Clear();
+  }
+  cout << nan_count << endl;
+  cout << one_count << endl;
+
+  /*TrioVector sites = v->sites();
   int sites_count = sites.size();
   if (sites_count > 0) {
     SufficientStatistics stats(sites_count);
@@ -117,7 +183,7 @@ int main(int argc, const char *argv[]) {
     cout << "After " << count << " iterations of "
          << sites_count << " sites:" << endl
          << "^E:\t" << params.sequencing_error_rate() << endl;
-  }
-  
+  }*/
+
   return 0;
 }

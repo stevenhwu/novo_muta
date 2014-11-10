@@ -102,6 +102,11 @@ void CountBin(ifstream &fin) {
   }
 }
 
+/**
+ * See case 2.
+ *
+ * @param  fin  File input stream.
+ */
 void CountBinTrio(ifstream &fin) {
   string line;
   int bin = 0;
