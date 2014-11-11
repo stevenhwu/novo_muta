@@ -54,32 +54,13 @@ double SufficientStatistics::MaxSomaticMutationRate() {
  * @return  Maximized sequencing error rate.
  */
 double SufficientStatistics::MaxSequencingErrorRate() {
-  double denominator = 4.0 * (hom_ + e_ + het_);
-  double double_het = 2.0 * het_;
-  double sqrt_term_a = 9 * pow(hom_, 9.0);
-  double sqrt_term_b = 6.0 * hom_ * (double_het + e_);
-  double sqrt_term_c = pow(e_ - double_het, 2.0);
-  double sqrt_term = sqrt(sqrt_term_a + sqrt_term_b + sqrt_term_c);
-  double first_term = 3.0 * hom_ + 5.0 * e_ + 2.0 * het_;
-  double max = (first_term - sqrt_term) / denominator;
-  if (max > 1.0) {
-    return 1.0;
-  } else if (max < 0.0) {
-    return 0.0;
-  } else {
-    return max;
-  }
-/*  double sum = hom_ + het_ + e_;
-  double double_het = 2.0 * het_;
-  double sqrt_term_a = 9.0 * pow(hom_, 2.0);
-  double sqrt_term_b = pow(double_het - e_, 2.0);
-  double sqrt_term_c = 6.0 * hom_ * (double_het + e_);
-  double sqrt_term = sqrt(sqrt_term_a + sqrt_term_b + sqrt_term_c);
-  double inner_term = 3.0 * hom_ + double_het + 5.0 * e_;
-  double subtract_term = (inner_term - sqrt_term) / sum / -3.0;
-  double bracket_term = 1.0 + subtract_term;
-
-  return -0.75 * log(bracket_term);*/
+  double A = 2.0 * e_ + 2.0 * het_ + 2.0 * hom_;
+  double B = -1.0 * (5.0 * e_ + 2.0 * het_ + 3.0 * hom_);
+  double C = 3.0 * e_;
+  double sqrt_term = sqrt(pow(B, 2) - 4.0*A*C);
+  double first_term = -1.0 * B;
+  double denominator = 2.0 * A;
+  return (first_term - sqrt_term) / denominator;
 }
 
 /**

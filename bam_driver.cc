@@ -117,11 +117,11 @@ int main(int argc, const char *argv[]) {
       //stats.Print();
 
       // Sum of likelihood should increase and converge.
-      if (stats.log_likelihood() < log_likelihood) {
+/*      if (stats.log_likelihood() < log_likelihood) {
         cout << "ERROR: Log likelihood is decreasing between iterations." << endl;
         PrintReadDataVector(params.read_dependent_data().read_data_vec);
         stats.Print();
-      }
+      }*/
 
       if (stats.IsNan()) {
         nan_count++;
