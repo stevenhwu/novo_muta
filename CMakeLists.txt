@@ -77,3 +77,12 @@ if(Boost_FOUND)
   add_executable(test_sufficient_statistics ${TRIO_MODEL} ${EM} test/test_sufficient_statistics.cc)
   target_link_libraries(test_sufficient_statistics ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 endif()
+
+enable_testing()
+
+add_test(test_utility test_utility)
+add_test(test_trio_model test_trio_model)
+add_test(test_simulation_model test_simulation_model)
+add_test(test_pileup_utility test_pileup_utility)
+add_test(test_em_algorithm test_em_algorithm)
+add_test(test_sufficient_statistics test_sufficient_statistics)

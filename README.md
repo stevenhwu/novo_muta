@@ -8,15 +8,31 @@ An implementation of probabilistic methods for detecting de novo mutations from 
 See Cartwright et al.: Family-Based Method for Capturing De Novo Mutations:
 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3728889/
 
-This project uses C++11, Eigen library, GNU Scientific Library, and BamTools. It compiles using Clang and CMake. To do this, make a build directory and in this directory, type ```cmake ..``` and then ```make```. It can compile on herschel (Cartwright lab).
+There are currently two versions of the trio model. Master is the trio model that uses customized Dirichlet-multinomial approximations. The infinite sites model branch is the trio model that uses simpler multinomial approximations and an infinite sites model. The simulation program is based on the trio model that uses the Dirichlet-multinomial (master).
 
-Download Eigen and put the source code in the same directory as the novo_muta repository.
-http://eigen.tuxfamily.org/
+#Required libraries
 
-Download GSL.
-http://www.gnu.org/software/gsl/
+This project uses C++11, Eigen library, GNU Scientific Library, BamTools, and Boost. It compiles using Clang and CMake, configured specifically for use with herschel (Cartwright lab). You may need to modify ```CMakeLists.txt``` to make this project compile for your system.
 
-Download BamTools. Keep a local copy of utils in the project directory as the file 'utils/bamtools_pileup_engine.h' is required.
-https://github.com/pezmaster31/bamtools
+Download [Eigen](http://eigen.tuxfamily.org/) and put the source code in the project directory.
 
-There are currently two versions of the trio model. Master is the trio model that uses customized Dirichlet-multinomial approximations. The infinite sites model branch is the trio model that uses simpler multinomial approximations and an infinite sites model. The simulation program is based on the trio model that uses the Dirichlet-multinomial.
+Download [GSL](http://www.gnu.org/software/gsl/).
+
+Download [BamTools](https://github.com/pezmaster31/bamtools). Keep a local copy of the utils folder in the project directory as the file ```utils/bamtools_pileup_engine.h``` is required.
+
+Download [Boost](http://www.boost.org/users/download/). Be sure to include the unit test framework.
+
+#Compilation
+
+```mkdir build``` makes a build directory.
+```cd build``` navigates to the new build directory.
+```cmake ..``` reads ```CMakeLists.txt``` and makes the build files.
+```make``` builds the CMake files.
+
+To execute a file, use ```./<filename>```.
+
+#Testing
+
+Navigate to the build directory you created earlier to compile the project and type ```make test``` to run all Boost tests in the test folder. If there are any changes to ```CMakeLists.txt```, the command ```cmake ..``` must precede ```make test``` in order to update.
+
+Individual tests can be executed using ```./<filename>```.
