@@ -7,7 +7,7 @@ project(pileup_driver)
 project(simulation_driver)
 project(simulation_trio)
 
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wno-deprecated-register")
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Modules")
 set(EM em_algorithm.cc sufficient_statistics.cc)
 set(TRIO_MODEL utility.cc read_dependent_data.cc trio_model.cc)

@@ -25,7 +25,15 @@ BOOST_AUTO_TEST_CASE(TestGetPopulationMutationRateStatistic) {
   BOOST_CHECK(s_theta >= 0.0);
 }
 
-// BOOST_AUTO_TEST_CASE(TestGetSequencingErrorStatistic) {}
+BOOST_AUTO_TEST_CASE(TestGetHeterozygousStatistic) {
+  TrioModel params;
+  ReadDataVector data = {{20, 0, 20, 0},
+                         {40, 0, 0,  0},
+                         {40, 0, 0,  0}};
+  params.SetReadDependentData(data);
+  double s_het = GetHeterozygousStatistic(params);
+  BOOST_CHECK(s_het >= 0.0);
+}
 
 BOOST_AUTO_TEST_CASE(TestGetHomozygousStatistic) {
   TrioModel params;
@@ -37,16 +45,6 @@ BOOST_AUTO_TEST_CASE(TestGetHomozygousStatistic) {
   BOOST_CHECK(s_hom >= 0.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestGetHeterozygousStatistic) {
-  TrioModel params;
-  ReadDataVector data = {{20, 0, 20, 0},
-                         {40, 0, 0,  0},
-                         {40, 0, 0,  0}};
-  params.SetReadDependentData(data);
-  double s_het = GetHeterozygousStatistic(params);
-  BOOST_CHECK(s_het >= 0.0);
-}
-
 BOOST_AUTO_TEST_CASE(TestGetMismatchStatistic) {
   TrioModel params;
   ReadDataVector data = {{20, 0, 20, 0},
@@ -56,6 +54,8 @@ BOOST_AUTO_TEST_CASE(TestGetMismatchStatistic) {
   double s_e = GetMismatchStatistic(params);
   BOOST_CHECK(s_e >= 0.0);
 }
+
+// BOOST_AUTO_TEST_CASE(TestGetSequencingErrorStatistic) {}
 
 BOOST_AUTO_TEST_CASE(TestGetMismatches) {
   ReadData data = {20, 10, 0, 1};
