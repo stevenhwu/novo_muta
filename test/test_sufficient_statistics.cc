@@ -22,6 +22,7 @@ BOOST_AUTO_TEST_CASE(TestSufficientStatistics) {
   BOOST_CHECK(stats.het() == 0.0);
   BOOST_CHECK(stats.som() == 0.0);
   BOOST_CHECK(stats.germ() == 0.0);
+  BOOST_CHECK(stats.log_likelihood() == 0.0);
   BOOST_CHECK(stats.n_s() == 1.0);
 }
 
@@ -59,6 +60,7 @@ BOOST_AUTO_TEST_CASE(TestUpdate) {
   BOOST_CHECK(stats.e() > 0.0);
   BOOST_CHECK(stats.hom() > 0.0);
   BOOST_CHECK(stats.het() > 0.0);
+  BOOST_CHECK(stats.log_likelihood() < 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(TestClear) {
@@ -74,6 +76,8 @@ BOOST_AUTO_TEST_CASE(TestClear) {
   BOOST_CHECK(stats.het() == 0.0);
   BOOST_CHECK(stats.som() == 0.0);
   BOOST_CHECK(stats.germ() == 0.0);
+  BOOST_CHECK(stats.log_likelihood() == 0.0);
+  BOOST_CHECK(stats.n_s() == 1.0);
 }
 
 BOOST_AUTO_TEST_CASE(TestIsNan) {
