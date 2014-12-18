@@ -12,21 +12,24 @@ There are currently two versions of the trio model. Master is the trio model tha
 
 #Required libraries
 
-This project uses C++11, Eigen library, GNU Scientific Library, BamTools, and Boost. It compiles using Clang and CMake, configured specifically for use with herschel (Cartwright lab). You may need to modify ```CMakeLists.txt``` to make this project compile for your system.
+This project uses C++11, Eigen, GNU Scientific Library, BamTools, and Boost. It compiles using Clang and CMake, configured specifically for use with herschel (Cartwright lab). You may need to modify ```CMakeLists.txt``` to make this project compile for your system.
 
 Download [Eigen](http://eigen.tuxfamily.org/) and put the source code in the project directory.
 
 Download [GSL](http://www.gnu.org/software/gsl/).
 
-Download [BamTools](https://github.com/pezmaster31/bamtools). Keep a local copy of the utils folder in the project directory as the file ```utils/bamtools_pileup_engine.h``` is required.
+Download [BamTools](https://github.com/pezmaster31/bamtools). Keep a local copy of the ```utils``` folder in the project directory as the file ```utils/bamtools_pileup_engine.h``` is required.
 
-Download [Boost](http://www.boost.org/users/download/). Be sure to include the unit test framework.
+Download [Boost](http://www.boost.org/users/download/). Be sure to include and build the unit test framework.
 
 #Compilation
 
 ```mkdir build``` makes a build directory.
+
 ```cd build``` navigates to the new build directory.
-```cmake ..``` reads ```CMakeLists.txt``` and makes the build files.
+
+```cmake ..``` reads ```CMakeLists.txt``` and makes the build files. ```FindGSL.cmake``` and ```FindBamTools.cmake``` are provided in the ```Modules``` folder.
+
 ```make``` builds the CMake files.
 
 To execute a file, use ```./<filename>```.

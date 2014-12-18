@@ -43,8 +43,36 @@
  * To run this file, provide the following command line inputs:
  * ./bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>
  */
-#include "sufficient_statistics.h"
+#include "parameter_estimates.h"
 #include "variant_visitor.h"
+
+/**
+ * Returns a list of trios parsed from input BAM file, matching reads given the
+ * sample name of the child, mother, and father.
+ *
+ * @param  reader    BamReader instance.
+ * @param  child_sm  Sample name of the child.
+ * @param  mother_sm Sample name of the mother.
+ * @param  father_sm Sample name of the father.
+ * @return           List of trios parsed from input BAM file.
+ */
+TrioVector ParseBamSites(BamReader &reader,
+                         const string &child_sm,
+                         const string &mother_sm,
+                         const string &father_sm) {
+  BamAlignment al;
+  PileupEngine pileup;
+  RefVector references = reader.GetReferenceData();
+  VariantVisitor *v = new VariantVisitor(references, child_sm, mother_sm, father_sm);
+  
+  pileup.AddVisitor(v);
+  while (reader.GetNextAlignment(al)) {
+    pileup.AddAlignment(al);
+  }
+
+  pileup.Flush();
+  return v->sites();
+}
 
 
 int main(int argc, const char *argv[]) {
@@ -56,71 +84,45 @@ int main(int argc, const char *argv[]) {
   const string child_sm = argv[2];
   const string mother_sm = argv[3];
   const string father_sm = argv[4];
-  const int qual_cut = 13;  // May decide to pass cut values via command line.
-  const int mapping_cut = 13;
-  const double probability_cut = 0.0;  // Examines all probabilities, otherwise 0.1
 
   BamReader reader;
   reader.Open(input);
   if (!reader.IsOpen()) {
     Die("Input file could not be opened.");
   }
-
-  BamAlignment al;
-  TrioModel params;
-  PileupEngine pileup;
-  SamHeader header = reader.GetHeader();
-  RefVector references = reader.GetReferenceData();
-  VariantVisitor *v = new VariantVisitor(references, header, params, al,
-                                         child_sm, mother_sm, father_sm,
-                                         qual_cut, mapping_cut, probability_cut);
-  
-  pileup.AddVisitor(v);
-  while (reader.GetNextAlignment(al)) {
-    pileup.AddAlignment(al);
-  }
-  
-  pileup.Flush();
+  const TrioVector sites = ParseBamSites(reader, child_sm, mother_sm, father_sm);
   reader.Close();
 
   // EM algorithm begins with initial E-Step.
   // Runs EM on a section created by a trio repeated 10x for every trio.
-  TrioVector sites = v->sites();
+  TrioModel params;
   int sites_count = sites.size();
+  cout.precision(16);
+  
   if (sites_count > 0) {
-    SufficientStatistics stats(sites_count);
+    ParameterEstimates stats(sites_count);
     stats.Update(params, sites);
 
     // M-Step.
     int count = 0;
     double maximized = stats.MaxSequencingErrorRate();
+    double start_log_likelihood = stats.log_likelihood();
     double log_likelihood = stats.log_likelihood();
-    cout.precision(16);
 
-    while (!Equal(params.sequencing_error_rate(), maximized) &&
-        count < 50 && !stats.IsNan()) {  // Exits if converges or takes longer than 50 iteratons.
-      // Sets new estimate.
-      params.set_sequencing_error_rate(maximized);
+    // Exits if converges or takes longer than 50 iteratons.  
+    while (!Equal(params.sequencing_error_rate(), maximized) && count < 50) {
+      params.set_sequencing_error_rate(maximized);  // Sets new estimate.
       stats.Clear();  // Sets all statistics except number of sites to 0.
       stats.Update(params, sites);  // Loops to E-Step.
-
-      // Sum of likelihood should increase and converge.
-      if (stats.log_likelihood() < log_likelihood) {
-        cout << "ERROR: Log likelihood is decreasing between iterations." << endl;
-        PrintReadDataVector(params.read_dependent_data().read_data_vec);
-        stats.Print();
-      }
-
-      if (stats.IsNan()) {
-        cout << "ERROR: This site is nan." << endl;
-        PrintReadDataVector(params.read_dependent_data().read_data_vec);
-        stats.Print();
-      }
-
       maximized = stats.MaxSequencingErrorRate();  // Loops to M-Step.
       // cout << "~E:\t" << maximized << endl;
       log_likelihood = stats.log_likelihood();
       count++;
+    }
+
+    // Sum of likelihood should increase and converge.
+    if (stats.log_likelihood() < start_log_likelihood) {
+      cout << "ERROR: Log likelihood is decreasing." << endl;
     }
 
     cout << "After " << count << " iterations of "

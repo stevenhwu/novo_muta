@@ -8,7 +8,7 @@
  * To compile on Herschel without using cmake and include GSL:
  * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -I/usr/local/include -o infinite_driver utility.cc read_dependent_data.cc trio_model.cc em_algorithm.cc sufficient_statistics.cc infinite_driver.cc
  */
-#include "sufficient_statistics.h"
+#include "parameter_estimates.h"
 
 
 int main() {
@@ -21,7 +21,7 @@ int main() {
   cout << "P(Mut):\t" << probability << endl;
 
   // E-Step.
-  SufficientStatistics stats(1.0);
+  ParameterEstimates stats(1.0);
   TrioVector sites = {data};
   stats.Update(params, sites);
   stats.Print();

@@ -10,34 +10,24 @@
 
 
 /**
- * Constructor calls base constructor PileupVisitor.
+ * Constructor calls base constructor PileupVisitor. base_cut cuts off
+ * alignments for poor base quality. mapping_cut cuts off alignments for poor
+ * mapping quality.
  *
- * @param  references      Reference data from BAM file.
- * @param  header          SAM header data from BAM file.
- * @param  params          TrioModel object containing parameters.
- * @param  al              Certain alignment from BAM file.
- * @param  child_sm        Sample name of the child.
- * @param  mother_sm       Sample name of the mother.
- * @param  father_sm       Sample name of the father.
- * @param  qual_cut        Value to cut off alignments for base quality.
- * @param  mapping_cut     Value to cut off alignments for mapping quality.
- * @param  probability_cut Value to cut off alignments with low probabilities.
+ * @param  references Reference data from BAM file.
+ * @param  header     SAM header data from BAM file.
+ * @param  al         Alignment from BAM file.
+ * @param  child_sm   Sample name of the child.
+ * @param  mother_sm  Sample name of the mother.
+ * @param  father_sm  Sample name of the father.
  */
 VariantVisitor::VariantVisitor(const RefVector &references,
-                               const SamHeader &header,
-                               const TrioModel &params,
-                               BamAlignment &al,
-                               string child_sm,
-                               string mother_sm,
-                               string father_sm,
-                               int qual_cut,
-                               int mapping_cut,
-                               double probability_cut)
-    : PileupVisitor(),
-      references_{references}, header_{header}, al_{al},
-      child_sm_{child_sm}, mother_sm_{mother_sm}, father_sm_{father_sm},
-      qual_cut_{qual_cut}, mapping_cut_{mapping_cut},
-      probability_cut_{probability_cut} {
+                               const string &child_sm,
+                               const string &mother_sm,
+                               const string &father_sm)
+    : PileupVisitor(), references_{references}, child_sm_{child_sm},
+      mother_sm_{mother_sm}, father_sm_{father_sm}, base_cut_{13},
+      mapping_cut_{13} {
 }
 
 /**
@@ -52,14 +42,13 @@ VariantVisitor::VariantVisitor(const RefVector &references,
 void VariantVisitor::Visit(const PileupPosition &pileupData) {
   ReadDataVector data_vec = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
   string chr = references_[pileupData.RefId].RefName;
-  bool is_qual = false;
 
   for (auto it = begin(pileupData.PileupAlignments);
       it != end(pileupData.PileupAlignments); ++it) {
     if (it->Alignment.MapQuality >= mapping_cut_) {
       const int *pos = &it->PositionInAlignment;
       uint16_t bqual = static_cast<short>(it->Alignment.Qualities[*pos]) - 33;
-      if (bqual >= qual_cut_) {
+      if (bqual >= base_cut_) {
         // Match individual identifier tag as child, mother, or father.
         string sm;
         it->Alignment.GetTag("RG", sm);
@@ -80,14 +69,13 @@ void VariantVisitor::Visit(const PileupPosition &pileupData) {
         char base = it->Alignment.QueryBases[*pos];
         uint16_t base_idx = ToNucleotideIndex(base);
         if (base_idx < 4) {
-          is_qual = true;
           data_vec[i].reads[base_idx]++;
         }
       }
     }
   }
 
-  if (is_qual && !HasZeroReadDataVector(data_vec)) {
+  if (!HasZeroReadDataVector(data_vec)) {
     sites_.push_back(data_vec);
   }
 }

@@ -3,10 +3,6 @@
  * @author Melissa Ip
  *
  * This file tests the functions in utility.h.
- *
- * To compile on Herschel, go to the build directory and call:
- * cmake ..
- * make
  */
 #define BOOST_TEST_MODULE TestUtility
 

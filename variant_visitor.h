@@ -6,7 +6,7 @@
  * It is used to parse BAM files and get sequencing reads as ReadDataVector
  * objects, which are accepted as input by the trio model.
  *
- * This class is referenced from:
+ * For further reference, see:
  * https://github.com/dwinter/accuMUlate
  */
 #ifndef VARIANT_VISITOR_H
@@ -26,30 +26,20 @@ using namespace BamTools;
 class VariantVisitor : public PileupVisitor {
  public:
   VariantVisitor(const RefVector &references,
-                 const SamHeader &header,
-                 const TrioModel &params,
-                 BamAlignment &al,
-                 string child_sm,
-                 string mother_sm,
-                 string father_sm,
-                 int qual_cut,
-                 int mapping_cut,
-                 double probability_cut);
+                 const string &child_sm,
+                 const string &mother_sm,
+                 const string &father_sm);
   ~VariantVisitor() {}
   void Visit(const PileupPosition &pileupData);
   TrioVector sites() const;
 
  private:
   RefVector references_;
-  SamHeader header_;
-  TrioModel params_;
-  BamAlignment &al_;
   string child_sm_;
   string mother_sm_;
   string father_sm_;
-  int qual_cut_;
+  int base_cut_;
   int mapping_cut_;
-  double probability_cut_;
   TrioVector sites_;
 };
 

@@ -9,7 +9,7 @@ project(simulation_trio)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wno-deprecated-register")
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Modules")
-set(EM em_algorithm.cc sufficient_statistics.cc)
+set(EM sufficient_statistics.cc parameter_estimates.cc)
 set(TRIO_MODEL utility.cc read_dependent_data.cc trio_model.cc)
 
 include_directories("./")
@@ -69,13 +69,13 @@ if(Boost_FOUND)
   add_executable(test_pileup_utility ${TRIO_MODEL} pileup_utility.cc test/test_pileup_utility.cc)
   target_link_libraries(test_pileup_utility ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 
-  project(test_em_algorithm)
-  add_executable(test_em_algorithm ${TRIO_MODEL} ${EM} test/test_em_algorithm.cc)
-  target_link_libraries(test_em_algorithm ${GSL_LIBRARIES} ${Boost_LIBRARIES})
-
   project(test_sufficient_statistics)
   add_executable(test_sufficient_statistics ${TRIO_MODEL} ${EM} test/test_sufficient_statistics.cc)
   target_link_libraries(test_sufficient_statistics ${GSL_LIBRARIES} ${Boost_LIBRARIES})
+
+  project(test_parameter_estimates)
+  add_executable(test_parameter_estimates ${TRIO_MODEL} ${EM} test/test_parameter_estimates.cc)
+  target_link_libraries(test_parameter_estimates ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 endif()
 
 enable_testing()
@@ -84,5 +84,5 @@ add_test(test_utility test_utility)
 add_test(test_trio_model test_trio_model)
 add_test(test_simulation_model test_simulation_model)
 add_test(test_pileup_utility test_pileup_utility)
-add_test(test_em_algorithm test_em_algorithm)
 add_test(test_sufficient_statistics test_sufficient_statistics)
+add_test(test_parameter_estimates test_parameter_estimates)
