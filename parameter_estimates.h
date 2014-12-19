@@ -13,12 +13,14 @@
 
 #include "sufficient_statistics.h"
 
+
 /**
  * ParameterEstimates class header. See top of file for a complete description.
  */
 class ParameterEstimates {
  public:
   ParameterEstimates(double sites_count);  // Default constructor.
+  ~ParameterEstimates() {}
   bool Update(TrioModel &params, const TrioVector &sites);
   void Clear();
   void Print();
@@ -35,6 +37,7 @@ class ParameterEstimates {
   double germ() const;
   double n_s() const;
   double log_likelihood() const;
+  double max_e() const;
   void set_e(double max);
   void set_hom(double max);
   void set_het(double max);
@@ -52,6 +55,7 @@ class ParameterEstimates {
   double germ_;  // S_M + S_F.
   double n_s_;  // Number of sites.
   double log_likelihood_;  // Log of denominator sum.
+  double max_e_;
 };
 
 #endif

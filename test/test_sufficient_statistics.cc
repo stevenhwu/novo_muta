@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE(TestGetPopulationMutationRateStatistic) {
                          {40, 0, 0,  0},
                          {40, 0, 0,  0}};
   params.SetReadDependentData(data);
-  double s_theta = GetPopulationMutationRateStatistic(params);
+  double s_theta = SufficientStatistics::GetPopulationMutationRateStatistic(params);
   BOOST_CHECK(s_theta >= 0.0);
 }
 
@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(TestGetHeterozygousStatistic) {
                          {40, 0, 0,  0},
                          {40, 0, 0,  0}};
   params.SetReadDependentData(data);
-  double s_het = GetHeterozygousStatistic(params);
+  double s_het = SufficientStatistics::GetHeterozygousStatistic(params);
   BOOST_CHECK(s_het >= 0.0);
 }
 
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(TestGetHomozygousStatistic) {
                          {40, 0, 0,  0},
                          {40, 0, 0,  0}};
   params.SetReadDependentData(data);
-  double s_hom = GetHomozygousStatistic(params);
+  double s_hom = SufficientStatistics::GetHomozygousStatistic(params);
   BOOST_CHECK(s_hom >= 0.0);
 }
 
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(TestGetMismatchStatistic) {
                          {40, 0, 0,  0},
                          {40, 0, 0,  0}};
   params.SetReadDependentData(data);
-  double s_e = GetMismatchStatistic(params);
+  double s_e = SufficientStatistics::GetMismatchStatistic(params);
   BOOST_CHECK(s_e >= 0.0);
 }
 
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(TestGetMismatches) {
                   1.0,  21.0, 21.0, 20.0,
                   11.0, 21.0, 31.0, 30.0,
                   10.0, 20.0, 30.0, 30.0;
-  RowVector16d matches = GetMismatches(data);
+  RowVector16d matches = SufficientStatistics::GetMismatches(data);
   BOOST_CHECK(matches == test_matches);
 
   ReadDataVector data_vec = {{20, 10, 0, 1},
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(TestGetMismatches) {
                    2.0,  11.0, 12.0, 11.0,
                    2.0,  11.0, 11.0, 12.0;
 
-  Matrix3_16d matches2 = GetMismatches(data_vec);
+  Matrix3_16d matches2 = SufficientStatistics::GetMismatches(data_vec);
   BOOST_CHECK(matches2 == test_matches2);
 }
 
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(TestGetHeterozygousMatches) {
                   30.0, 0.0,  10.0, 11.0,
                   20.0, 10.0, 0.0,  1.0,
                   21.0, 11.0, 1.0,  0.0;
-  RowVector16d matches = GetHeterozygousMatches(data);
+  RowVector16d matches = SufficientStatistics::GetHeterozygousMatches(data);
   BOOST_CHECK(matches == test_matches);
 
   ReadDataVector data_vec = {{20, 10, 0, 1},
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(TestGetHeterozygousMatches) {
                    11.0, 2.0,  0.0,  2.0,
                    11.0, 2.0,  2.0,  0.0;
 
-  Matrix3_16d matches2 = GetHeterozygousMatches(data_vec);
+  Matrix3_16d matches2 = SufficientStatistics::GetHeterozygousMatches(data_vec);
   BOOST_CHECK(matches2 == test_matches2);
 }
 
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(TestGetHomozygousMatches) {
   test_matches(0) = 20.0;
   test_matches(5) = 10.0;
   test_matches(15) = 1.0;
-  RowVector16d matches = GetHomozygousMatches(data);
+  RowVector16d matches = SufficientStatistics::GetHomozygousMatches(data);
   BOOST_CHECK(matches == test_matches);
 
   ReadDataVector data_vec = {{20, 10, 0, 1},
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(TestGetHomozygousMatches) {
                    0.0,  0.0,  1.0, 0.0,
                    0.0,  0.0,  0.0, 1.0;
 
-  Matrix3_16d matches2 = GetHomozygousMatches(data_vec);
+  Matrix3_16d matches2 = SufficientStatistics::GetHomozygousMatches(data_vec);
   BOOST_CHECK(matches2 == test_matches2);
 }
 
@@ -157,13 +157,13 @@ BOOST_AUTO_TEST_CASE(TestGetGermlineStatistic) {
                          {40, 0, 0,  0},
                          {40, 0, 0,  0}};
   params.SetReadDependentData(data);
-  double s_germ = GetGermlineStatistic(params);
+  double s_germ = SufficientStatistics::GetGermlineStatistic(params);
   BOOST_CHECK(s_germ >= 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(TestGermlineMutationCounts) {
   TrioModel params;
-  Matrix16_256d counts = GermlineMutationCounts(params);
+  Matrix16_256d counts = SufficientStatistics::GermlineMutationCounts(params);
   Matrix16_256d test_counts = Matrix16_256d::Zero();
   int child_allele1 = 0;
   int child_allele2 = 0;
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(TestGermlineMutationCountsSingle) {
                  1.0,          1.0,          1.0,          heterozygous,
                  1.0,          1.0,          1.0,          heterozygous,
                  heterozygous, heterozygous, heterozygous, 0.0;
-  Matrix4_16d counts = GermlineMutationCountsSingle(params);
+  Matrix4_16d counts = SufficientStatistics::GermlineMutationCountsSingle(params);
   BOOST_CHECK(counts == test_counts);
 }
 
@@ -215,12 +215,12 @@ BOOST_AUTO_TEST_CASE(TestGetSomaticStatistic) {
                          {40, 0, 0,  0},
                          {40, 0, 0,  0}};
   params.SetReadDependentData(data);
-  double s_som = GetSomaticStatistic(params);
+  double s_som = SufficientStatistics::GetSomaticStatistic(params);
   BOOST_CHECK(s_som >= 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(TestSomaticMutationCounts) {
-  Matrix16_16d counts = SomaticMutationCounts();
+  Matrix16_16d counts = SufficientStatistics::SomaticMutationCounts();
   BOOST_CHECK(counts.diagonal().sum() == 0.0);
   int count = 0;
 

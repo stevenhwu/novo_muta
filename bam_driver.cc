@@ -43,35 +43,51 @@
  * To run this file, provide the following command line inputs:
  * ./bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>
  */
+#include "bam_utility.h"
 #include "parameter_estimates.h"
-#include "variant_visitor.h"
 
 /**
- * Returns a list of trios parsed from input BAM file, matching reads given the
- * sample name of the child, mother, and father.
+ * Returns ParameterEstimates object containing maximum likelihood estimates
+ * and expected sufficient statistics for the sum of all sites by performing
+ * the EM algorithm. Returns null if sites is empty.
  *
- * @param  reader    BamReader instance.
- * @param  child_sm  Sample name of the child.
- * @param  mother_sm Sample name of the mother.
- * @param  father_sm Sample name of the father.
- * @return           List of trios parsed from input BAM file.
+ * @param  params TrioModel object containing parameters.
+ * @param  sites  List of trios.
+ * @return        Parameter estimates.
  */
-TrioVector ParseBamSites(BamReader &reader,
-                         const string &child_sm,
-                         const string &mother_sm,
-                         const string &father_sm) {
-  BamAlignment al;
-  PileupEngine pileup;
-  RefVector references = reader.GetReferenceData();
-  VariantVisitor *v = new VariantVisitor(references, child_sm, mother_sm, father_sm);
-  
-  pileup.AddVisitor(v);
-  while (reader.GetNextAlignment(al)) {
-    pileup.AddAlignment(al);
+ParameterEstimates* EmAlgorithm(TrioModel &params, const TrioVector &sites) {
+  int sites_count = sites.size();
+  if (sites_count > 0) {
+    ParameterEstimates *stats = new ParameterEstimates(sites_count);
+    if (stats->Update(params, sites)) {  // EM algorithm starts here.
+      int count = 1;  // Includes initial steps.
+      double start_log_likelihood = stats->log_likelihood();
+
+      // Exits if converges or takes longer than 50 iteratons.
+      while (stats->Update(params, sites) &&
+             !Equal(params.sequencing_error_rate(), stats->max_e()) &&
+             count < 50) {
+        params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
+        stats->Clear();  // Sets all statistics except number of sites to 0.
+        // cout << "~E:\t" << stats->max_e() << endl;
+        count++;
+      }
+
+      // Sum of likelihood should increase and converge.
+      if (stats->log_likelihood() < start_log_likelihood) {
+        cout << "ERROR: Log likelihood is decreasing overall from "
+             << start_log_likelihood << " to " << stats->log_likelihood() << endl;
+      }
+
+      cout << "After " << count << " iterations of "
+           << sites_count << " sites:" << endl
+           << "^E:\t" << params.sequencing_error_rate() << endl << endl;
+
+      return stats;
+    }
   }
 
-  pileup.Flush();
-  return v->sites();
+  return NULL;
 }
 
 
@@ -90,52 +106,13 @@ int main(int argc, const char *argv[]) {
   if (!reader.IsOpen()) {
     Die("Input file could not be opened.");
   }
-  const TrioVector sites = ParseBamSites(reader, child_sm, mother_sm, father_sm);
+  const TrioVector sites = BamUtility::ParseSites(reader, child_sm, mother_sm, father_sm);
   reader.Close();
 
-  // EM algorithm begins with initial E-Step.
-  // Runs EM on a section created by a trio repeated 10x for every trio.
-  TrioModel params;
-  int sites_count = sites.size();
   cout.precision(16);
-  
-  if (sites_count > 0) {
-    ParameterEstimates stats(sites_count);
-    if (stats.Update(params, sites)) {
-      // M-Step.
-      int count = 0;
-      double maximized = stats.MaxSequencingErrorRate();
-      double start_log_likelihood = stats.log_likelihood();
-      double log_likelihood = stats.log_likelihood();
-
-      // Exits if converges or takes longer than 50 iteratons.  
-      while (!Equal(params.sequencing_error_rate(), maximized) && count < 50) {
-        params.set_sequencing_error_rate(maximized);  // Sets new estimate.
-        stats.Clear();  // Sets all statistics except number of sites to 0.
-        
-        if (!stats.Update(params, sites)) {  // Loops to E-Step.
-          break;
-        };
-        
-        maximized = stats.MaxSequencingErrorRate();  // Loops to M-Step.
-        // cout << "~E:\t" << maximized << endl;
-        log_likelihood = stats.log_likelihood();
-        count++;
-      }
-
-      // Sum of likelihood should increase and converge.
-      if (stats.log_likelihood() < start_log_likelihood) {
-        cout << "ERROR: Log likelihood is decreasing overall from "
-             << start_log_likelihood << " to " << stats.log_likelihood() << endl;
-      }
-
-      cout << "After " << count << " iterations of "
-           << sites_count << " sites:" << endl
-           << "^E:\t" << params.sequencing_error_rate() << endl << endl;
-    
-      stats.Clear();
-    }
-  }
+  TrioModel params;
+  ParameterEstimates *stats = EmAlgorithm(params, sites);
+  cout << stats->max_e() << " compare with " << params.sequencing_error_rate() << endl;
 
   return 0;
 }

@@ -14,22 +14,27 @@
 #include "trio_model.h"
 
 
-double GetPopulationMutationRateStatistic(const TrioModel &params);
-double GetSequencingErrorStatistic(const TrioModel &params,
-	                               const Matrix3_16d &matches);
-double GetHomozygousStatistic(const TrioModel &params);
-double GetHeterozygousStatistic(const TrioModel &params);
-double GetMismatchStatistic(const TrioModel &params);
-RowVector16d GetHeterozygousMatches(const ReadData &data);
-Matrix3_16d GetHeterozygousMatches(const ReadDataVector &data_vec);
-RowVector16d GetHomozygousMatches(const ReadData &data);
-Matrix3_16d GetHomozygousMatches(const ReadDataVector &data_vec);
-RowVector16d GetMismatches(const ReadData &data);
-Matrix3_16d GetMismatches(const ReadDataVector &data_vec);
-double GetGermlineStatistic(const TrioModel &params);
-Matrix16_256d GermlineMutationCounts(const TrioModel &params);
-Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params);
-double GetSomaticStatistic(const TrioModel &params);
-Matrix16_16d SomaticMutationCounts();
+/**
+ * SufficientStatistics namespace header. See top of file for a complete description.
+ */
+namespace SufficientStatistics {
+  double GetPopulationMutationRateStatistic(const TrioModel &params);
+  double GetSequencingErrorStatistic(const TrioModel &params,
+                                     const Matrix3_16d &matches);
+  double GetHomozygousStatistic(const TrioModel &params);
+  double GetHeterozygousStatistic(const TrioModel &params);
+  double GetMismatchStatistic(const TrioModel &params);
+  RowVector16d GetHeterozygousMatches(const ReadData &data);
+  Matrix3_16d GetHeterozygousMatches(const ReadDataVector &data_vec);
+  RowVector16d GetHomozygousMatches(const ReadData &data);
+  Matrix3_16d GetHomozygousMatches(const ReadDataVector &data_vec);
+  RowVector16d GetMismatches(const ReadData &data);
+  Matrix3_16d GetMismatches(const ReadDataVector &data_vec);
+  double GetGermlineStatistic(const TrioModel &params);
+  Matrix16_256d GermlineMutationCounts(const TrioModel &params);
+  Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params);
+  double GetSomaticStatistic(const TrioModel &params);
+  Matrix16_16d SomaticMutationCounts();
+};
 
 #endif

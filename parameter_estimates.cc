@@ -22,7 +22,7 @@
  */
 ParameterEstimates::ParameterEstimates(double sites_count)
     : e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0}, log_likelihood_{0.0},
-      n_s_{sites_count} {
+      max_e_{0.0}, n_s_{sites_count} {
 }
 
 /**
@@ -73,21 +73,22 @@ double ParameterEstimates::MaxSequencingErrorRate() {
 bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
   for (const ReadDataVector data_vec : sites) {
     params.SetReadDependentData(data_vec);
-    som_ += GetSomaticStatistic(params);
-    germ_ += GetGermlineStatistic(params);
-    e_ += GetMismatchStatistic(params);
-    hom_ += GetHomozygousStatistic(params);
-    het_ += GetHeterozygousStatistic(params);
+    som_ += SufficientStatistics::GetSomaticStatistic(params);
+    germ_ += SufficientStatistics::GetGermlineStatistic(params);
+    e_ += SufficientStatistics::GetMismatchStatistic(params);
+    hom_ += SufficientStatistics::GetHomozygousStatistic(params);
+    het_ += SufficientStatistics::GetHeterozygousStatistic(params);
     log_likelihood_ += log(params.read_dependent_data().denominator.sum);
 
-    if (ParameterEstimates::IsNan()) {
+    if (IsNan()) {
       cout << "ERROR: This site is nan." << endl;
       PrintReadDataVector(data_vec);
-      ParameterEstimates::Print();
+      Print();
       return false;
     }
   }
 
+  max_e_ = MaxSequencingErrorRate();
   return true;
 }
 
@@ -101,6 +102,7 @@ void ParameterEstimates::Clear() {
   som_ = 0.0;
   germ_ = 0.0;
   log_likelihood_ = 0.0;
+  max_e_ = 0.0;
 }
 
 /**
@@ -150,6 +152,10 @@ double ParameterEstimates::n_s() const {
 
 double ParameterEstimates::log_likelihood() const {
   return log_likelihood_;
+}
+
+double ParameterEstimates::max_e() const {
+  return max_e_;
 }
 
 void ParameterEstimates::set_e(double max) {

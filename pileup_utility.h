@@ -20,16 +20,14 @@
 #include "trio_model.h"
 
 
-// Any greater probability than this number is printed.
-const double kThreshold = 0.01;
-
-// Forward declarations.
-string GetSequence(string &line);
-string TrimHeader(ifstream &f);
-ReadData GetReadData(const string &line);
-double GetProbability(TrioModel &params, const string &child_line,
-                      const string &mother_line, const string &father_line);
-void ProcessPileup(const string &file_name, const string &child_pileup,
-                   const string &mother_pileup, const string &father_pileup);
+namespace PileupUtility {
+  string GetSequence(string &line);
+  string TrimHeader(ifstream &f);
+  ReadData GetReadData(const string &line);
+  double GetProbability(TrioModel &params, const string &child_line,
+                        const string &mother_line, const string &father_line);
+  void WriteProbability(const string &file_name, const string &child_pileup,
+                        const string &mother_pileup, const string &father_pileup);
+};
 
 #endif

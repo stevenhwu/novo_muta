@@ -18,7 +18,7 @@
  * @param params TrioModel object containing parameters.
  * @return       Expected theta.
  */
-double GetPopulationMutationRateStatistic(const TrioModel &params) {
+double SufficientStatistics::GetPopulationMutationRateStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const RowVector256d root_mat = data.denominator.root_mat;
   const double sum = data.denominator.sum;
@@ -37,7 +37,7 @@ double GetPopulationMutationRateStatistic(const TrioModel &params) {
  * @param params TrioModel object containing parameters.
  * @return       Number of expected heterozygous matches.
  */
-double GetHeterozygousStatistic(const TrioModel &params) {
+double SufficientStatistics::GetHeterozygousStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
   Matrix3_16d het_matches = GetHeterozygousMatches(data_vec);
@@ -52,7 +52,7 @@ double GetHeterozygousStatistic(const TrioModel &params) {
  * @param params TrioModel object containing parameters.
  * @return       Number of expected homozygous matches.
  */
-double GetHomozygousStatistic(const TrioModel &params) {
+double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
   Matrix3_16d hom_matches = GetHomozygousMatches(data_vec);
@@ -67,7 +67,7 @@ double GetHomozygousStatistic(const TrioModel &params) {
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected mismatches.
  */
-double GetMismatchStatistic(const TrioModel &params) {
+double SufficientStatistics::GetMismatchStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
   Matrix3_16d mismatches = GetMismatches(data_vec);
@@ -81,8 +81,8 @@ double GetMismatchStatistic(const TrioModel &params) {
  * @para   matches Mismatches, homozygous, or heterzygous matches.
  * @return         Number of expected sequencing error statistic.
  */
-double GetSequencingErrorStatistic(const TrioModel &params,
-                                   const Matrix3_16d &matches) {
+double SufficientStatistics::GetSequencingErrorStatistic(const TrioModel &params,
+                                                         const Matrix3_16d &matches) {
   const ReadDependentData data = params.read_dependent_data();
   const Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
@@ -164,7 +164,7 @@ double GetSequencingErrorStatistic(const TrioModel &params,
  * @param  data ReadData.
  * @return      1 x 16 Eigen matrix containing number of mismatches per genotype.
  */
-RowVector16d GetMismatches(const ReadData &data) {
+RowVector16d SufficientStatistics::GetMismatches(const ReadData &data) {
   RowVector16d s_e = RowVector16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
     int allele1 = i / kNucleotideCount;
@@ -186,7 +186,7 @@ RowVector16d GetMismatches(const ReadData &data) {
  * @return          3 x 16 Eigen matrix containing number of mismatches per
  *                  genotype for each read data.
  */
-Matrix3_16d GetMismatches(const ReadDataVector &data_vec) {
+Matrix3_16d SufficientStatistics::GetMismatches(const ReadDataVector &data_vec) {
   Matrix3_16d s_e = Matrix3_16d::Zero();
   for (int i = 0; i < 3; ++i) {
     ReadData data = data_vec[i];
@@ -219,7 +219,7 @@ Matrix3_16d GetMismatches(const ReadDataVector &data_vec) {
  * @return      1 x 16 Eigen matrix containing number of heterozygous matches
  *              per genotype.
  */
-RowVector16d GetHeterozygousMatches(const ReadData &data) {
+RowVector16d SufficientStatistics::GetHeterozygousMatches(const ReadData &data) {
   RowVector16d s_het = RowVector16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
     if (i % 5 != 0) {  // Heterozygous genotypes are not divisible by 5.
@@ -239,7 +239,7 @@ RowVector16d GetHeterozygousMatches(const ReadData &data) {
  * @return          3 x 16 Eigen matrix containing number of heterozygous
  *                  matches per genotype for each read data.
  */
-Matrix3_16d GetHeterozygousMatches(const ReadDataVector &data_vec) {
+Matrix3_16d SufficientStatistics::GetHeterozygousMatches(const ReadDataVector &data_vec) {
   Matrix3_16d s_het = Matrix3_16d::Zero();
   for (int i = 0; i < 3; ++i) {
     ReadData data = data_vec[i];
@@ -269,7 +269,7 @@ Matrix3_16d GetHeterozygousMatches(const ReadDataVector &data_vec) {
  * @return      1 x 16 Eigen matrix containing number of homozygous matches per
  *              genotype.
  */
-RowVector16d GetHomozygousMatches(const ReadData &data) {
+RowVector16d SufficientStatistics::GetHomozygousMatches(const ReadData &data) {
   RowVector16d s_hom = RowVector16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
     if (i % 5 == 0) {  // Homozygous genotypes are divisible by 5.
@@ -287,7 +287,7 @@ RowVector16d GetHomozygousMatches(const ReadData &data) {
  * @return          3 x 16 Eigen matrix containing number of homozygous
  *                  matches per genotype for each read data.
  */
-Matrix3_16d GetHomozygousMatches(const ReadDataVector &data_vec) {
+Matrix3_16d SufficientStatistics::GetHomozygousMatches(const ReadDataVector &data_vec) {
   Matrix3_16d s_hom = Matrix3_16d::Zero();
   for (int i = 0; i < 3; ++i) {
     ReadData data = data_vec[i];
@@ -311,7 +311,7 @@ Matrix3_16d GetHomozygousMatches(const ReadDataVector &data_vec) {
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected germline mutations.
  */
-double GetGermlineStatistic(const TrioModel &params) {
+double SufficientStatistics::GetGermlineStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const Matrix16_256d germline_mutation_counts = GermlineMutationCounts(params);
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
@@ -351,7 +351,7 @@ double GetGermlineStatistic(const TrioModel &params) {
  * @param  params TrioModel object containing parameters.
  * @return        16 x 256 Eigen matrix holding the number of germline mutations.
  */
-Matrix16_256d GermlineMutationCounts(const TrioModel &params) {
+Matrix16_256d SufficientStatistics::GermlineMutationCounts(const TrioModel &params) {
   Matrix16_256d mat = Matrix16_256d::Zero();
   Matrix4_16d germline_mutation_counts = GermlineMutationCountsSingle(params);
   int child_allele1 = 0;
@@ -394,7 +394,7 @@ Matrix16_256d GermlineMutationCounts(const TrioModel &params) {
  * @param  params TrioModel object containing parameters.
  * @return        4 x 16 Eigen matrix holding the number of germline mutations.
  */
-Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params) {
+Matrix4_16d SufficientStatistics::GermlineMutationCountsSingle(const TrioModel &params) {
   Matrix4_16d mat = Matrix4_16d::Zero();
 
   for (int i = 0; i < kNucleotideCount; ++i) {  // Child allele.
@@ -427,7 +427,7 @@ Matrix4_16d GermlineMutationCountsSingle(const TrioModel &params) {
  * @param  params TrioModel object containing parameters.
  * @return        Number of expected somatic mutations.
  */
-double GetSomaticStatistic(const TrioModel &params) {
+double SufficientStatistics::GetSomaticStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
@@ -508,7 +508,7 @@ double GetSomaticStatistic(const TrioModel &params) {
  *
  * @return  16 x 16 Eigen matrix holding the number of somatic mutations.
  */
-Matrix16_16d SomaticMutationCounts() {
+Matrix16_16d SufficientStatistics::SomaticMutationCounts() {
   Matrix16_16d mat = Matrix16_16d::Zero();
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {

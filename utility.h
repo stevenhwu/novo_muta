@@ -96,6 +96,7 @@ const int kNucleotideCount = 4;
 const int kGenotypeCount = 16;
 const int kGenotypePairCount = 256;
 const int kTrioCount = 42875;
+const double kThreshold = 0.01;  // Any greater probability than this number is printed.
 const double kEpsilon = numeric_limits<double>::epsilon();
 // const Matrix16_2i kGenotypeNumIndex = GenotypeNumIndex();
 // const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();

@@ -19,7 +19,7 @@
  * @param  f Input stream.
  * @return   First line where N is not the reference.
  */
-string TrimHeader(ifstream &f) {
+string PileupUtility::TrimHeader(ifstream &f) {
   string line;
   while(getline(f, line)) {
     line = GetSequence(line);  // Trims newline.
@@ -37,7 +37,7 @@ string TrimHeader(ifstream &f) {
  * @param  line Line from pileup file.
  * @return      Line without newline and has valid nucleotide reference.
  */
-string GetSequence(string &line) {
+string PileupUtility::GetSequence(string &line) {
   int sequence = 0;
   int position = 0;
   char ref_nucleotide;
@@ -62,7 +62,7 @@ string GetSequence(string &line) {
  * @param  line Read from a pileup file representing a single site sequence.
  * @return      ReadData.
  */
-ReadData GetReadData(const string &line) {
+ReadData PileupUtility::GetReadData(const string &line) {
   int sequence = 0;
   int position = 0;
   char ref_nucleotide;
@@ -109,7 +109,7 @@ ReadData GetReadData(const string &line) {
  * @param  mother_line Line from the mother pileup.
  * @param  father_line Line from the father pileup.
  */
-double GetProbability(TrioModel &params, const string &child_line,
+double PileupUtility::GetProbability(TrioModel &params, const string &child_line,
                       const string &mother_line, const string &father_line) {
   ReadDataVector data_vec = {GetReadData(child_line),
                              GetReadData(mother_line),
@@ -129,8 +129,10 @@ double GetProbability(TrioModel &params, const string &child_line,
  * @param  mother_pileup Mother pileup file name.
  * @param  father_pileup Father pileup file name.
  */
-void ProcessPileup(const string &file_name, const string &child_pileup,
-                   const string &mother_pileup, const string &father_pileup) {
+void PileupUtility::WriteProbability(const string &file_name,
+                                     const string &child_pileup,
+                                     const string &mother_pileup,
+                                     const string &father_pileup) {
   ifstream child(child_pileup);
   ifstream mother(mother_pileup);
   ifstream father(father_pileup);

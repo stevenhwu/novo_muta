@@ -17,16 +17,16 @@ BOOST_AUTO_TEST_CASE(TestGetSequence) {
   string line = "22\t34907918\tG\t83\t"
                 ".TT,T.TT.tt,..t..TT..tT.tt,..tt.t.TttT,Tt,tT,tt,T,T,Tt,t.TtTTTTTt,.,.TTT.,,T..ttT.,\t"
                 "DEBB/>EFBFFC<EFEEFFEDFBCFECEEGEEFEFBGE>FGCGFC;GCFC;CEGCFEEGEEEFEGCECEEFED;C>CAFFDC@\n";
-  BOOST_CHECK(GetSequence(line).find('\n') == string::npos);
+  BOOST_CHECK(PileupUtility::GetSequence(line).find('\n') == string::npos);
   string invalid_line = "21\t9411191\tN\t1\t^>T C\n";
-  BOOST_CHECK(GetSequence(invalid_line).empty());
+  BOOST_CHECK(PileupUtility::GetSequence(invalid_line).empty());
 }
 
 BOOST_AUTO_TEST_CASE(TestGetReadData) {
   string line = "22\t34907918\tG\t83\t"
                 ".TT,T.TT.tt,..t..TT..tT.tt,..tt.t.TttT,Tt,tT,tt,T,T,Tt,t.TtTTTTTt,.,.TTT.,,T..ttT.,\t"
                 "DEBB/>EFBFFC<EFEEFFEDFBCFECEEGEEFEFBGE>FGCGFC;GCFC;CEGCFEEGEEEFEGCECEEFED;C>CAFFDC@";
-  ReadData data = GetReadData(line);
+  ReadData data = PileupUtility::GetReadData(line);
   ReadData test_data = {0, 0, 36, 47};
   BOOST_CHECK(EqualsReadData(test_data, data));
 }
@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(TestGetProbability) {
   string father_line = "22\t34907918\tG\t68\t"
                        ".....,.,,.,,....,,,,,.,,,,,.,..,,,.,,..,,.,,,..,,,.,.,..,.,,,..,.,.,\t"
                        "DADADBACADBBDEEDCCBCBECCCCBEBDDCCBCCC9DBBEBCCEDCCDEDDDC<BCBBBDCBB@?5";
-  double probability = GetProbability(params, child_line, mother_line, father_line);
+  double probability = PileupUtility::GetProbability(params, child_line, mother_line, father_line);
   BOOST_CHECK(probability >= 0.0 && probability <= 1.0);
 }
 

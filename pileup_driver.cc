@@ -29,7 +29,7 @@ int main(int argc, const char *argv[]) {
   const string mother_pileup = argv[3];
   const string father_pileup = argv[4];
 
-  ProcessPileup(file_name, child_pileup, mother_pileup, father_pileup);
+  PileupUtility::WriteProbability(file_name, child_pileup, mother_pileup, father_pileup);
 
   return 0;
 }

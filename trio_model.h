@@ -97,7 +97,7 @@ class TrioModel {
   Matrix16_16d SomaticProbabilityMat();
   Matrix16_16d SomaticProbabilityMatDiag();
   void SequencingProbabilityMat();
-  Matrix16_4d Alphas();
+  Matrix16_4d GetAlphas();
 
   // Instance member variables.
   double population_mutation_rate_;
