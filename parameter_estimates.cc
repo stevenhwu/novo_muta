@@ -22,7 +22,7 @@
  */
 ParameterEstimates::ParameterEstimates(double sites_count)
     : e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0}, log_likelihood_{0.0},
-      max_e_{0.0}, n_s_{sites_count} {
+      max_e_{0.0}, count_{0}, n_s_{sites_count} {
 }
 
 /**
@@ -80,6 +80,10 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
     het_ += SufficientStatistics::GetHeterozygousStatistic(params);
     log_likelihood_ += log(params.read_dependent_data().denominator.sum);
 
+    if (count_ == 0) {
+      start_log_likelihood_ = log_likelihood_;
+    }
+
     if (IsNan()) {
       cout << "ERROR: This site is nan." << endl;
       PrintReadDataVector(data_vec);
@@ -87,13 +91,30 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
       return false;
     }
   }
-
+  
   max_e_ = MaxSequencingErrorRate();
+  count_++;
   return true;
 }
 
 /**
- * Sets all statistics to 0 except n_s_.
+ * Returns true if the sum of likelihood increases (and converges). To be
+ * called at the end of the EM algorithm.
+ *
+ * @return  True if log likelihood increases for the data set, otherwise false.
+ */
+bool ParameterEstimates::IsLogLikelihoodIncreasing() {
+  if (log_likelihood_ < start_log_likelihood_) {
+    cout << "ERROR: Log likelihood is decreasing overall from "
+         << start_log_likelihood_ << " to " << log_likelihood_ << endl;
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Sets all statistics to 0 except n_s_ and count_.
  */
 void ParameterEstimates::Clear() {
   e_ = 0.0;
@@ -117,13 +138,19 @@ bool ParameterEstimates::IsNan() {
  */
 void ParameterEstimates::Print() {
   cout.precision(16);
+  cout << "Iteration #" << count_ << " for " << n_s_ << " sites." << endl;
   cout << "S_Som:\t"  << som_            << endl
        << "S_Germ:\t" << germ_           << endl
        << "S_E:\t"    << e_              << endl
        << "S_Hom:\t"  << hom_            << endl
        << "S_Het:\t"  << het_            << endl
-       << "Q_Log:\t"  << log_likelihood_ << endl
-       << "N_S:\t"    << n_s_            << endl;
+       << "Q_Log:\t"  << log_likelihood_ << endl;
+}
+
+void ParameterEstimates::PrintMaxSequencingErrorRateEstimate() {
+  cout << "After " << count_ << " iterations of "
+       << n_s_ << " sites:" << endl
+       << "^E:\t" << max_e_ << endl << endl;
 }
 
 double ParameterEstimates::e() const {
@@ -156,6 +183,10 @@ double ParameterEstimates::log_likelihood() const {
 
 double ParameterEstimates::max_e() const {
   return max_e_;
+}
+
+int ParameterEstimates::count() const {
+  return count_;
 }
 
 void ParameterEstimates::set_e(double max) {

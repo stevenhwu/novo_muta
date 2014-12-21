@@ -28,6 +28,8 @@ class ParameterEstimates {
   double MaxGermlineMutationRate();  // M-step functions.
   double MaxSomaticMutationRate();
   double MaxSequencingErrorRate();
+  bool IsLogLikelihoodIncreasing();
+  void PrintMaxSequencingErrorRateEstimate();
   bool IsNan();
 
   double e() const;  // Get and set functions.
@@ -37,7 +39,9 @@ class ParameterEstimates {
   double germ() const;
   double n_s() const;
   double log_likelihood() const;
+  double start_log_likelihood() const;
   double max_e() const;
+  int count() const;
   void set_e(double max);
   void set_hom(double max);
   void set_het(double max);
@@ -55,7 +59,9 @@ class ParameterEstimates {
   double germ_;  // S_M + S_F.
   double n_s_;  // Number of sites.
   double log_likelihood_;  // Log of denominator sum.
+  double start_log_likelihood_;
   double max_e_;
+  int count_;  // Number of iterations in EM algorithm performed.
 };
 
 #endif

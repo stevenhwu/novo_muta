@@ -38,57 +38,13 @@
  * <output_sorted>.bam is accepted as input for a specified region.
  * 
  * To compile on Herschel without using cmake and include GSL and BamTools:
- * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc em_algorithm.cc sufficient_statistics.cc bam_driver.cc
+ * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc sufficient_statistics.cc parameter_estimates.cc em_algorithm.cc bam_utilities.cc bam_driver.cc
  *
  * To run this file, provide the following command line inputs:
  * ./bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>
  */
 #include "bam_utility.h"
-#include "parameter_estimates.h"
-
-/**
- * Returns ParameterEstimates object containing maximum likelihood estimates
- * and expected sufficient statistics for the sum of all sites by performing
- * the EM algorithm. Returns null if sites is empty.
- *
- * @param  params TrioModel object containing parameters.
- * @param  sites  List of trios.
- * @return        Parameter estimates.
- */
-ParameterEstimates* EmAlgorithm(TrioModel &params, const TrioVector &sites) {
-  int sites_count = sites.size();
-  if (sites_count > 0) {
-    ParameterEstimates *stats = new ParameterEstimates(sites_count);
-    if (stats->Update(params, sites)) {  // EM algorithm starts here.
-      int count = 1;  // Includes initial steps.
-      double start_log_likelihood = stats->log_likelihood();
-
-      // Exits if converges or takes longer than 50 iteratons.
-      while (stats->Update(params, sites) &&
-             !Equal(params.sequencing_error_rate(), stats->max_e()) &&
-             count < 50) {
-        params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
-        stats->Clear();  // Sets all statistics except number of sites to 0.
-        // cout << "~E:\t" << stats->max_e() << endl;
-        count++;
-      }
-
-      // Sum of likelihood should increase and converge.
-      if (stats->log_likelihood() < start_log_likelihood) {
-        cout << "ERROR: Log likelihood is decreasing overall from "
-             << start_log_likelihood << " to " << stats->log_likelihood() << endl;
-      }
-
-      cout << "After " << count << " iterations of "
-           << sites_count << " sites:" << endl
-           << "^E:\t" << params.sequencing_error_rate() << endl << endl;
-
-      return stats;
-    }
-  }
-
-  return NULL;
-}
+#include "em_algorithm.cc"
 
 
 int main(int argc, const char *argv[]) {
@@ -106,13 +62,14 @@ int main(int argc, const char *argv[]) {
   if (!reader.IsOpen()) {
     Die("Input file could not be opened.");
   }
-  const TrioVector sites = BamUtility::ParseSites(reader, child_sm, mother_sm, father_sm);
+  TrioVector sites = BamUtility::ParseSites(reader, child_sm, mother_sm, father_sm);
   reader.Close();
 
   cout.precision(16);
   TrioModel params;
-  ParameterEstimates *stats = EmAlgorithm(params, sites);
-  cout << stats->max_e() << " compare with " << params.sequencing_error_rate() << endl;
+  ParameterEstimates *stats = EstimateParameters(params, sites);
+  stats->IsLogLikelihoodIncreasing();
+  stats->PrintMaxSequencingErrorRateEstimate();
 
   return 0;
 }

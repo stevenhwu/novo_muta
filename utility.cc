@@ -316,16 +316,22 @@ int IndexOfReadDataVector(const ReadDataVector &data_vec, TrioVector trio_vec) {
 
 /**
  * Returns all possible and unique trio sets of sequencing counts for an
- * individual sequenced at given coverage.
+ * individual sequenced at given coverage. Assume  coverage is at least 1,
+ * usually 4.
  *
  * @param  coverage Coverage or max nucleotide count.
  * @return          Vector of ReadDataVector.
  */
 TrioVector GetTrioVector(int coverage) {
   TrioVector trio_vec;
-  // MatrixXi mat = EnumerateNucleotideCounts(coverage);
-  // ReadDataVector data_vec = GetUniqueReadDataVector(mat);
-  ReadDataVector data_vec = FourNucleotideCounts();
+  ReadDataVector data_vec;
+  if (coverage == kNucleotideCount) {
+    data_vec = FourNucleotideCounts();
+  } else {  // Less efficient.
+    MatrixXi mat = EnumerateNucleotideCounts(coverage);
+    data_vec = GetUniqueReadDataVector(mat);
+  }
+  
   for (ReadData data1 : data_vec) {
     for (ReadData data2 : data_vec) {
       for (ReadData data3 : data_vec) {

@@ -28,7 +28,7 @@ if(BamTools_FOUND)
 
   add_executable(bam_driver ${TRIO_MODEL}
                  ${BamTools_LIBRARIES} variant_visitor.cc
-                 ${EM} bam_utility.cc bam_driver.cc)
+                 ${EM}  bam_utility.cc bam_driver.cc)
 endif()
 
 add_executable(bin_driver utility.cc bin_driver.cc)
@@ -73,6 +73,10 @@ if(Boost_FOUND)
   project(test_parameter_estimates)
   add_executable(test_parameter_estimates ${TRIO_MODEL} ${EM} test/test_parameter_estimates.cc)
   target_link_libraries(test_parameter_estimates ${GSL_LIBRARIES} ${Boost_LIBRARIES})
+
+  project(test_em_algorithm)
+  add_executable(test_em_algorithm ${TRIO_MODEL} ${EM} test/test_parameter_estimates.cc)
+  target_link_libraries(test_em_algorithm ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 endif()
 
 enable_testing()
@@ -83,3 +87,4 @@ add_test(test_simulation_model test_simulation_model)
 add_test(test_pileup_utility test_pileup_utility)
 add_test(test_sufficient_statistics test_sufficient_statistics)
 add_test(test_parameter_estimates test_parameter_estimates)
+add_test(test_em_algorithm test_em_algorithm)
