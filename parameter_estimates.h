@@ -52,16 +52,16 @@ class ParameterEstimates {
 
  private:
   // Instance member variables.
-  double e_;
-  double hom_;
-  double het_;
-  double som_;
-  double germ_;  // S_M + S_F.
-  double n_s_;  // Number of sites.
-  double log_likelihood_;  // Log of denominator sum.
-  double start_log_likelihood_;
-  double max_e_;
-  int count_;  // Number of iterations in EM algorithm performed.
+  double e_;                     // Expected statistic for sequencing error rate.
+  double hom_;                   // Expected statistic for homozygous matches.
+  double het_;                   // Expected statistic for heterozygous matches.
+  double som_;                   // Expected statistic for somatic mutation.
+  double germ_;                  // S_M + S_F. Expected statistic for germline mutation.
+  double n_s_;                   // Number of sites.
+  double log_likelihood_;        // Log likelihood of P(R,H)/denominator sum.
+  double start_log_likelihood_;  // First calculated log likelihood.
+  double max_e_;                 // Maximum likehood estimate for sequencing error rate.
+  int count_;                    // Number of iterations in EM algorithm performed.
 };
 
 #endif

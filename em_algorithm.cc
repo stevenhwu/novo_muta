@@ -21,20 +21,14 @@ ParameterEstimates* EstimateParameters(TrioModel &params, const TrioVector &site
   int sites_count = sites.size();
   if (sites_count > 0) {
     ParameterEstimates *stats = new ParameterEstimates(sites_count);
-    if (stats->Update(params, sites)) {  // EM algorithm starts here.
-      double start_log_likelihood = stats->log_likelihood();
       // Exits if converges or takes longer than 50 iteratons.
       while (stats->Update(params, sites) &&
              !Equal(params.sequencing_error_rate(), stats->max_e()) &&
              stats->count() < 50) {
         params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
         stats->Clear();  // Sets all statistics except number of sites to 0.
-        // cout << "~E:\t" << stats->max_e() << endl;
       }
-
       return stats;
-    }
   }
-
   return NULL;
 }

@@ -12,13 +12,7 @@
 /**
  * Default constructor.
  *
- * @param  e              Expected statistic for sequencing error rate.
- * @param  hom            Expected statistic for homozygous matches.
- * @param  het            Expected statistic for heterozygous matches.
- * @param  som            Expected statistic for somatic mutation.
- * @param  germ           Expected statistic for germline mutation.
- * @param  log_likelihood Log likelihood of P(R,H)
- * @param  n_s            Number of sites.
+ * @param  sites_count Number of sites.
  */
 ParameterEstimates::ParameterEstimates(double sites_count)
     : e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0}, log_likelihood_{0.0},
@@ -114,7 +108,7 @@ bool ParameterEstimates::IsLogLikelihoodIncreasing() {
 }
 
 /**
- * Sets all statistics to 0 except n_s_ and count_.
+ * Sets all statistics to 0 except n_s_, count_, and start_log_likelihood_.
  */
 void ParameterEstimates::Clear() {
   e_ = 0.0;
@@ -127,10 +121,10 @@ void ParameterEstimates::Clear() {
 }
 
 /**
- * Returns true if any of the statistics is NaN.
+ * Returns true if any of the statistics is NaN. Does not check for n_s_ or count_.
  */
 bool ParameterEstimates::IsNan() {
-  return isnan(e_) || isnan(hom_) || isnan(het_) || isnan(som_) || isnan(germ_) || isnan(log_likelihood_);
+  return isnan(e_) || isnan(hom_) || isnan(het_) || isnan(som_) || isnan(germ_) || isnan(log_likelihood_) || isnan(start_log_likelihood_);
 }
 
 /**
@@ -145,8 +139,13 @@ void ParameterEstimates::Print() {
        << "S_Hom:\t"  << hom_            << endl
        << "S_Het:\t"  << het_            << endl
        << "Q_Log:\t"  << log_likelihood_ << endl;
+       // << "~E:\t"     << max_e_          << endl;
 }
 
+/**
+ * Prints the maximum likelihood estimate of sequencing error rate after the
+ * EM algorithm is done.
+ */
 void ParameterEstimates::PrintMaxSequencingErrorRateEstimate() {
   cout << "After " << count_ << " iterations of "
        << n_s_ << " sites:" << endl
