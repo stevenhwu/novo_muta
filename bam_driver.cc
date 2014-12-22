@@ -41,7 +41,10 @@
  * c++ -std=c++11 -L/usr/local/lib -lgsl -lgslcblas -lm -L/home/mip/novo_muta_infinite_sites_model/bamtools/lib -I/home/mip/novo_muta_infinite_sites_model/bamtools/include -lbamtools -I/home/mip/novo_muta_infinite_sites_model/bamtools/src -lbamtools-utils -I/usr/local/include -o bam_driver utility.cc read_dependent_data.cc trio_model.cc bamtools/src/utils/bamtools_pileup_engine.cpp variant_visitor.cc sufficient_statistics.cc parameter_estimates.cc em_algorithm.cc bam_utilities.cc bam_driver.cc
  *
  * To run this file, provide the following command line inputs:
- * ./bam_driver <output>.txt <input>.bam <child SM> <mother SM> <father SM>
+ * ./bam_driver <input>.bam <child SM> <mother SM> <father SM>
+ *
+ * For example:
+ * ./bam_driver output_sorted.bam NA12828 NA12892 NA12891
  */
 #include "bam_utility.h"
 #include "em_algorithm.cc"

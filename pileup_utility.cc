@@ -21,7 +21,7 @@
  */
 string PileupUtility::TrimHeader(ifstream &f) {
   string line;
-  while(getline(f, line)) {
+  while (getline(f, line)) {
     line = GetSequence(line);  // Trims newline.
     if (!line.empty()) {
       return line;
@@ -102,49 +102,35 @@ ReadData PileupUtility::GetReadData(const string &line) {
 }
 
 /**
- * Writes the probability of each site on a new line to a text file.
+ * Returns the ReadDataVector from the parsed pileup data.
  *
- * @param  params      TrioModel object with default parameters.
  * @param  child_line  Line from the child pileup.
  * @param  mother_line Line from the mother pileup.
  * @param  father_line Line from the father pileup.
+ * @return             ReadDataVector from the parsed pileup data.
  */
-double PileupUtility::GetProbability(TrioModel &params, const string &child_line,
-                      const string &mother_line, const string &father_line) {
+ReadDataVector PileupUtility::GetReadDataVector(const string &child_line,
+                                                const string &mother_line,
+                                                const string &father_line) {
   ReadDataVector data_vec = {GetReadData(child_line),
                              GetReadData(mother_line),
                              GetReadData(father_line)};
-  return params.MutationProbability(data_vec);
+  return data_vec;
 }
 
 /**
  * Opens and parses all pileup files. All valid sequences are converted to
- * ReadData and used to calculate the probability at their sequence position.
- * The output file is tab separated and each sequence is on a new line.
- * The first column represents the sequence position and the second column
- * represents the probability at that sequence.
+ * ReadDataVector.
  *
- * @param  file_name     Output file name.
- * @param  child_pileup  Chile pileup file name.
- * @param  mother_pileup Mother pileup file name.
- * @param  father_pileup Father pileup file name.
+ * @param  child  Chile pileup input stream.
+ * @param  mother Mother pileup input stream.
+ * @param  father Father pileup input stream.
+ * @return        List of probabilities from pileup data.
  */
-void PileupUtility::WriteProbability(const string &file_name,
-                                     const string &child_pileup,
-                                     const string &mother_pileup,
-                                     const string &father_pileup) {
-  ifstream child(child_pileup);
-  ifstream mother(mother_pileup);
-  ifstream father(father_pileup);
-  if (!child.is_open() || 0 != child.fail() || !mother.is_open() ||
-      0 != mother.fail() || !father.is_open() || 0 != father.fail()) {
-    Die("Input file cannot be read.");
-  }
-  
-  TrioModel params;
-  vector<double> probabilities;
-
-  // Removes N sequences and writes probability of first valid line.
+TrioVector PileupUtility::ParseSites(ifstream &child,
+                                     ifstream &mother,
+                                     ifstream &father) {
+  // Removes N sequences.
   string child_line = TrimHeader(child);
   string mother_line = TrimHeader(mother);
   string father_line = TrimHeader(father);
@@ -152,34 +138,49 @@ void PileupUtility::WriteProbability(const string &file_name,
     Die("Pileup file does not contain valid sequences (no N reference).");
   }
 
-  int sequence = 0;
-  int position = 0;
-  stringstream str(child_line);
-  str >> sequence;
-  str >> position;
-  double probability = GetProbability(params, child_line, mother_line,
-                                      father_line);
-  if (probability >= kThreshold) {
-    probabilities.push_back(probability);
-  }
+  TrioVector sites;
+  ReadDataVector data_vec = GetReadDataVector(child_line, mother_line, father_line);
+  sites.push_back(data_vec);  // First valid line.
 
-  // Writes probabilities of the rest of the sequences.
   while (getline(child, child_line)) {
     getline(mother, mother_line);
     getline(father, father_line);
-    stringstream str(child_line);
-    str >> sequence;
-    str >> position;
-    probability = GetProbability(params, child_line, mother_line, father_line);
+    data_vec = GetReadDataVector(child_line, mother_line, father_line);
+    sites.push_back(data_vec);
+  }
+
+  return sites;
+}
+
+/**
+ * Returns a list of probabilities of each site in pileup data at its sequence
+ * position if it is greater than the threshold value.
+ *
+ * @param  sites List of sites from pileup data.
+ * @return       List of probabilities from pileup data.
+ */
+vector<double> PileupUtility::GetProbability(const TrioVector &sites) {
+  TrioModel params;
+  vector<double> probabilities;
+  for (auto site : sites) {
+    double probability = params.MutationProbability(site);
     if (probability >= kThreshold) {
       probabilities.push_back(probability);
     }
   }
+  return probabilities;
+}
 
-  child.close();
-  mother.close();
-  father.close();
-
+/**
+ * The output file is tab separated and each sequence is on a new line.
+ * The first column represents the sequence position and the second column
+ * represents the probability at that sequence.
+ *
+ * @param  file_name     Output file name.
+ * @param  probabilities List of probabilities from pileup data.
+ */
+void PileupUtility::WriteProbability(const string &file_name,
+                                     const vector<double> &probabilities) {
   ofstream fout(file_name);
   ostream_iterator<double> output_iter(fout, "\n");
   copy(probabilities.begin(), probabilities.end(), output_iter);

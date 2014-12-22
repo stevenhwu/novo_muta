@@ -31,8 +31,7 @@ BOOST_AUTO_TEST_CASE(TestGetReadData) {
   BOOST_CHECK(EqualsReadData(test_data, data));
 }
 
-BOOST_AUTO_TEST_CASE(TestGetProbability) {
-  TrioModel params;
+BOOST_AUTO_TEST_CASE(TestGetReadDataVector) {
   string child_line = "22\t34907918\tG\t83\t"
                       ".TT,T.TT.tt,..t..TT..tT.tt,..tt.t.TttT,Tt,tT,tt,T,T,Tt,t.TtTTTTTt,.,.TTT.,,T..ttT.,\t"
                       "DEBB/>EFBFFC<EFEEFFEDFBCFECEEGEEFEFBGE>FGCGFC;GCFC;CEGCFEEGEEEFEGCECEEFED;C>CAFFDC@";
@@ -42,8 +41,20 @@ BOOST_AUTO_TEST_CASE(TestGetProbability) {
   string father_line = "22\t34907918\tG\t68\t"
                        ".....,.,,.,,....,,,,,.,,,,,.,..,,,.,,..,,.,,,..,,,.,.,..,.,,,..,.,.,\t"
                        "DADADBACADBBDEEDCCBCBECCCCBEBDDCCBCCC9DBBEBCCEDCCDEDDDC<BCBBBDCBB@?5";
-  double probability = PileupUtility::GetProbability(params, child_line, mother_line, father_line);
-  BOOST_CHECK(probability >= 0.0 && probability <= 1.0);
+  ReadDataVector data = PileupUtility::GetReadDataVector(child_line, mother_line, father_line);
+  ReadDataVector test_data = {{0, 0, 36, 47}, {0, 0, 60, 0}, {0, 0, 68, 0}};
+  BOOST_CHECK(EqualsReadDataVector(test_data, data));
 }
 
-// BOOST_AUTO_TEST_CASE(TestProcessPileup) {}
+// BOOST_AUTO_TEST_CASE(TestParseSites) {}
+
+BOOST_AUTO_TEST_CASE(TestGetProbability) {
+  TrioModel params;
+  TrioVector trio_vec = GetTrioVector(kNucleotideCount);
+  vector<double> probabilities = PileupUtility::GetProbability(trio_vec);
+  for (double probability : probabilities) {
+    BOOST_CHECK(probability >= kThreshold && probability <= 1.0);
+  }
+}
+
+// BOOST_AUTO_TEST_CASE(TestWriteProbability) {}

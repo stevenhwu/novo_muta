@@ -9,7 +9,6 @@
 #define BAM_UTILITY_H
 
 #include <fstream>
-#include <iterator>
 
 #include "variant_visitor.h"
 

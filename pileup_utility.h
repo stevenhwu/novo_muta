@@ -14,7 +14,6 @@
 #define PILEUP_UTILITY_H
 
 #include <fstream>
-#include <iterator>
 #include <sstream>
 
 #include "trio_model.h"
@@ -24,10 +23,14 @@ namespace PileupUtility {
   string GetSequence(string &line);
   string TrimHeader(ifstream &f);
   ReadData GetReadData(const string &line);
-  double GetProbability(TrioModel &params, const string &child_line,
-                        const string &mother_line, const string &father_line);
-  void WriteProbability(const string &file_name, const string &child_pileup,
-                        const string &mother_pileup, const string &father_pileup);
+  ReadDataVector GetReadDataVector(const string &child_line,
+                                   const string &mother_line,
+                                   const string &father_line);
+  TrioVector ParseSites(ifstream &child, ifstream &mother, ifstream &father);
+  vector<double> GetProbability(const TrioVector &sites);
+  void WriteProbability(const string &file_name,
+                        const vector<double> &probabilities);
+
 };
 
 #endif
