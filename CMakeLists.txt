@@ -28,12 +28,12 @@ if(BamTools_FOUND)
 
   add_executable(bam_driver ${TRIO_MODEL}
                  ${BamTools_LIBRARIES} variant_visitor.cc
-                 ${EM}  bam_utility.cc bam_driver.cc)
+                 ${EM} bam_utility.cc bam_driver.cc)
 endif()
 
 add_executable(bin_driver utility.cc bin_driver.cc)
 add_executable(parse_bam_header utility.cc parse_bam_header.cc)
-add_executable(pileup_driver ${TRIO_MODEL} pileup_utility.cc pileup_driver.cc)
+add_executable(pileup_driver ${TRIO_MODEL} ${EM} pileup_utility.cc pileup_driver.cc)
 add_executable(simulation_driver ${TRIO_MODEL} simulation_model.cc simulation_driver.cc)
 add_executable(simulation_trio ${TRIO_MODEL} simulation_trio.cc)
 

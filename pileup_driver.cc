@@ -14,10 +14,11 @@
  * ./pileup_driver <output>.txt <child>.pileup <mother>.pileup <father>.pileup
  *
  * For example:
- * ./pileup_driver output.txt 828_21.pileup 892_21.pileup 891_21.pileup
+ * ./pileup_driver output.txt 878_21.pileup 892_21.pileup 891_21.pileup
  *
  * See top of pileup_utility.h for additional information.
  */
+#include "em_algorithm.cc" 
 #include "pileup_utility.h"
 
 
@@ -41,13 +42,21 @@ int main(int argc, const char *argv[]) {
   }  
 
   TrioVector sites = PileupUtility::ParseSites(child, mother, father);
-  vector<double> probabilities = PileupUtility::GetProbability(sites);
-  PileupUtility::WriteProbability(file_name, probabilities);
+  
+  // Feature: Write probability to output.
+  // vector<double> probabilities = PileupUtility::GetProbability(sites);
+  // PileupUtility::WriteProbability(file_name, probabilities);
+
+  // Feature: EM algorithm.
+  cout.precision(16);
+  TrioModel params;
+  ParameterEstimates *stats = EstimateParameters(params, sites);
+  stats->IsLogLikelihoodIncreasing();
+  stats->PrintMaxSequencingErrorRateEstimate();
 
   child.close();
   mother.close();
   father.close();
-
 
   return 0;
 }

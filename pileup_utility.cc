@@ -164,9 +164,9 @@ vector<double> PileupUtility::GetProbability(const TrioVector &sites) {
   vector<double> probabilities;
   for (auto site : sites) {
     double probability = params.MutationProbability(site);
-    if (probability >= kThreshold) {
+    // if (probability >= kThreshold) {
       probabilities.push_back(probability);
-    }
+    // }
   }
   return probabilities;
 }
