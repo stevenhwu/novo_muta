@@ -48,8 +48,8 @@ void BamUtility::WriteProbability(const string &file_name,
                                   const TrioVector &sites,
                                   TrioModel &params) {
   vector<double> probabilities;
-  for (auto data_vec : sites) {
-    double probability = params.MutationProbability(data_vec);
+  for (auto site : sites) {
+    double probability = params.MutationProbability(site);
     probabilities.push_back(probability);
   }
 
