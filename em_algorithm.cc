@@ -26,7 +26,6 @@ ParameterEstimates* EstimateParameters(TrioModel &params, const TrioVector &site
              !Equal(params.sequencing_error_rate(), stats->max_e()) &&
              stats->count() < 50) {
         params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
-        stats->Clear();  // Sets all statistics except number of sites to 0.
       }
       return stats;
   }
