@@ -65,6 +65,7 @@ double ParameterEstimates::MaxSequencingErrorRate() {
  * @param sites   List of parsed trios.
  */
 bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
+  Clear();  // Sets all statistics except number of sites to 0.
   for (const ReadDataVector data_vec : sites) {
     params.SetReadDependentData(data_vec);
     som_ += SufficientStatistics::GetSomaticStatistic(params);
