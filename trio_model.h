@@ -78,6 +78,7 @@ class TrioModel {
   Matrix3_16d sequencing_probability_mat() const;
   Matrix16_4d alphas() const;
   ReadDependentData read_dependent_data() const;
+  ReadDependentData likelihood_read_dependent_data() const;
 
  private:
   void GermlineTransition(bool is_numerator=false);  // Helper functions for MutationProbability.
@@ -118,6 +119,7 @@ class TrioModel {
   Matrix16_16d somatic_probability_mat_;
   Matrix16_16d somatic_probability_mat_diag_;
   ReadDependentData read_dependent_data_;  // Contains TreePeel class.
+  ReadDependentData likelihood_read_dependent_data_;
 };
 
 #endif

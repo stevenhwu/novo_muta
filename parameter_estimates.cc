@@ -73,7 +73,7 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
     e_ += SufficientStatistics::GetMismatchStatistic(params);
     hom_ += SufficientStatistics::GetHomozygousStatistic(params);
     het_ += SufficientStatistics::GetHeterozygousStatistic(params);
-    log_likelihood_ += log(params.read_dependent_data().denominator.sum);
+    log_likelihood_ += log(params.likelihood_read_dependent_data().denominator.sum);
 
     if (count_ == 0) {
       start_log_likelihood_ = log_likelihood_;
@@ -82,12 +82,14 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
     if (IsNan()) {
       cout << "ERROR: This site is nan." << endl;
       PrintReadDataVector(data_vec);
-      Print();
+      Print(params.sequencing_error_rate());
       return false;
     }
   }
   
   max_e_ = MaxSequencingErrorRate();
+
+  Print(params.sequencing_error_rate());
   count_++;
   return true;
 }
@@ -125,22 +127,25 @@ void ParameterEstimates::Clear() {
  * Returns true if any of the statistics is NaN. Does not check for n_s_ or count_.
  */
 bool ParameterEstimates::IsNan() {
-  return isnan(e_) || isnan(hom_) || isnan(het_) || isnan(som_) || isnan(germ_) || isnan(log_likelihood_) || isnan(start_log_likelihood_);
+  return (std::isnan(e_) || std::isnan(hom_) || std::isnan(het_) ||
+          std::isnan(som_) || std::isnan(germ_) || std::isnan(log_likelihood_) ||
+          std::isnan(start_log_likelihood_));
 }
 
 /**
  * Prints content.
  */
-void ParameterEstimates::Print() {
+void ParameterEstimates::Print(double rate) {
   cout.precision(16);
   cout << "Iteration #" << count_ << " for " << n_s_ << " sites." << endl;
-  cout << "S_Som:\t"  << som_            << endl
-       << "S_Germ:\t" << germ_           << endl
+  cout << "^E:\t"     << rate            << endl
+       //<< "S_Som:\t"  << som_            << endl
+       //<< "S_Germ:\t" << germ_           << endl
        << "S_E:\t"    << e_              << endl
        << "S_Hom:\t"  << hom_            << endl
        << "S_Het:\t"  << het_            << endl
-       << "Q_Log:\t"  << log_likelihood_ << endl;
-       // << "~E:\t"     << max_e_          << endl;
+       << "Q_Log:\t"  << log_likelihood_ << endl
+       << "~E:\t"     << max_e_          << endl;
 }
 
 /**

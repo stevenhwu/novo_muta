@@ -61,6 +61,10 @@ if(Boost_FOUND)
   add_executable(test_trio_model ${TRIO_MODEL} test/test_trio_model.cc)
   target_link_libraries(test_trio_model ${GSL_LIBRARIES} ${Boost_LIBRARIES})
 
+  project(test_read_dependent_data)
+  add_executable(test_read_dependent_data ${TRIO_MODEL} test/test_read_dependent_data.cc)
+  target_link_libraries(test_read_dependent_data ${GSL_LIBRARIES} ${Boost_LIBRARIES})
+
   project(test_simulation_model)
   add_executable(test_simulation_model ${TRIO_MODEL} simulation_model.cc test/test_simulation_model.cc)
   target_link_libraries(test_simulation_model ${GSL_LIBRARIES} ${Boost_LIBRARIES})

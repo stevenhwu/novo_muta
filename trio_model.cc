@@ -124,6 +124,7 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
  */
 void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
   read_dependent_data_ = ReadDependentData(data_vec);  // First intialized.
+  likelihood_read_dependent_data_ = ReadDependentData(data_vec);
 
   SequencingProbabilityMat();
   SomaticTransition();
@@ -388,6 +389,14 @@ void TrioModel::SequencingProbabilityMat() {
   read_dependent_data_.child_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(0);
   read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);
   read_dependent_data_.father_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(2);
+
+  // Log likelihood uses same data matrixes without the constant max_element.
+  likelihood_read_dependent_data_.sequencing_probability_mat = exp(
+    read_dependent_data_.sequencing_probability_mat.array()
+  );
+  likelihood_read_dependent_data_.child_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(0);
+  likelihood_read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);
+  likelihood_read_dependent_data_.father_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(2);
 }
 
 /**
@@ -406,6 +415,16 @@ void TrioModel::SomaticTransition(bool is_numerator) {
     read_dependent_data_.denominator.father_zygotic_probability = (
       read_dependent_data_.father_somatic_probability * somatic_probability_mat_
     );
+
+    likelihood_read_dependent_data_.denominator.child_zygotic_probability = (
+      likelihood_read_dependent_data_.child_somatic_probability * somatic_probability_mat_
+    );
+    likelihood_read_dependent_data_.denominator.mother_zygotic_probability = (
+      likelihood_read_dependent_data_.mother_somatic_probability * somatic_probability_mat_
+    );
+    likelihood_read_dependent_data_.denominator.mother_zygotic_probability = (
+      likelihood_read_dependent_data_.father_somatic_probability * somatic_probability_mat_
+    );
   } else {
     read_dependent_data_.numerator.child_zygotic_probability = (
       read_dependent_data_.child_somatic_probability * somatic_probability_mat_diag_
@@ -416,6 +435,7 @@ void TrioModel::SomaticTransition(bool is_numerator) {
     read_dependent_data_.numerator.father_zygotic_probability = (
       read_dependent_data_.father_somatic_probability * somatic_probability_mat_diag_
     );
+    // Log likelihood does not require numerator.
   }
 }
 
@@ -440,6 +460,20 @@ void TrioModel::GermlineTransition(bool is_numerator) {
       read_dependent_data_.denominator.parent_probability
     );
     read_dependent_data_.denominator.sum = read_dependent_data_.denominator.root_mat.sum();
+
+    likelihood_read_dependent_data_.denominator.child_germline_probability = (
+      likelihood_read_dependent_data_.denominator.child_zygotic_probability *
+      germline_probability_mat_
+    );
+    likelihood_read_dependent_data_.denominator.parent_probability = KroneckerProduct(
+      likelihood_read_dependent_data_.denominator.mother_zygotic_probability,
+      likelihood_read_dependent_data_.denominator.father_zygotic_probability
+    );
+    likelihood_read_dependent_data_.denominator.root_mat = GetRootMat(
+      likelihood_read_dependent_data_.denominator.child_germline_probability,
+      likelihood_read_dependent_data_.denominator.parent_probability
+    );
+    likelihood_read_dependent_data_.denominator.sum = read_dependent_data_.denominator.root_mat.sum();
   } else {
     read_dependent_data_.numerator.child_germline_probability = (
       read_dependent_data_.numerator.child_zygotic_probability *
@@ -674,4 +708,8 @@ Matrix16_4d TrioModel::alphas() const {
 
 ReadDependentData TrioModel::read_dependent_data() const {
   return read_dependent_data_;
+}
+
+ReadDependentData TrioModel::likelihood_read_dependent_data() const {
+  return likelihood_read_dependent_data_;
 }

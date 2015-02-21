@@ -23,7 +23,7 @@ class ParameterEstimates {
   ~ParameterEstimates() {}
   bool Update(TrioModel &params, const TrioVector &sites);
   void Clear();
-  void Print();
+  void Print(double rate);
 
   double MaxGermlineMutationRate();  // M-step functions.
   double MaxSomaticMutationRate();
