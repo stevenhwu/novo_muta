@@ -383,7 +383,8 @@ void TrioModel::SequencingProbabilityMat() {
   // Calculates sequencing_probability_mat and splits into individual child
   // mother, and father vectors.
   read_dependent_data_.sequencing_probability_mat = exp(
-    read_dependent_data_.sequencing_probability_mat.array() - max_element
+    read_dependent_data_.sequencing_probability_mat.array()
+            - max_element
   );
   read_dependent_data_.child_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(0);
   read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);

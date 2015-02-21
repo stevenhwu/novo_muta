@@ -47,9 +47,9 @@
  * ./bam_driver output_sorted.bam NA12828 NA12892 NA12891
  */
 #include "bam_utility.h"
-#include "em_algorithm.cc"
-
-
+//#include "em_algorithm.cc"
+#include "parameter_estimates.h"
+//
 int main(int argc, const char *argv[]) {
   if (argc < 5) {
     Die("USAGE: bam_driver <input>.bam <child SM> <mother SM> <father SM>");

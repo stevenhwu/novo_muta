@@ -86,8 +86,13 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
       return false;
     }
   }
-  
+    cout <<  log_likelihood_ << "\t" << params.sequencing_error_rate() << "\t";
+//  e_ = 1.0/(count_+1);
+//    hom_ = 1;
+//    het_ = 1;
+
   max_e_ = MaxSequencingErrorRate();
+    cout << max_e_ << endl;
   count_++;
   return true;
 }
@@ -125,7 +130,7 @@ void ParameterEstimates::Clear() {
  * Returns true if any of the statistics is NaN. Does not check for n_s_ or count_.
  */
 bool ParameterEstimates::IsNan() {
-  return isnan(e_) || isnan(hom_) || isnan(het_) || isnan(som_) || isnan(germ_) || isnan(log_likelihood_) || isnan(start_log_likelihood_);
+  return std::isnan(e_) || std::isnan(hom_) || std::isnan(het_) || std::isnan(som_) || std::isnan(germ_) || std::isnan(log_likelihood_) || std::isnan(start_log_likelihood_);
 }
 
 /**

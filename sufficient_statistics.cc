@@ -41,6 +41,7 @@ double SufficientStatistics::GetHeterozygousStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
   Matrix3_16d het_matches = GetHeterozygousMatches(data_vec);
+
   return GetSequencingErrorStatistic(params, het_matches);
 }
 
@@ -56,6 +57,7 @@ double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
   const ReadDataVector data_vec = data.read_data_vec;
   Matrix3_16d hom_matches = GetHomozygousMatches(data_vec);
+
   return GetSequencingErrorStatistic(params, hom_matches);
 }
 
@@ -69,8 +71,10 @@ double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
  */
 double SufficientStatistics::GetMismatchStatistic(const TrioModel &params) {
   const ReadDependentData data = params.read_dependent_data();
+    //Note: Circular dependence: SetReadDependentData(data_vec) in Update().  read_dependent_data() here
   const ReadDataVector data_vec = data.read_data_vec;
   Matrix3_16d mismatches = GetMismatches(data_vec);
+    //Note: GetMismatches(heter/homo) can factor out, it's constant for given dataset
   return GetSequencingErrorStatistic(params, mismatches);
 }
 
@@ -187,6 +191,7 @@ RowVector16d SufficientStatistics::GetMismatches(const ReadData &data) {
  *                  genotype for each read data.
  */
 Matrix3_16d SufficientStatistics::GetMismatches(const ReadDataVector &data_vec) {
+    //Note: Many duplicate code here, GetMismatches(const ReadDataVector &data_vec) can call GetMismatches(const ReadData &data). Same for heter/homo
   Matrix3_16d s_e = Matrix3_16d::Zero();
   for (int i = 0; i < 3; ++i) {
     ReadData data = data_vec[i];

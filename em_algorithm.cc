@@ -24,7 +24,7 @@ ParameterEstimates* EstimateParameters(TrioModel &params, const TrioVector &site
       // Exits if converges or takes longer than 50 iteratons.
       while (stats->Update(params, sites) &&
              !Equal(params.sequencing_error_rate(), stats->max_e()) &&
-             stats->count() < 50) {
+             stats->count() < 10) {
         params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
       }
       return stats;
