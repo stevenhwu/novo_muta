@@ -19,7 +19,7 @@
  */
 namespace SufficientStatistics {
   double GetPopulationMutationRateStatistic(const TrioModel &params);
-  double GetSequencingErrorStatistic(const TrioModel &params, const Matrix3_16d &matches);
+  double GetSequencingErrorStatistic(const TrioModel &params, int match_flag);
   double GetHomozygousStatistic(const TrioModel &params);
   double GetHeterozygousStatistic(const TrioModel &params);
   double GetMismatchStatistic(const TrioModel &params);

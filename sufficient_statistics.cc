@@ -38,9 +38,7 @@ double SufficientStatistics::GetPopulationMutationRateStatistic(const TrioModel 
  * @return       Number of expected heterozygous matches.
  */
 double SufficientStatistics::GetHeterozygousStatistic(const TrioModel &params) {
-  const ReadDependentData data = params.read_dependent_data();
-  const Matrix3_16d het_matches = data.heterozygous_matches;
-  return GetSequencingErrorStatistic(params, het_matches);
+  return GetSequencingErrorStatistic(params, 1);
 }
 
 /**
@@ -52,9 +50,7 @@ double SufficientStatistics::GetHeterozygousStatistic(const TrioModel &params) {
  * @return       Number of expected homozygous matches.
  */
 double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
-  const ReadDependentData data = params.read_dependent_data();
-  const Matrix3_16d hom_matches = data.homozygous_matches;
-  return GetSequencingErrorStatistic(params, hom_matches);
+  return GetSequencingErrorStatistic(params, 0);
 }
 
 /**
@@ -66,20 +62,18 @@ double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
  * @return        Number of expected mismatches.
  */
 double SufficientStatistics::GetMismatchStatistic(const TrioModel &params) {
-  const ReadDependentData data = params.read_dependent_data();
-  const Matrix3_16d mismatches = data.mismatches;
-  return GetSequencingErrorStatistic(params, mismatches);
+  return GetSequencingErrorStatistic(params, 2);
 }
 
 /**
  * Returns S_E, S_Hom, or S_Het based on parameters passed in.
  *
- * @param  params  TrioModel object containing parameters.
- * @para   matches Mismatches, homozygous, or heterzygous matches.
- * @return         Number of expected sequencing error statistic.
+ * @param  params     TrioModel object containing parameters.
+ * @para   match_flag Homozygous (0), or heterzygous (1) matches, or mismatches (2).
+ * @return            Number of expected sequencing error statistic.
  */
 double SufficientStatistics::GetSequencingErrorStatistic(const TrioModel &params,
-                                                         const Matrix3_16d &matches) {
+                                                         int match_flag) {
   const ReadDependentData data = params.read_dependent_data();
   const Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
@@ -98,6 +92,17 @@ double SufficientStatistics::GetSequencingErrorStatistic(const TrioModel &params
   RowVector16d s_e_father = RowVector16d::Zero();
   RowVector256d s_e_child_x = RowVector256d::Zero(); // Given x = parent pair genotype.
   
+  Matrix3_16d matches;
+  if (match_flag == 0) {
+    matches = data.homozygous_matches;
+  } else if (match_flag == 1) {
+    matches = data.heterozygous_matches;
+  } else if (match_flag == 2) {
+    matches = data.mismatches;
+  } else {
+    cout << "Invalid matches." << endl;
+  }
+
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
   for (int x = 0; x < kGenotypeCount; ++x) { // Zygotic genotype.
     for (int y = 0; y < kGenotypeCount; ++y) { // Somatic genotype.
