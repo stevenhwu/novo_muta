@@ -25,14 +25,17 @@ class ParameterEstimates {
   void Clear();
   void Print(double rate);
 
-  double MaxGermlineMutationRate();  // M-step functions.
+  double MaxPopulationMutationRate();  // M-step functions.
+  double MaxGermlineMutationRate();
   double MaxSomaticMutationRate();
   double MaxSequencingErrorRate();
   bool IsLogLikelihoodIncreasing();
+  void PrintMaxPopulationMutationRateEstimate();
   void PrintMaxSequencingErrorRateEstimate();
   bool IsNan();
 
-  double e() const;  // Get and set functions.
+  double theta() const;  // Get and set functions.
+  double e() const;
   double hom() const;
   double het() const;
   double som() const;
@@ -40,8 +43,10 @@ class ParameterEstimates {
   double n_s() const;
   double log_likelihood() const;
   double start_log_likelihood() const;
+  double max_theta() const;
   double max_e() const;
   int count() const;
+  void set_theta(double max);
   void set_e(double max);
   void set_hom(double max);
   void set_het(double max);
@@ -52,6 +57,7 @@ class ParameterEstimates {
 
  private:
   // Instance member variables.
+  double theta_;                 // Expected statistic for population mutation rate.
   double e_;                     // Expected statistic for sequencing error rate.
   double hom_;                   // Expected statistic for homozygous matches.
   double het_;                   // Expected statistic for heterozygous matches.
@@ -60,7 +66,8 @@ class ParameterEstimates {
   double n_s_;                   // Number of sites.
   double log_likelihood_;        // Log likelihood of P(R,H)/denominator sum.
   double start_log_likelihood_;  // First calculated log likelihood.
-  double max_e_;                 // Maximum likehood estimate for sequencing error rate.
+  double max_theta_;             // Maximum likelihood estimate for population mutation rate.
+  double max_e_;                 // Maximum likelihood estimate for sequencing error rate.
   int count_;                    // Number of iterations in EM algorithm performed.
 };
 

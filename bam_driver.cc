@@ -72,7 +72,8 @@ int main(int argc, const char *argv[]) {
   TrioModel params;
   ParameterEstimates *stats = EstimateParameters(params, sites);
   stats->IsLogLikelihoodIncreasing();
-  stats->PrintMaxSequencingErrorRateEstimate();
+  stats->PrintMaxPopulationMutationRateEstimate();
+  //stats->PrintMaxSequencingErrorRateEstimate();
 
   return 0;
 }

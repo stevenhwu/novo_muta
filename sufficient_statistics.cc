@@ -101,6 +101,7 @@ double SufficientStatistics::GetSequencingErrorStatistic(const TrioModel &params
     matches = data.mismatches;
   } else {
     cout << "Invalid matches." << endl;
+    matches = Matrix3_16d::Zero();
   }
 
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
