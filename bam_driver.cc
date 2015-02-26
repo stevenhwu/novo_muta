@@ -47,7 +47,7 @@
  * ./bam_driver output_sorted.bam NA12828 NA12892 NA12891
  */
 #include "bam_utility.h"
-#include "em_algorithm.cc"
+#include "em_algorithm.h"
 
 
 int main(int argc, const char *argv[]) {

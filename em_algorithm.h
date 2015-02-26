@@ -26,9 +26,11 @@ ParameterEstimates* EstimateParameters(TrioModel &params, const TrioVector &site
     ParameterEstimates *stats = new ParameterEstimates(sites_count);
       // Exits if converges or takes longer than 50 iteratons.
       while (stats->Update(params, sites) &&
-             !Equal(params.sequencing_error_rate(), stats->max_e()) &&
+             !Equal(params.population_mutation_rate(), stats->max_theta()) &&
+             //!Equal(params.sequencing_error_rate(), stats->max_e()) &&
              stats->count() < 50) {
-        params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
+        params.set_population_mutation_rate(stats->max_theta());  // Sets new estimate.
+        //params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
       }
       return stats;
   }

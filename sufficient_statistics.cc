@@ -26,6 +26,15 @@ double SufficientStatistics::GetPopulationMutationRateStatistic(const TrioModel 
   double CCCC = root_mat(64) / sum;
   double GGGG = root_mat(128) / sum;
   double TTTT = root_mat(192) / sum;
+
+  // PrintReadDataVector(data.read_data_vec);
+  // cout << params.population_mutation_rate() << endl;
+  // cout << "Sum:\t"  << sum << endl;
+  // cout << "AAAA:\t" << AAAA << endl;
+  // cout << "CCCC:\t" << CCCC << endl;
+  // cout << "GGGG:\t" << GGGG << endl;
+  // cout << "TTTT:\t" << TTTT << endl;
+
   return AAAA + CCCC + GGGG + TTTT;
 }
 
