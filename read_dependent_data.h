@@ -19,6 +19,9 @@ class ReadDependentData {
  public:
   ReadDependentData();  // Default constructor leaves read_data_vec empty.
   ReadDependentData(const ReadDataVector &data_vec);  // Constructor that initializes read_data_vec.
+  Matrix3_16d GetMismatches();
+  Matrix3_16d GetHeterozygousMatches();
+  Matrix3_16d GetHomozygousMatches();
   bool Equals(const ReadDependentData &other);
 
   // Instance member variables.
@@ -28,6 +31,9 @@ class ReadDependentData {
   RowVector16d child_somatic_probability;
   RowVector16d mother_somatic_probability;
   RowVector16d father_somatic_probability;
+  Matrix3_16d homozygous_matches;
+  Matrix3_16d heterozygous_matches;
+  Matrix3_16d mismatches;
   class TreePeel {
    public:
     RowVector16d child_zygotic_probability; // P(R|zygotic genotype)

@@ -17,6 +17,9 @@ ReadDependentData::ReadDependentData() {
   child_somatic_probability = RowVector16d::Zero();
   mother_somatic_probability = RowVector16d::Zero();
   father_somatic_probability = RowVector16d::Zero();
+  homozygous_matches = Matrix3_16d::Zero();
+  heterozygous_matches = Matrix3_16d::Zero();
+  mismatches = Matrix3_16d::Zero();
 }
 
 /**
@@ -28,7 +31,100 @@ ReadDependentData::ReadDependentData(const ReadDataVector &data_vec)
   child_somatic_probability = RowVector16d::Zero();
   mother_somatic_probability = RowVector16d::Zero();
   father_somatic_probability = RowVector16d::Zero();
+  homozygous_matches = GetHomozygousMatches();
+  heterozygous_matches = GetHeterozygousMatches();
+  mismatches = GetMismatches();
 };
+
+/**
+ * Sums all nucleotide counts in each ReadData and subtracts out the number of
+ * nucleotides that match the genotype. It does not subtract twice for
+ * homozygous genotypes. Returns 3 x 16 Eigen matrix holding number of
+ * mismatches per genotype for each read. For example:
+ *
+ * ReadData  A  C  G T
+ *           20 10 0 1
+ *
+ * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
+ * 11 1  11 10 1  21 21 20 11 21 31 30 10 20 30 30
+ *
+ * @return  3 x 16 Eigen matrix containing number of mismatches per genotype
+ *          for each read data.
+ */
+Matrix3_16d ReadDependentData::GetMismatches() {
+  Matrix3_16d s_e = Matrix3_16d::Zero();
+  for (int i = 0; i < 3; ++i) {
+    ReadData data = read_data_vec[i];
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      int allele1 = j / kNucleotideCount;
+      int allele2 = j % kNucleotideCount;
+
+      s_e(i, j) += data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3];
+      s_e(i, j) -= data.reads[allele1];  // Homozygous.
+      if (allele1 != allele2) {
+        s_e(i, j) -= data.reads[allele2];  // Hetereogyzous.
+      }
+    }
+  }
+
+  return s_e;
+}
+
+/**
+ * Returns 3 x 16 Eigen matrix holding number of heterozygous matches per
+ * genotype for each read. For example:
+ *
+ * ReadData  A  C  G T
+ *           20 10 0 1
+ *
+ * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
+ * 0  30 20 21 30 0  10 11 20 10 0  1  21 11 1  0 
+ *
+ * @return  3 x 16 Eigen matrix containing number of heterozygous matches per
+ *          genotype for each read data.
+ */
+Matrix3_16d ReadDependentData::GetHeterozygousMatches() {
+  Matrix3_16d s_het = Matrix3_16d::Zero();
+  for (int i = 0; i < 3; ++i) {
+    ReadData data = read_data_vec[i];
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      if (j % 5 != 0) {  // Heterozygous genotypes are not divisible by 5.
+        int allele1 = j / kNucleotideCount;
+        int allele2 = j % kNucleotideCount;
+        s_het(i, j) += data.reads[allele1] + data.reads[allele2];
+      }
+    }
+  }
+
+  return s_het;
+}
+
+/**
+ * Returns 3 x 16 Eigen matrix holding number of homozygous matches per
+ * genotype for each read. For example:
+ *
+ * ReadData  A  C  G T
+ *           20 10 0 1
+ *
+ * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
+ * 20 0  0  0  0  10 0  0  0  0  0  0  0  0  0  1 
+ *
+ * @return  3 x 16 Eigen matrix containing number of homozygous matches per
+ *          genotype for each read data.
+ */
+Matrix3_16d ReadDependentData::GetHomozygousMatches() {
+  Matrix3_16d s_hom = Matrix3_16d::Zero();
+  for (int i = 0; i < 3; ++i) {
+    ReadData data = read_data_vec[i];
+    for (int j = 0; j < kGenotypeCount; ++j) {
+      if (j % 5 == 0) {  // Homozygous genotypes are divisible by 5.
+        s_hom(i, j) += data.reads[j / kNucleotideCount];
+      }
+    }
+  }
+
+  return s_hom;
+}
 
 /**
  * Returns true if the two ReadDependentData objects are equal to each other.

@@ -26,6 +26,15 @@ double SufficientStatistics::GetPopulationMutationRateStatistic(const TrioModel 
   double CCCC = root_mat(64) / sum;
   double GGGG = root_mat(128) / sum;
   double TTTT = root_mat(192) / sum;
+
+  // PrintReadDataVector(data.read_data_vec);
+  // cout << params.population_mutation_rate() << endl;
+  // cout << "Sum:\t"  << sum << endl;
+  // cout << "AAAA:\t" << AAAA << endl;
+  // cout << "CCCC:\t" << CCCC << endl;
+  // cout << "GGGG:\t" << GGGG << endl;
+  // cout << "TTTT:\t" << TTTT << endl;
+
   return AAAA + CCCC + GGGG + TTTT;
 }
 
@@ -38,11 +47,8 @@ double SufficientStatistics::GetPopulationMutationRateStatistic(const TrioModel 
  * @return       Number of expected heterozygous matches.
  */
 double SufficientStatistics::GetHeterozygousStatistic(const TrioModel &params) {
-  const ReadDependentData data = params.read_dependent_data();
-  const ReadDataVector data_vec = data.read_data_vec;
-  Matrix3_16d het_matches = GetHeterozygousMatches(data_vec);
+  return GetSequencingErrorStatistic(params, 1);
 
-  return GetSequencingErrorStatistic(params, het_matches);
 }
 
 /**
@@ -54,11 +60,8 @@ double SufficientStatistics::GetHeterozygousStatistic(const TrioModel &params) {
  * @return       Number of expected homozygous matches.
  */
 double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
-  const ReadDependentData data = params.read_dependent_data();
-  const ReadDataVector data_vec = data.read_data_vec;
-  Matrix3_16d hom_matches = GetHomozygousMatches(data_vec);
+  return GetSequencingErrorStatistic(params, 0);
 
-  return GetSequencingErrorStatistic(params, hom_matches);
 }
 
 /**
@@ -70,23 +73,20 @@ double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
  * @return        Number of expected mismatches.
  */
 double SufficientStatistics::GetMismatchStatistic(const TrioModel &params) {
-  const ReadDependentData data = params.read_dependent_data();
+  return GetSequencingErrorStatistic(params, 2);
     //Note: Circular dependence: SetReadDependentData(data_vec) in Update().  read_dependent_data() here
-  const ReadDataVector data_vec = data.read_data_vec;
-  Matrix3_16d mismatches = GetMismatches(data_vec);
     //Note: GetMismatches(heter/homo) can factor out, it's constant for given dataset
-  return GetSequencingErrorStatistic(params, mismatches);
 }
 
 /**
  * Returns S_E, S_Hom, or S_Het based on parameters passed in.
  *
- * @param  params  TrioModel object containing parameters.
- * @para   matches Mismatches, homozygous, or heterzygous matches.
- * @return         Number of expected sequencing error statistic.
+ * @param  params     TrioModel object containing parameters.
+ * @para   match_flag Homozygous (0), or heterzygous (1) matches, or mismatches (2).
+ * @return            Number of expected sequencing error statistic.
  */
 double SufficientStatistics::GetSequencingErrorStatistic(const TrioModel &params,
-                                                         const Matrix3_16d &matches) {
+                                                         int match_flag) {
   const ReadDependentData data = params.read_dependent_data();
   const Matrix16_16d somatic_probability_mat = params.somatic_probability_mat();
   const Matrix16_256d germline_probability_mat = params.germline_probability_mat();
@@ -105,6 +105,18 @@ double SufficientStatistics::GetSequencingErrorStatistic(const TrioModel &params
   RowVector16d s_e_father = RowVector16d::Zero();
   RowVector256d s_e_child_x = RowVector256d::Zero(); // Given x = parent pair genotype.
   
+  Matrix3_16d matches;
+  if (match_flag == 0) {
+    matches = data.homozygous_matches;
+  } else if (match_flag == 1) {
+    matches = data.heterozygous_matches;
+  } else if (match_flag == 2) {
+    matches = data.mismatches;
+  } else {
+    cout << "Invalid matches." << endl;
+    matches = Matrix3_16d::Zero();
+  }
+
   // S(R_mom, mom_zygotic=x), S(R_dad, dad_zygotic=x), S(R_child, child_zygotic=x)
   for (int x = 0; x < kGenotypeCount; ++x) { // Zygotic genotype.
     for (int y = 0; y < kGenotypeCount; ++y) { // Somatic genotype.
@@ -154,159 +166,7 @@ double SufficientStatistics::GetSequencingErrorStatistic(const TrioModel &params
 }
 
 /**
- * Sums all nucleotide counts in ReadData and subtracts out the number of
- * nucleotides that match the genotype. It does not subtract twice for
- * homozygous genotypes. Returns 1 x 16 Eigen matrix holding number of
- * mismatches per genotype. For example:
- *
- * ReadData  A  C  G T
- *           20 10 0 1
- *
- * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
- * 11 1  11 10 1  21 21 20 11 21 31 30 10 20 30 30
- *
- * @param  data ReadData.
- * @return      1 x 16 Eigen matrix containing number of mismatches per genotype.
- */
-RowVector16d SufficientStatistics::GetMismatches(const ReadData &data) {
-  RowVector16d s_e = RowVector16d::Zero();
-  for (int i = 0; i < kGenotypeCount; ++i) {
-    int allele1 = i / kNucleotideCount;
-    int allele2 = i % kNucleotideCount;
-    s_e(i) += data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3];
-    s_e(i) -= data.reads[allele1];  // Homozygous.
-    if (allele1 != allele2) {
-      s_e(i) -= data.reads[allele2];  // Hetereogyzous.
-    }
-  }
-
-  return s_e;
-}
-
-/**
- * See GetMismatches(ReadData).
- *
- * @param  data_vec ReadDataVector.
- * @return          3 x 16 Eigen matrix containing number of mismatches per
- *                  genotype for each read data.
- */
-Matrix3_16d SufficientStatistics::GetMismatches(const ReadDataVector &data_vec) {
     //Note: Many duplicate code here, GetMismatches(const ReadDataVector &data_vec) can call GetMismatches(const ReadData &data). Same for heter/homo
-  Matrix3_16d s_e = Matrix3_16d::Zero();
-  for (int i = 0; i < 3; ++i) {
-    ReadData data = data_vec[i];
-    for (int j = 0; j < kGenotypeCount; ++j) {
-      int allele1 = j / kNucleotideCount;
-      int allele2 = j % kNucleotideCount;
-
-      s_e(i, j) += data.reads[0] + data.reads[1] + data.reads[2] + data.reads[3];
-      s_e(i, j) -= data.reads[allele1];  // Homozygous.
-      if (allele1 != allele2) {
-        s_e(i, j) -= data.reads[allele2];  // Hetereogyzous.
-      }
-    }
-  }
-
-  return s_e;
-}
-
-/**
- * Returns 1 x 16 Eigen matrix holding number of heterozygous matches per
- * genotype. For example:
- *
- * ReadData  A  C  G T
- *           20 10 0 1
- *
- * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
- * 0  30 20 21 30 0  10 11 20 10 0  1  21 11 1  0 
- *
- * @param  data ReadData.
- * @return      1 x 16 Eigen matrix containing number of heterozygous matches
- *              per genotype.
- */
-RowVector16d SufficientStatistics::GetHeterozygousMatches(const ReadData &data) {
-  RowVector16d s_het = RowVector16d::Zero();
-  for (int i = 0; i < kGenotypeCount; ++i) {
-    if (i % 5 != 0) {  // Heterozygous genotypes are not divisible by 5.
-      int allele1 = i / kNucleotideCount;
-      int allele2 = i % kNucleotideCount;
-      s_het(i) += data.reads[allele1] + data.reads[allele2];
-    }
-  }
-
-  return s_het;
-}
-
-/**
- * See GetHeterozygousMatches(ReadData).
- *
- * @param  data_vec ReadDataVector.
- * @return          3 x 16 Eigen matrix containing number of heterozygous
- *                  matches per genotype for each read data.
- */
-Matrix3_16d SufficientStatistics::GetHeterozygousMatches(const ReadDataVector &data_vec) {
-  Matrix3_16d s_het = Matrix3_16d::Zero();
-  for (int i = 0; i < 3; ++i) {
-    ReadData data = data_vec[i];
-    for (int j = 0; j < kGenotypeCount; ++j) {
-      if (j % 5 != 0) {  // Heterozygous genotypes are not divisible by 5.
-        int allele1 = j / kNucleotideCount;
-        int allele2 = j % kNucleotideCount;
-        s_het(i, j) += data.reads[allele1] + data.reads[allele2];
-      }
-    }
-  }
-
-  return s_het;
-}
-
-/**
- * Returns 1 x 16 Eigen matrix holding number of homozygous matches per
- * genotype. For example:
- *
- * ReadData  A  C  G T
- *           20 10 0 1
- *
- * AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT
- * 20 0  0  0  0  10 0  0  0  0  0  0  0  0  0  1 
- *
- * @param  data ReadData.
- * @return      1 x 16 Eigen matrix containing number of homozygous matches per
- *              genotype.
- */
-RowVector16d SufficientStatistics::GetHomozygousMatches(const ReadData &data) {
-  RowVector16d s_hom = RowVector16d::Zero();
-  for (int i = 0; i < kGenotypeCount; ++i) {
-    if (i % 5 == 0) {  // Homozygous genotypes are divisible by 5.
-      s_hom(i) += data.reads[i / kNucleotideCount];
-    }
-  }
-
-  return s_hom;
-}
-
-/**
- * See GetHomozygousMatches(ReadData).
- *
- * @param  data_vec ReadDataVector.
- * @return          3 x 16 Eigen matrix containing number of homozygous
- *                  matches per genotype for each read data.
- */
-Matrix3_16d SufficientStatistics::GetHomozygousMatches(const ReadDataVector &data_vec) {
-  Matrix3_16d s_hom = Matrix3_16d::Zero();
-  for (int i = 0; i < 3; ++i) {
-    ReadData data = data_vec[i];
-    for (int j = 0; j < kGenotypeCount; ++j) {
-      if (j % 5 == 0) {  // Homozygous genotypes are divisible by 5.
-        s_hom(i, j) += data.reads[j / kNucleotideCount];
-      }
-    }
-  }
-
-  return s_hom;
-}
-
-/**
  * Returns S_Germ the total number of nucleotide mismatches between parent and
  * child genotypes, or the expected number of germline mutations. This is the
  * sum of SM the number of nucleotide mismatches between m* and oa and SF the

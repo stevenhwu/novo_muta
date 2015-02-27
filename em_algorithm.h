@@ -1,10 +1,13 @@
 /**
- * @file em_algorithm.cc
+ * @file em_algorithm.h
  * @author Melissa Ip
  *
  * This file contains the implementation of the expectation-maximization (EM)
  * algorithm.
  */
+#ifndef EM_ALGORITHM_H
+#define EM_ALGORITHM_H
+
 #include "parameter_estimates.h"
 
 
@@ -23,11 +26,15 @@ ParameterEstimates* EstimateParameters(TrioModel &params, const TrioVector &site
     ParameterEstimates *stats = new ParameterEstimates(sites_count);
       // Exits if converges or takes longer than 50 iteratons.
       while (stats->Update(params, sites) &&
-             !Equal(params.sequencing_error_rate(), stats->max_e()) &&
-             stats->count() < 10) {
-        params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
+             !Equal(params.population_mutation_rate(), stats->max_theta()) &&
+             //!Equal(params.sequencing_error_rate(), stats->max_e()) &&
+             stats->count() < 50) {
+        params.set_population_mutation_rate(stats->max_theta());  // Sets new estimate.
+        //params.set_sequencing_error_rate(stats->max_e());  // Sets new estimate.
       }
       return stats;
   }
   return NULL;
 }
+
+#endif

@@ -47,7 +47,7 @@
  * ./bam_driver output_sorted.bam NA12828 NA12892 NA12891
  */
 #include "bam_utility.h"
-//#include "em_algorithm.cc"
+#include "em_algorithm.h"
 #include "parameter_estimates.h"
 //
 int main(int argc, const char *argv[]) {
@@ -72,7 +72,8 @@ int main(int argc, const char *argv[]) {
   TrioModel params;
   ParameterEstimates *stats = EstimateParameters(params, sites);
   stats->IsLogLikelihoodIncreasing();
-  stats->PrintMaxSequencingErrorRateEstimate();
+  stats->PrintMaxPopulationMutationRateEstimate();
+  //stats->PrintMaxSequencingErrorRateEstimate();
 
   return 0;
 }

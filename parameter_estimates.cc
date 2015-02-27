@@ -20,6 +20,14 @@ ParameterEstimates::ParameterEstimates(double sites_count)
 }
 
 /**
+ * Maximizes population mutation rate (theta). Calculated during the M-step of
+  *expectation-maximization algorithm.
+ */
+double ParameterEstimates::MaxPopulationMutationRate() {
+  return 6.0 / 11.0 * (1.0 - theta_ / n_s_);
+}
+
+/**
  * Maximizes germline mutation rate. Calculated during the M-step of
  * expectation-maximization algorithm.
  *
@@ -68,12 +76,13 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
   Clear();  // Sets all statistics except number of sites to 0.
   for (const ReadDataVector data_vec : sites) {
     params.SetReadDependentData(data_vec);
-    som_ += SufficientStatistics::GetSomaticStatistic(params);
-    germ_ += SufficientStatistics::GetGermlineStatistic(params);
-    e_ += SufficientStatistics::GetMismatchStatistic(params);
-    hom_ += SufficientStatistics::GetHomozygousStatistic(params);
-    het_ += SufficientStatistics::GetHeterozygousStatistic(params);
-    log_likelihood_ += log(params.read_dependent_data().denominator.sum);
+    theta_ += SufficientStatistics::GetPopulationMutationRateStatistic(params);
+    // som_ += SufficientStatistics::GetSomaticStatistic(params);
+    // germ_ += SufficientStatistics::GetGermlineStatistic(params);
+    // e_ += SufficientStatistics::GetMismatchStatistic(params);
+    // hom_ += SufficientStatistics::GetHomozygousStatistic(params);
+    // het_ += SufficientStatistics::GetHeterozygousStatistic(params);
+    log_likelihood_ += log(params.likelihood_read_dependent_data().denominator.sum);
 
     if (count_ == 0) {
       start_log_likelihood_ = log_likelihood_;
@@ -82,7 +91,8 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
     if (IsNan()) {
       cout << "ERROR: This site is nan." << endl;
       PrintReadDataVector(data_vec);
-      Print();
+      Print(params.sequencing_error_rate());
+      Die("Cannot continue EM with a nan estimate.");
       return false;
     }
   }
@@ -91,8 +101,11 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
 //    hom_ = 1;
 //    het_ = 1;
 
-  max_e_ = MaxSequencingErrorRate();
-    cout << max_e_ << endl;
+  max_theta_ = MaxPopulationMutationRate();
+  //max_e_ = MaxSequencingErrorRate();
+
+  Print(params.population_mutation_rate());
+  //Print(params.sequencing_error_rate());
   count_++;
   return true;
 }
@@ -117,6 +130,7 @@ bool ParameterEstimates::IsLogLikelihoodIncreasing() {
  * Sets all statistics to 0 except n_s_, count_, and start_log_likelihood_.
  */
 void ParameterEstimates::Clear() {
+  theta_ = 0.0;
   e_ = 0.0;
   hom_ = 0.0;
   het_ = 0.0;
@@ -124,28 +138,44 @@ void ParameterEstimates::Clear() {
   germ_ = 0.0;
   log_likelihood_ = 0.0;
   max_e_ = 0.0;
+  max_theta_ = 0.0;
 }
 
 /**
  * Returns true if any of the statistics is NaN. Does not check for n_s_ or count_.
  */
 bool ParameterEstimates::IsNan() {
-  return std::isnan(e_) || std::isnan(hom_) || std::isnan(het_) || std::isnan(som_) || std::isnan(germ_) || std::isnan(log_likelihood_) || std::isnan(start_log_likelihood_);
+  return (std::isnan(theta_) || std::isnan(e_) || std::isnan(hom_) || std::isnan(het_) ||
+          std::isnan(som_) || std::isnan(germ_) || std::isnan(log_likelihood_) ||
+          std::isnan(start_log_likelihood_));
 }
 
 /**
  * Prints content.
  */
-void ParameterEstimates::Print() {
+void ParameterEstimates::Print(double rate) {
   cout.precision(16);
   cout << "Iteration #" << count_ << " for " << n_s_ << " sites." << endl;
-  cout << "S_Som:\t"  << som_            << endl
-       << "S_Germ:\t" << germ_           << endl
-       << "S_E:\t"    << e_              << endl
-       << "S_Hom:\t"  << hom_            << endl
-       << "S_Het:\t"  << het_            << endl
-       << "Q_Log:\t"  << log_likelihood_ << endl;
+  cout << "^Theta:\t" << rate << endl
+       // << "^E:\t"     << rate            << endl
+       //<< "S_Som:\t"  << som_            << endl
+       //<< "S_Germ:\t" << germ_           << endl
+       // << "S_E:\t"    << e_              << endl
+       // << "S_Hom:\t"  << hom_            << endl
+       // << "S_Het:\t"  << het_            << endl
+       << "Q_Log:\t"  << log_likelihood_ << endl
+       << "~Theta:\t" << max_theta_ << endl;
        // << "~E:\t"     << max_e_          << endl;
+}
+
+/**
+ * Prints the maximum likelihood estimate of sequencing error rate after the
+ * EM algorithm is done.
+ */
+void ParameterEstimates::PrintMaxPopulationMutationRateEstimate() {
+  cout << "After " << count_ << " iterations of "
+       << n_s_ << " sites:" << endl
+       << "~Theta:\t" << max_theta_ << endl << endl;
 }
 
 /**
@@ -155,7 +185,11 @@ void ParameterEstimates::Print() {
 void ParameterEstimates::PrintMaxSequencingErrorRateEstimate() {
   cout << "After " << count_ << " iterations of "
        << n_s_ << " sites:" << endl
-       << "^E:\t" << max_e_ << endl << endl;
+       << "~E:\t" << max_e_ << endl << endl;
+}
+
+double ParameterEstimates::theta() const {
+  return theta_;
 }
 
 double ParameterEstimates::e() const {
@@ -186,12 +220,20 @@ double ParameterEstimates::log_likelihood() const {
   return log_likelihood_;
 }
 
+double ParameterEstimates::max_theta() const {
+  return max_theta_;
+}
+
 double ParameterEstimates::max_e() const {
   return max_e_;
 }
 
 int ParameterEstimates::count() const {
   return count_;
+}
+
+void ParameterEstimates::set_theta(double max) {
+  theta_ = max;
 }
 
 void ParameterEstimates::set_e(double max) {
