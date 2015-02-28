@@ -15,8 +15,9 @@
  * @param  sites_count Number of sites.
  */
 ParameterEstimates::ParameterEstimates(double sites_count)
-    : e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0}, log_likelihood_{0.0},
-      max_e_{0.0}, count_{0}, n_s_{sites_count} {
+    : theta_{0.0}, e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0}, n_s_{sites_count}, log_likelihood_{0.0},
+       max_theta_{0.0}, max_e_{0.0}, count_{0} {
+    //Note: since you init everything, you might do it for theta_ and max_theta as well
 }
 
 /**
@@ -74,6 +75,7 @@ double ParameterEstimates::MaxSequencingErrorRate() {
  */
 bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
   Clear();  // Sets all statistics except number of sites to 0.
+  double log_likelihood_2 = 0;
   for (const ReadDataVector data_vec : sites) {
     params.SetReadDependentData(data_vec);
     theta_ += SufficientStatistics::GetPopulationMutationRateStatistic(params);
@@ -83,6 +85,7 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
     // hom_ += SufficientStatistics::GetHomozygousStatistic(params);
     // het_ += SufficientStatistics::GetHeterozygousStatistic(params);
     log_likelihood_ += log(params.likelihood_read_dependent_data().denominator.sum);
+    log_likelihood_2 += log(params.read_dependent_data().denominator.sum);
 
     if (count_ == 0) {
       start_log_likelihood_ = log_likelihood_;
@@ -96,10 +99,7 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
       return false;
     }
   }
-    cout <<  log_likelihood_ << "\t" << params.sequencing_error_rate() << "\t";
-//  e_ = 1.0/(count_+1);
-//    hom_ = 1;
-//    het_ = 1;
+  cout <<  log_likelihood_ << "\t" << log_likelihood_2 << "\t" << params.population_mutation_rate() << endl;
 
   max_theta_ = MaxPopulationMutationRate();
   //max_e_ = MaxSequencingErrorRate();
@@ -164,7 +164,7 @@ void ParameterEstimates::Print(double rate) {
        // << "S_Hom:\t"  << hom_            << endl
        // << "S_Het:\t"  << het_            << endl
        << "Q_Log:\t"  << log_likelihood_ << endl
-       << "~Theta:\t" << max_theta_ << endl;
+       << "~Theta:\t" << max_theta_ << endl << endl;
        // << "~E:\t"     << max_e_          << endl;
 }
 

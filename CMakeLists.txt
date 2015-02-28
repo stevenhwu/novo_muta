@@ -36,7 +36,7 @@ if(BamTools_FOUND)
 
   add_executable(bam_driver ${TRIO_MODEL}
                  ${BamTools_LIBRARIES} variant_visitor.cc
-                 ${EM} bam_utility.cc bam_driver.cc em_algorithm.cc)
+                 ${EM} bam_utility.cc bam_driver.cc em_algorithm.h)
 endif()
 
 add_executable(bin_driver utility.cc bin_driver.cc)
@@ -104,3 +104,5 @@ add_test(test_pileup_utility test_pileup_utility)
 add_test(test_sufficient_statistics test_sufficient_statistics)
 add_test(test_parameter_estimates test_parameter_estimates)
 add_test(test_em_algorithm test_em_algorithm)
+
+set(CMAKE_CXX_FLAGS_DEBUG  "-g -O0 -Wvla -Wall -Wextra -pedantic ")

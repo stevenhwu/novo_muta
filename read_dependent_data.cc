@@ -133,6 +133,7 @@ Matrix3_16d ReadDependentData::GetHomozygousMatches() {
  * @return True if the two ReadDependentData objects are equal to each other.
  */
 bool ReadDependentData::Equals(const ReadDependentData &other) {
+    //Note: Keep in mind that these doubles are very small, therefore == might be misleading. Usually you do something like if (diff < epsilon), where epsilon is some sort of arbitrary threshold
   bool attr_table[20] = {
     EqualsReadDataVector(read_data_vec, other.read_data_vec),
     max_elements == other.max_elements,
