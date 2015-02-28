@@ -26,7 +26,7 @@ double SufficientStatistics::GetPopulationMutationRateStatistic(const TrioModel 
   double CCCC = root_mat(64) / sum;
   double GGGG = root_mat(128) / sum;
   double TTTT = root_mat(192) / sum;
-
+  
   return AAAA + CCCC + GGGG + TTTT;
 }
 
@@ -40,6 +40,7 @@ double SufficientStatistics::GetPopulationMutationRateStatistic(const TrioModel 
  */
 double SufficientStatistics::GetHeterozygousStatistic(const TrioModel &params) {
   return GetSequencingErrorStatistic(params, 1);
+
 }
 
 /**
@@ -52,6 +53,7 @@ double SufficientStatistics::GetHeterozygousStatistic(const TrioModel &params) {
  */
 double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
   return GetSequencingErrorStatistic(params, 0);
+
 }
 
 /**
@@ -64,6 +66,8 @@ double SufficientStatistics::GetHomozygousStatistic(const TrioModel &params) {
  */
 double SufficientStatistics::GetMismatchStatistic(const TrioModel &params) {
   return GetSequencingErrorStatistic(params, 2);
+    //Note: Circular dependence: SetReadDependentData(data_vec) in Update().  read_dependent_data() here
+    //Note: GetMismatches(heter/homo) can factor out, it's constant for given dataset
 }
 
 /**
@@ -154,6 +158,7 @@ double SufficientStatistics::GetSequencingErrorStatistic(const TrioModel &params
 }
 
 /**
+    //Note: Many duplicate code here, GetMismatches(const ReadDataVector &data_vec) can call GetMismatches(const ReadData &data). Same for heter/homo
  * Returns S_Germ the total number of nucleotide mismatches between parent and
  * child genotypes, or the expected number of germline mutations. This is the
  * sum of SM the number of nucleotide mismatches between m* and oa and SF the

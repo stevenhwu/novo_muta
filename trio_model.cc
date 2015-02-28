@@ -474,7 +474,8 @@ void TrioModel::GermlineTransition(bool is_numerator) {
       likelihood_read_dependent_data_.denominator.child_germline_probability,
       likelihood_read_dependent_data_.denominator.parent_probability
     );
-    likelihood_read_dependent_data_.denominator.sum = read_dependent_data_.denominator.root_mat.sum();
+    likelihood_read_dependent_data_.denominator.sum = likelihood_read_dependent_data_.denominator.root_mat.sum();
+
   } else {
     read_dependent_data_.numerator.child_germline_probability = (
       read_dependent_data_.numerator.child_zygotic_probability *
