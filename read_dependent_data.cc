@@ -135,25 +135,25 @@ Matrix3_16d ReadDependentData::GetHomozygousMatches() {
 bool ReadDependentData::Equals(const ReadDependentData &other) {
   bool attr_table[20] = {
     EqualsReadDataVector(read_data_vec, other.read_data_vec),
-    max_elements == other.max_elements,
-    sequencing_probability_mat == other.sequencing_probability_mat,
-    child_somatic_probability == other.child_somatic_probability,
-    mother_somatic_probability == other.mother_somatic_probability,
-    father_somatic_probability == other.father_somatic_probability,
-    denominator.child_zygotic_probability == other.denominator.child_zygotic_probability,
-    denominator.mother_zygotic_probability == other.denominator.mother_zygotic_probability,
-    denominator.father_zygotic_probability == other.denominator.father_zygotic_probability,
-    denominator.child_germline_probability == other.denominator.child_germline_probability,
-    denominator.parent_probability == other.denominator.parent_probability,
-    denominator.root_mat == other.denominator.root_mat,
-    denominator.sum == other.denominator.sum,
-    numerator.child_zygotic_probability == other.numerator.child_zygotic_probability,
-    numerator.mother_zygotic_probability == other.numerator.mother_zygotic_probability,
-    numerator.father_zygotic_probability == other.numerator.father_zygotic_probability,
-    numerator.child_germline_probability == other.numerator.child_germline_probability,
-    numerator.parent_probability == other.numerator.parent_probability,
-    numerator.root_mat == other.numerator.root_mat,
-    numerator.sum == other.numerator.sum
+    max_elements == other.max_elements,  // Better comparison of vectors?
+    sequencing_probability_mat.isApprox(other.sequencing_probability_mat, kEpsilon),
+    child_somatic_probability.isApprox(other.child_somatic_probability, kEpsilon),
+    mother_somatic_probability.isApprox(other.mother_somatic_probability, kEpsilon),
+    father_somatic_probability.isApprox(other.father_somatic_probability, kEpsilon),
+    denominator.child_zygotic_probability.isApprox(other.denominator.child_zygotic_probability, kEpsilon),
+    denominator.mother_zygotic_probability.isApprox(other.denominator.mother_zygotic_probability, kEpsilon),
+    denominator.father_zygotic_probability.isApprox(other.denominator.father_zygotic_probability, kEpsilon),
+    denominator.child_germline_probability.isApprox(other.denominator.child_germline_probability, kEpsilon),
+    denominator.parent_probability.isApprox(other.denominator.parent_probability, kEpsilon),
+    denominator.root_mat.isApprox(other.denominator.root_mat, kEpsilon),
+    deEquals(nominator.sum, other.denominator.sum),
+    numerator.child_zygotic_probability.isApprox(other.numerator.child_zygotic_probability, kEpsilon),
+    numerator.mother_zygotic_probability.isApprox(other.numerator.mother_zygotic_probability, kEpsilon),
+    numerator.father_zygotic_probability.isApprox(other.numerator.father_zygotic_probability, kEpsilon),
+    numerator.child_germline_probability.isApprox(other.numerator.child_germline_probability, kEpsilon),
+    numerator.parent_probability.isApprox(other.numerator.parent_probability, kEpsilon),
+    numerator.root_mat.isApprox(other.numerator.root_mat, kEpsilon),
+    Equals(numerator.sum, other.numerator.sum);
   };
 
   if (all_of(begin(attr_table), end(attr_table), [](bool i) { return i; })) {

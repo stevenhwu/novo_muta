@@ -20,7 +20,8 @@
 class ParameterEstimates {
  public:
   ParameterEstimates(double sites_count);  // Default constructor.
-  ~ParameterEstimates() {}
+
+    ~ParameterEstimates() {}
   bool Update(TrioModel &params, const TrioVector &sites);
   void Clear();
   void Print(double rate);
@@ -70,5 +71,7 @@ class ParameterEstimates {
   double max_e_;                 // Maximum likelihood estimate for sequencing error rate.
   int count_;                    // Number of iterations in EM algorithm performed.
 };
+
+ParameterEstimates* EstimateParameters(TrioModel &params, const TrioVector &sites);
 
 #endif

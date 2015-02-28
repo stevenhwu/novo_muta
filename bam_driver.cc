@@ -48,6 +48,7 @@
  */
 #include "bam_utility.h"
 #include "em_algorithm.h"
+#include "parameter_estimates.h"
 
 
 int main(int argc, const char *argv[]) {

@@ -15,13 +15,14 @@
  * @param  sites_count Number of sites.
  */
 ParameterEstimates::ParameterEstimates(double sites_count)
-    : e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0}, log_likelihood_{0.0},
-      max_e_{0.0}, count_{0}, n_s_{sites_count} {
+    : theta_{0.0}, e_{0.0}, hom_{0.0}, het_{0.0}, som_{0.0}, germ_{0.0},
+      n_s_{sites_count}, log_likelihood_{0.0},
+      max_theta_{0.0}, max_e_{0.0}, count_{0} {
 }
 
 /**
  * Maximizes population mutation rate (theta). Calculated during the M-step of
-  *expectation-maximization algorithm.
+ * expectation-maximization algorithm.
  */
 double ParameterEstimates::MaxPopulationMutationRate() {
   return 6.0 / 11.0 * (1.0 - theta_ / n_s_);
@@ -74,6 +75,7 @@ double ParameterEstimates::MaxSequencingErrorRate() {
  */
 bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
   Clear();  // Sets all statistics except number of sites to 0.
+  double log_likelihood_2 = 0;
   for (const ReadDataVector data_vec : sites) {
     params.SetReadDependentData(data_vec);
     theta_ += SufficientStatistics::GetPopulationMutationRateStatistic(params);
@@ -84,10 +86,10 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
     // het_ += SufficientStatistics::GetHeterozygousStatistic(params);
 
     log_likelihood_ += log(params.likelihood_read_dependent_data().denominator.sum);
+    log_likelihood_2 += log(params.read_dependent_data().denominator.sum);
 
     cout << "LIKELIHOOD:\t" << params.likelihood_read_dependent_data().denominator.sum << endl;
     cout << "LOGLIKELIHOOD:\t" << log_likelihood_ << endl;
-
 
     if (count_ == 0) {
       start_log_likelihood_ = log_likelihood_;
@@ -101,7 +103,8 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
       return false;
     }
   }
-  
+  cout <<  log_likelihood_ << "\t" << log_likelihood_2 << "\t" << params.population_mutation_rate() << endl;
+
   max_theta_ = MaxPopulationMutationRate();
   //max_e_ = MaxSequencingErrorRate();
 
@@ -165,7 +168,7 @@ void ParameterEstimates::Print(double rate) {
        // << "S_Hom:\t"  << hom_            << endl
        // << "S_Het:\t"  << het_            << endl
        << "Q_Log:\t"  << log_likelihood_ << endl
-       << "~Theta:\t" << max_theta_ << endl;
+       << "~Theta:\t" << max_theta_ << endl << endl;
        // << "~E:\t"     << max_e_          << endl;
 }
 
