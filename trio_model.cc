@@ -396,7 +396,7 @@ void TrioModel::SequencingProbabilityMat() {
   // mother, and father vectors.
   read_dependent_data_.sequencing_probability_mat = exp(
     read_dependent_data_.sequencing_probability_mat.array()
-            - 10*max_element
+            - max_element
   );
   read_dependent_data_.child_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(0);
   read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);
@@ -490,7 +490,10 @@ void TrioModel::GermlineTransition(bool is_numerator) {
       likelihood_read_dependent_data_.denominator.child_germline_probability,
       likelihood_read_dependent_data_.denominator.parent_probability
     );
-    likelihood_read_dependent_data_.denominator.sum = read_dependent_data_.denominator.root_mat.sum();
+    //Note: Final bug here.
+//    likelihood_read_dependent_data_.denominator.sum = read_dependent_data_.denominator.root_mat.sum();
+    likelihood_read_dependent_data_.denominator.sum = likelihood_read_dependent_data_.denominator.root_mat.sum();
+
   } else {
     read_dependent_data_.numerator.child_germline_probability = (
       read_dependent_data_.numerator.child_zygotic_probability *
