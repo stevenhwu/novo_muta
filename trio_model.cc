@@ -381,6 +381,9 @@ void TrioModel::SequencingProbabilityMat() {
   double max_element = read_dependent_data_.sequencing_probability_mat.maxCoeff();
   read_dependent_data_.max_elements.push_back(max_element);
 
+  cout << read_dependent_data_.sequencing_probability_mat.array() << endl << endl;
+  cout << likelihood_read_dependent_data_.sequencing_probability_mat.array() << endl << endl;
+
   // Calculates sequencing_probability_mat and splits into individual child
   // mother, and father vectors.
   read_dependent_data_.sequencing_probability_mat = exp(
@@ -391,13 +394,24 @@ void TrioModel::SequencingProbabilityMat() {
   read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);
   read_dependent_data_.father_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(2);
 
+  cout << read_dependent_data_.sequencing_probability_mat.array() << endl << endl;
+  cout << likelihood_read_dependent_data_.sequencing_probability_mat.array() << endl << endl;
+
   // Log likelihood uses same data matrixes without the constant max_element.
   likelihood_read_dependent_data_.sequencing_probability_mat = exp(
     read_dependent_data_.sequencing_probability_mat.array()
   );
+  //Note: Assign likelihood_read_dependent_data_ AFTER read_dependent_data_ is normalised (- max_element) and exp()!
+  //Effectively we exp() likelihood_read_dependent_data_ twice
+
+  cout << read_dependent_data_.sequencing_probability_mat.array() << endl << endl;
+  cout << likelihood_read_dependent_data_.sequencing_probability_mat.array() << endl << endl;
+  exit(10);
+
   likelihood_read_dependent_data_.child_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(0);
   likelihood_read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);
   likelihood_read_dependent_data_.father_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(2);
+
 }
 
 /**
