@@ -377,6 +377,15 @@ void TrioModel::SequencingProbabilityMat() {
     }
   }
 
+  // Log likelihood uses same data matrixes without the constant max_element.
+  likelihood_read_dependent_data_.sequencing_probability_mat = exp(
+    read_dependent_data_.sequencing_probability_mat.array()
+  );
+  likelihood_read_dependent_data_.child_somatic_probability = likelihood_read_dependent_data_.sequencing_probability_mat.row(0);
+  likelihood_read_dependent_data_.mother_somatic_probability = likelihood_read_dependent_data_.sequencing_probability_mat.row(1);
+  likelihood_read_dependent_data_.father_somatic_probability = likelihood_read_dependent_data_.sequencing_probability_mat.row(2);
+
+
   // Rescales to normal space and records max element of all 3 reads together.
   double max_element = read_dependent_data_.sequencing_probability_mat.maxCoeff();
   read_dependent_data_.max_elements.push_back(max_element);
@@ -389,14 +398,6 @@ void TrioModel::SequencingProbabilityMat() {
   read_dependent_data_.child_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(0);
   read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);
   read_dependent_data_.father_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(2);
-
-  // Log likelihood uses same data matrixes without the constant max_element.
-  likelihood_read_dependent_data_.sequencing_probability_mat = exp(
-    read_dependent_data_.sequencing_probability_mat.array()
-  );
-  likelihood_read_dependent_data_.child_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(0);
-  likelihood_read_dependent_data_.mother_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(1);
-  likelihood_read_dependent_data_.father_somatic_probability = read_dependent_data_.sequencing_probability_mat.row(2);
 }
 
 /**
@@ -422,7 +423,7 @@ void TrioModel::SomaticTransition(bool is_numerator) {
     likelihood_read_dependent_data_.denominator.mother_zygotic_probability = (
       likelihood_read_dependent_data_.mother_somatic_probability * somatic_probability_mat_
     );
-    likelihood_read_dependent_data_.denominator.mother_zygotic_probability = (
+    likelihood_read_dependent_data_.denominator.father_zygotic_probability = (
       likelihood_read_dependent_data_.father_somatic_probability * somatic_probability_mat_
     );
   } else {

@@ -82,7 +82,12 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
     // e_ += SufficientStatistics::GetMismatchStatistic(params);
     // hom_ += SufficientStatistics::GetHomozygousStatistic(params);
     // het_ += SufficientStatistics::GetHeterozygousStatistic(params);
+
     log_likelihood_ += log(params.likelihood_read_dependent_data().denominator.sum);
+
+    cout << "LIKELIHOOD:\t" << params.likelihood_read_dependent_data().denominator.sum << endl;
+    cout << "LOGLIKELIHOOD:\t" << log_likelihood_ << endl;
+
 
     if (count_ == 0) {
       start_log_likelihood_ = log_likelihood_;
