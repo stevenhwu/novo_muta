@@ -77,6 +77,7 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
   Clear();  // Sets all statistics except number of sites to 0.
   double log_likelihood_2 = 0;
   for (const ReadDataVector data_vec : sites) {
+//    PrintReadDataVector(data_vec);
     params.SetReadDependentData(data_vec);
     theta_ += SufficientStatistics::GetPopulationMutationRateStatistic(params);
     // som_ += SufficientStatistics::GetSomaticStatistic(params);
@@ -88,8 +89,8 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
     log_likelihood_ += log(params.likelihood_read_dependent_data().denominator.sum);
     log_likelihood_2 += log(params.read_dependent_data().denominator.sum);
 
-    cout << "LIKELIHOOD:\t" << params.likelihood_read_dependent_data().denominator.sum << endl;
-    cout << "LOGLIKELIHOOD:\t" << log_likelihood_ << endl;
+//    cout << "LIKELIHOOD:\t" << params.likelihood_read_dependent_data().denominator.sum << endl;
+//    cout << "LOGLIKELIHOOD:\t" << log_likelihood_ << endl;
 
     if (count_ == 0) {
       start_log_likelihood_ = log_likelihood_;
@@ -102,13 +103,21 @@ bool ParameterEstimates::Update(TrioModel &params, const TrioVector &sites) {
       Die("Cannot continue EM with a nan estimate.");
       return false;
     }
+    //Note: This is the thing I forget to change, so it wasn't working when I try to show you (I had that in two lines, and I didn't comment out both). This is test the problem with one site only.
+//    n_s_=1; break;
   }
-  cout <<  log_likelihood_ << "\t" << log_likelihood_2 << "\t" << params.population_mutation_rate() << endl;
 
-  max_theta_ = MaxPopulationMutationRate();
+    max_theta_ = MaxPopulationMutationRate();
+    //Note: Test for the effect of max_theta_, what happen if it is always increasing/decreasing? It helps you to get some idea about the likelihood surface
+//  max_theta_ = params.population_mutation_rate() - 0.0001;
+// + bad?
+// - good?
+
+
   //max_e_ = MaxSequencingErrorRate();
-
   Print(params.population_mutation_rate());
+
+
   //Print(params.sequencing_error_rate());
   count_++;
   return true;

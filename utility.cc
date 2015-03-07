@@ -120,9 +120,12 @@ Matrix16_16_4d TwoParentCounts() {
       vec(j / kNucleotideCount)++;
       vec(j % kNucleotideCount)++;
       counts(i, j) = vec;
+      //Note: Actually print out everything to make sure the order/count is correct
+//      cout << (i*kGenotypeCount+j) << "\t" << i << "\t" << j << "\t= " << vec << " =\t" << vec.sum() << endl;
       vec = RowVector4d::Zero();
     }
   }
+//  exit(17);
   return counts;
 }
 

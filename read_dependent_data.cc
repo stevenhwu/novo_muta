@@ -20,6 +20,7 @@ ReadDependentData::ReadDependentData() {
   homozygous_matches = Matrix3_16d::Zero();
   heterozygous_matches = Matrix3_16d::Zero();
   mismatches = Matrix3_16d::Zero();
+
 }
 
 /**
@@ -146,14 +147,15 @@ bool ReadDependentData::Equals(const ReadDependentData &other) {
     denominator.child_germline_probability.isApprox(other.denominator.child_germline_probability, kEpsilon),
     denominator.parent_probability.isApprox(other.denominator.parent_probability, kEpsilon),
     denominator.root_mat.isApprox(other.denominator.root_mat, kEpsilon),
-    deEquals(nominator.sum, other.denominator.sum),
+//    Equals(nominator.sum, other.denominator.sum),
     numerator.child_zygotic_probability.isApprox(other.numerator.child_zygotic_probability, kEpsilon),
     numerator.mother_zygotic_probability.isApprox(other.numerator.mother_zygotic_probability, kEpsilon),
     numerator.father_zygotic_probability.isApprox(other.numerator.father_zygotic_probability, kEpsilon),
     numerator.child_germline_probability.isApprox(other.numerator.child_germline_probability, kEpsilon),
     numerator.parent_probability.isApprox(other.numerator.parent_probability, kEpsilon),
     numerator.root_mat.isApprox(other.numerator.root_mat, kEpsilon),
-    Equals(numerator.sum, other.numerator.sum);
+//    Equals(numerator.sum, other.numerator.sum);
+  //Note: FIXME later
   };
 
   if (all_of(begin(attr_table), end(attr_table), [](bool i) { return i; })) {

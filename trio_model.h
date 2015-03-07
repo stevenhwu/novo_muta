@@ -82,6 +82,7 @@ class TrioModel {
 
  private:
   void GermlineTransition(bool is_numerator=false);  // Helper functions for MutationProbability.
+
   void SomaticTransition(bool is_numerator=false);
   RowVector256d GetRootMat(const RowVector256d &child_germline_probability,
                            const RowVector256d &parent_probability);

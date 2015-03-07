@@ -124,7 +124,7 @@ double TrioModel::MutationProbability(const ReadDataVector &data_vec) {
  */
 void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
   read_dependent_data_ = ReadDependentData(data_vec);  // First intialized.
-  likelihood_read_dependent_data_ = ReadDependentData(data_vec);
+  likelihood_read_dependent_data_ = ReadDependentData(data_vec); //NOTE: Kael? Copy constructor here? Or Cache it, DataVector never change
 
   SequencingProbabilityMat();
   SomaticTransition();
@@ -132,6 +132,7 @@ void TrioModel::SetReadDependentData(const ReadDataVector &data_vec) {
   SomaticTransition(true);
   GermlineTransition(true);
 }
+
 
 /**
  * Returns 1 x 256 Eigen probability RowVector. This is an order-relevant
@@ -172,7 +173,7 @@ RowVector256d TrioModel::PopulationPriors() {
  */
 Matrix16_16d TrioModel::PopulationPriorsExpanded() {
   Matrix16_16d population_priors = Matrix16_16d::Zero();
-  const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();
+  const Matrix16_16_4d kTwoParentCounts = TwoParentCounts();//NOTE: Global const? don't need to recalculate
   for (int i = 0; i < kGenotypeCount; ++i) {
     for (int j = 0; j < kGenotypeCount; ++j) {
       RowVector4d nucleotide_counts = kTwoParentCounts(i, j);
@@ -180,6 +181,7 @@ Matrix16_16d TrioModel::PopulationPriorsExpanded() {
       population_priors(i, j) = probability;
     }
   }
+
 
   return population_priors;
 }
@@ -374,6 +376,7 @@ void TrioModel::SequencingProbabilityMat() {
                                           data.reads[2], data.reads[3]};
       double log_probability = gsl_ran_multinomial_lnpdf(kNucleotideCount, p, n);
       read_dependent_data_.sequencing_probability_mat(read, genotype_idx) = log_probability;
+
     }
   }
 
@@ -408,14 +411,28 @@ void TrioModel::SequencingProbabilityMat() {
 void TrioModel::SomaticTransition(bool is_numerator) {
   if (!is_numerator) {
     read_dependent_data_.denominator.child_zygotic_probability = (
-      read_dependent_data_.child_somatic_probability * somatic_probability_mat_
+            read_dependent_data_.child_somatic_probability * somatic_probability_mat_
     );
     read_dependent_data_.denominator.mother_zygotic_probability = (
-      read_dependent_data_.mother_somatic_probability * somatic_probability_mat_
+            read_dependent_data_.mother_somatic_probability * somatic_probability_mat_
     );
     read_dependent_data_.denominator.father_zygotic_probability = (
-      read_dependent_data_.father_somatic_probability * somatic_probability_mat_
+            read_dependent_data_.father_somatic_probability * somatic_probability_mat_
     );
+
+//    Note: example with unordered_map<key, zygotic_probability> and encap encapsulation
+//     unordered_map<string, RowVector16d> read_dependent_data_.denominator.zygotic
+//
+//    CalculateSomaticProbability(read_dependent_data_.denominator, somatic_probability_mat_)
+//    CalculateSomaticProbability(read_dependent_data_.numerator, somatic_probability_mat_diag_)
+
+//    void CalculateSomaticProbability(TreePeel &tree_peel, double scale){
+//      for( auto key : tree_peel.zygotic){
+//        tree_peel.somatic[key] = tree_peel.zygotic[key] * somatic_probability_mat_;
+//        //Even better, assign scale to TreePeel:    tree_peel.somatic[key] = tree_peel.zygotic[key] * tree_peel.scale
+//        //jtree_peel.type = enum {numerator, denominator} // pseudocode
+//      }
+//    }
 
     likelihood_read_dependent_data_.denominator.child_zygotic_probability = (
       likelihood_read_dependent_data_.child_somatic_probability * somatic_probability_mat_
@@ -591,6 +608,7 @@ void TrioModel::set_population_mutation_rate(double rate) {
   population_mutation_rate_ = rate;
   population_priors_ = PopulationPriors();
   population_priors_single_ = PopulationPriorsSingle();
+
 }
 
 double TrioModel::germline_mutation_rate() const {
@@ -668,8 +686,8 @@ RowVector4d TrioModel::nucleotide_frequencies() const {
  */
 void TrioModel::set_nucleotide_frequencies(const RowVector4d &frequencies) {
   nucleotide_frequencies_ = frequencies;
-  population_priors_ = PopulationPriors();
-  population_priors_single_ = PopulationPriorsSingle();
+//  population_priors_ = PopulationPriors();
+//  population_priors_single_ = PopulationPriorsSingle();
 }
 
 RowVector16d TrioModel::population_priors_single() const {

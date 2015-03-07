@@ -22,12 +22,25 @@ double SufficientStatistics::GetPopulationMutationRateStatistic(const TrioModel 
   const ReadDependentData data = params.read_dependent_data();
   const RowVector256d root_mat = data.denominator.root_mat;
   const double sum = data.denominator.sum;
-  double AAAA = root_mat(0) / sum;
-  double CCCC = root_mat(64) / sum;
-  double GGGG = root_mat(128) / sum;
-  double TTTT = root_mat(192) / sum;
-  
-  return AAAA + CCCC + GGGG + TTTT;
+//  NOTE: BUG: Indexing the incorrect position. Test and checked the correction positon in test_utility.cc
+//  double AAAA = root_mat(0) / sum;    // 0	4 0 0 0	4
+//  double CCCC = root_mat(64) / sum;   // 64	3 1 0 0	4; ->   85      0 4 0 0
+//  double GGGG = root_mat(128) / sum;  // 128	3 0 1 0	4; -> 170     0 0 4 0
+//  double TTTT = root_mat(192) / sum;  // 192	3 0 0 1	4; -> 255     0 0 0 4
+//  double sum1 = AAAA+CCCC+GGGG+TTTT;
+
+  double A4 = root_mat(0) / sum;
+  double C4 = root_mat(85) / sum;
+  double G4 = root_mat(170) / sum;
+  double T4 = root_mat(255) / sum;
+
+  double sum2 = (A4+C4+G4+T4);
+//  cout << AAAA << "\t" << CCCC << "\t" << GGGG << "\t" << TTTT << "\t"
+//          << "\tSUM:" << sum1 << "\n"<<
+//  A4 << "\t" << C4 << "\t" << G4 << "\t" << T4 << "\tSum2:" << sum2 << endl;
+
+//  return AAAA + CCCC + GGGG + TTTT;
+  return sum2;
 }
 
 /**

@@ -34,7 +34,7 @@ class ReadDependentData {
   Matrix3_16d homozygous_matches;
   Matrix3_16d heterozygous_matches;
   Matrix3_16d mismatches;
-  class TreePeel {
+  class TreePeel { //Note: Maybe a map/unordered_map will be better here
    public:
     RowVector16d child_zygotic_probability; // P(R|zygotic genotype)
     RowVector16d mother_zygotic_probability;
